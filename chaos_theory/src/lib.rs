@@ -69,14 +69,6 @@ pub use source::*;
 pub use unwind::*;
 pub use util::*;
 
-/// Additional documentation.
-pub mod _docs {
-    #[doc = include_str!("../../docs/FAQ.md")]
-    pub mod faq {}
-    #[doc = include_str!("../../docs/CHANGELOG.md")]
-    pub mod changelog {}
-}
-
 /// Collection of built-in generator implementations.
 pub mod make {
     pub use crate::make_cell::*;
