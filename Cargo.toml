@@ -1,0 +1,61 @@
+[workspace]
+members = ["chaos_theory", "xtask"]
+exclude = ["chaos_theory_example", "chaos_theory_example_fuzz"]
+resolver = "2"
+
+[profile.dev]
+opt-level = 1
+debug = false
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
+homepage = "https://github.com/flyingmutant/chaos_theory"
+repository = "https://github.com/flyingmutant/chaos_theory"
+categories = [
+  "random",
+  "property",
+  "testing",
+  "fuzzing",
+  "hypothesis",
+  "quickcheck",
+]
+license = "MPL-2.0"
+edition = "2024"
+
+# TODO: update this list
+[workspace.lints]
+rust.unsafe_code = "forbid"
+rust.dead_code = "warn"
+rust.missing_docs = "warn"
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }  # https://github.com/rust-fuzz/cargo-fuzz/issues/372
+rustdoc.missing_crate_level_docs = "warn"
+clippy.alloc_instead_of_core = "warn"
+clippy.allow_attributes = "warn"
+clippy.clone_on_ref_ptr = "warn"
+clippy.deref_by_slicing = "warn"
+clippy.std_instead_of_alloc = "warn"
+clippy.std_instead_of_core = "warn"
+clippy.str_to_string = "warn"
+clippy.string_to_string = "warn"
+clippy.suboptimal_flops = "warn"
+clippy.unnecessary_self_imports = "warn"
+clippy.unused_trait_names = "warn"
+clippy.unwrap_used = "warn"
+clippy.use_self = "warn"
+clippy.all = { level = "warn", priority = 0 }
+clippy.pedantic = { level = "warn", priority = 0 }
+clippy.cast_possible_truncation = { level = "allow", priority = 2 } # mostly noise
+clippy.cast_possible_wrap = { level = "allow", priority = 2 }       # mostly noise
+clippy.cast_precision_loss = { level = "allow", priority = 2 }      # mostly noise
+clippy.cast_sign_loss = { level = "allow", priority = 2 }           # mostly noise
+clippy.unreadable_literal = { level = "allow", priority = 2 }       # easier to cross-reference magic constants
+
+[workspace.dependencies]
+anyhow = "1.0.98"
+clap = "4.5.37"
+env_logger = "0.11.8"
+log = "0.4.27"
+regex = "1.11.1"
+regex-syntax = "0.8.5"
+xshell = "0.2.6"

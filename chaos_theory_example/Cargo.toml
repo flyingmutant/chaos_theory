@@ -1,0 +1,15 @@
+[package]
+name = "chaos_theory_example"
+description = "chaos_theory usage example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Ensure chaos_theory is built with optimizations enabled.
+[profile.dev.package.chaos_theory]
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
+
+[dev-dependencies]
+chaos_theory = { path = "../chaos_theory" }

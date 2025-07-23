@@ -1,0 +1,9 @@
+[package]
+name = "chaos_theory_example_fuzz"
+description = "chaos_theory fuzzing usage example"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+chaos_theory = { path = "../chaos_theory"  }

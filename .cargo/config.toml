@@ -1,0 +1,5 @@
+[alias]
+x = "run --quiet --package xtask --"
+
+[env]
+CARGO_WORKSPACE_DIR = { value = "", relative = true } # trick to get the workspace dir for xtask

@@ -1,0 +1,9 @@
+.env
+*.swp
+
+/target/
+/.aider*
+
+perf.data
+perf.data.old
+profile.json

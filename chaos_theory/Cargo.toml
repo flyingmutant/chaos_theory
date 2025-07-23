@@ -1,0 +1,32 @@
+[package]
+name = "chaos_theory"
+description = "Modern property-based testing and structure-aware fuzzing library"
+rust-version = "1.88"
+
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+license.workspace = true
+edition.workspace = true
+readme = false
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+# default = ["nightly"]
+all = ["regex"]
+regex = ["dep:regex", "dep:regex-syntax"]
+
+nightly = ["_bench"]
+_bench = []
+
+[dependencies]
+regex = { workspace = true, optional = true }
+regex-syntax = { workspace = true, optional = true }
+
+[dev-dependencies]
+regex.workspace = true
