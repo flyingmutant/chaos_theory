@@ -13,7 +13,6 @@ authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
 categories = [
-  "random",
   "property",
   "testing",
   "fuzzing",
