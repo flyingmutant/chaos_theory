@@ -8,10 +8,11 @@ opt-level = 1
 debug = false
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
+documentation = "https://docs.rs/chaos_theory"
 categories = [
   "development-tools::testing",
   "rust-patterns",

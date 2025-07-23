@@ -12,6 +12,10 @@ keywords.workspace = true
 license.workspace = true
 edition.workspace = true
 readme = "../README.md"
+exclude = ["/UCD/"]
+
+[package.metadata.docs.rs]
+features = ["all"]
 
 [lints]
 workspace = true
