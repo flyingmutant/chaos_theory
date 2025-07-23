@@ -8,13 +8,20 @@ opt-level = 1
 debug = false
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
 categories = [
   "development-tools::testing",
   "rust-patterns",
+]
+keywords = [
+  "random",
+  "property-testing",
+  "fuzzing",
+  "quickcheck",
+  "hypothesis",
 ]
 license = "MPL-2.0"
 edition = "2024"
