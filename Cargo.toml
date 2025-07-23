@@ -13,11 +13,8 @@ authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
 categories = [
-  "property",
-  "testing",
-  "fuzzing",
-  "hypothesis",
-  "quickcheck",
+  "development-tools::testing",
+  "rust-patterns",
 ]
 license = "MPL-2.0"
 edition = "2024"
