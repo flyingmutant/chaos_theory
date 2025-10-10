@@ -91,7 +91,7 @@ pub trait Generator: Debug {
     /// Create a generator which uses a predicate to filter the generated items.
     ///
     /// `filter_assume` should be used carefully, because predicates that reject too many items
-    /// will lead to [`Env::check`](crate::Env::check) panicing due to being unable to
+    /// will lead to [`Env::check`](crate::Env::check) panicking due to being unable to
     /// construct enough valid test cases.
     ///
     /// When possible, prefer [`Generator::filter`] or generators that always produce
