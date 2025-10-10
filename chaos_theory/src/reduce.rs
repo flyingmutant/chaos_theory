@@ -556,7 +556,7 @@ mod tests {
     #[test]
     fn reduce_toy_seq() {
         fn accept(s: &ToySeq) -> bool {
-            sum(s) % 2 != 0
+            !sum(s).is_multiple_of(2)
         }
 
         fn sum(s: &ToySeq) -> u64 {

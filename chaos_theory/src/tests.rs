@@ -187,13 +187,13 @@ impl RgbState {
                                 .iter()
                                 .min()
                                 .expect("vector is not empty");
-                            if amount % 2 == 0 {
+                            if amount.is_multiple_of(2) {
                                 return Effect::Noop;
                             }
                             total = total.saturating_add(amount);
                             Effect::Success
                         });
-                        if total % 2 == 0 {
+                        if total.is_multiple_of(2) {
                             return Effect::Noop;
                         }
                         self.b = self.b.saturating_add(total);
