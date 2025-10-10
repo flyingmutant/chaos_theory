@@ -1053,9 +1053,14 @@ impl Arbitrary for Effect {
 // - otherwise, we fall back to generating new value
 
 impl Env {
-    fn choice_new_size(&mut self, n: usize) -> usize {
-        // For recursive data, we might want to half the temperature and set q = 2.0 + 0.25 * depth.
-        self.size_dist.sample(&mut self.rng, n)
+    fn choice_new_size(&mut self, n: usize, depth: usize) -> usize {
+        // For recursive data, gradually tighten the size distribution.
+        // This is a hacky way to work around recursive data generation for cases
+        // where recursion is expressed in terms of size (and not e.g. tree-as-enum).
+        let t = self.temperature >> (depth / 2);
+        let q = (depth as f64).mul_add(0.25, 2.0);
+        let d = Biased::new_temperature(t, Some(q));
+        d.sample(&mut self.rng, n)
     }
 
     pub(crate) fn choose_size(&mut self, r: SizeRange, example: Option<usize>) -> usize {
@@ -1075,7 +1080,7 @@ impl Env {
             .filter(|u| *u < n);
         let size_extra = example_extra
             .or_else(|| reuse_extra.filter(|u| *u < n))
-            .unwrap_or_else(|| self.choice_new_size(n));
+            .unwrap_or_else(|| self.choice_new_size(n, self.scope_depth));
         debug_assert!(size_extra < n);
         let size = r.min + size_extra;
         debug_assert!(r.contains(&size));
