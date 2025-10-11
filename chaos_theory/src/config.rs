@@ -363,12 +363,14 @@ impl Config {
     }
 
     /// Override coverage collection depth.
+    #[doc(hidden)]
     pub fn with_cover_depth(mut self, depth: usize) -> Self {
         self.cover_depth = Some(depth);
         self
     }
 
     /// Override use of coverage as a testing goal.
+    #[doc(hidden)]
     pub fn with_cover_require(mut self, require: bool) -> Self {
         self.cover_require = Some(require);
         self

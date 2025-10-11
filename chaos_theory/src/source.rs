@@ -180,6 +180,7 @@ impl<'env> Source<'env> {
     ///
     /// `repeat_select` panics when the variants slice is empty.
     // TODO: remove if not required for cover
+    #[doc(hidden)]
     pub fn repeat_select(
         &mut self,
         label: &str,
@@ -194,6 +195,7 @@ impl<'env> Source<'env> {
     /// # Panics
     ///
     /// `repeat_select_n` panics when the variants slice is empty.
+    #[doc(hidden)]
     pub fn repeat_select_n(
         &mut self,
         label: &str,
@@ -235,16 +237,19 @@ impl<'env> Source<'env> {
     }
 
     /// Require that condition is true at least once, when running in coverage mode.
+    #[doc(hidden)]
     pub fn cover(&mut self, condition: &str, value: bool) {
         self.cover_all(&[(condition, value)]);
     }
 
     /// Require that all conditions are simultaneously true at least once, when running in coverage mode.
+    #[doc(hidden)]
     pub fn cover_all(&mut self, conditions: &[(&str, bool)]) {
         self.as_mut().cover_all(conditions);
     }
 
     /// Require that at least one condition is true at least once, when running in coverage mode.
+    #[doc(hidden)]
     pub fn cover_any(&mut self, conditions: &[(&str, bool)]) {
         self.as_mut().cover_any(conditions);
     }
@@ -610,6 +615,7 @@ impl SourceRaw<'_> {
     }
 
     /// Repeatedly select and execute specified number of `step` variants that result in [`Effect::Success`].
+    #[doc(hidden)]
     pub fn repeat_select<L: AsRef<str> + Debug>(
         &mut self,
         label: &str,
