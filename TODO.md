@@ -2,6 +2,7 @@
 
 ## OSS public release
 
+- guide on how to write a generator impl for struct and for enum
 - rename tape to trace?
 - warn on `as` conversions
 - usage examples
@@ -19,6 +20,8 @@
 - `choose`/`select` stable key
   - special `Hash`-like trait or just hash?
 - `minimize` API with explicit goal that returns the minimum value
+- `maybe` should be generalized to a "structural `if`" (e.g. support `X && rand()` etc.)
+  - on the same note, `repeat` should be generalized to handle while loops as well (`Effect = Noop + Change(n)`?)
 
 ## Intelligent generation
 
@@ -36,6 +39,10 @@
 
 - cover
 - reldata
+- subtests support
+  - integrate with testing matrix (smooth transition grid <-> random walk)
+  - generator = kind of implicit grid, and we do random walks on these grids
+    - sometimes, we just want a full walk
 - nice-to-have
   - flaky test detection
   - collect N bugs during one run
@@ -74,6 +81,10 @@
     - need to think about IDs: we want our mutator to be able to replace whole with subparts
       - probably like `repeat` gives identical IDs to elements, recursive combinator should give identical IDs to parts as well
     - maybe use depth as well as scope IDs for swarm testing etc. to handle recursion
+    - or we could some kind of "total size budget" that we randomly allocate to subparts
+      - problem is, what to do with tree-as-enum? we don't need to `select` the branch that is possible given the size budget,
+        but we don't know the size budget upfront
+      - with zero budget, we have to somehow choose leaf!
   - flatten `or` and `mix_of` somehow (draw from the flattened list of generators)
   - find a way to unify int/byte generation:
     - use flatter "small values" for all integers, without special-casing `u8`
