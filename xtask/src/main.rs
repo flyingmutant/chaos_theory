@@ -196,6 +196,7 @@ fn run_lint(sh: &Shell, all: bool, package: &str, nightly: bool) -> Result<()> {
             sh,
             "cargo check --all-targets --no-default-features --quiet {package_args...}"
         )
+        .env("RUSTFLAGS", "-D warnings")
         .run()?;
         let feat = root_dir_all_features(dir, false);
         cmd!(
