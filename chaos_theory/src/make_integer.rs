@@ -7,7 +7,7 @@
 use core::{
     any::TypeId,
     fmt::Debug,
-    num::NonZero,
+    num::{NonZero, Saturating, Wrapping},
     ops::RangeBounds,
     sync::atomic::{
         AtomicBool, AtomicI8, AtomicI16, AtomicI32, AtomicI64, AtomicIsize, AtomicU8, AtomicU16,
@@ -143,13 +143,13 @@ macro_rules! impl_arbitrary_int {
     ($num: ty, $num_atomic: ty) => {
         impl Arbitrary for $num {
             fn arbitrary() -> impl Generator<Item = Self> {
-                int_in_range::<$num>(..)
+                int_in_range::<Self>(..)
             }
         }
 
         impl Arbitrary for $num_atomic {
             fn arbitrary() -> impl Generator<Item = Self> {
-                <$num>::arbitrary().map_reversible(Into::into, |i: &$num_atomic| {
+                <$num>::arbitrary().map_reversible(Into::into, |i: &Self| {
                     Some(MaybeOwned::Owned(i.load(Ordering::Relaxed)))
                 })
             }
@@ -168,6 +168,18 @@ macro_rules! impl_arbitrary_int {
                 <$num>::arbitrary()
                     .filter_assume(|i| *i != 0)
                     .map_reversible(to_nonzero, from_nonzero)
+            }
+        }
+
+        impl Arbitrary for Saturating<$num> {
+            fn arbitrary() -> impl Generator<Item = Self> {
+                <$num>::arbitrary().map_reversible(|i| Self(i), |i| Some(MaybeOwned::Owned(i.0)))
+            }
+        }
+
+        impl Arbitrary for Wrapping<$num> {
+            fn arbitrary() -> impl Generator<Item = Self> {
+                <$num>::arbitrary().map_reversible(|i| Self(i), |i| Some(MaybeOwned::Owned(i.0)))
             }
         }
     };
