@@ -52,6 +52,8 @@ mod make_collection;
 mod make_combine;
 mod make_core;
 mod make_float;
+#[cfg(feature = "indexmap")]
+mod make_indexmap;
 mod make_integer;
 #[cfg(feature = "regex")]
 mod make_regex;
@@ -92,6 +94,12 @@ pub mod make {
     /// This is equivalent to `<T as Arbitrary>::arbitrary()`, but can sometimes be a bit more concise.
     pub fn arbitrary<T: Arbitrary>() -> impl Generator<Item = T> {
         T::arbitrary()
+    }
+
+    #[cfg(feature = "indexmap")]
+    /// [`indexmap`](https://docs.rs/indexmap) generators.
+    pub mod indexmap {
+        pub use crate::make_indexmap::*;
     }
 }
 

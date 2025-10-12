@@ -22,13 +22,15 @@ workspace = true
 
 [features]
 # default = ["nightly"]
-all = ["regex"]
+all = ["indexmap", "regex"]
+indexmap = ["dep:indexmap"]
 regex = ["dep:regex", "dep:regex-syntax"]
 
 nightly = ["_bench"]
 _bench = []
 
 [dependencies]
+indexmap = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 regex-syntax = { workspace = true, optional = true }
 

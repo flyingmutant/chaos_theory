@@ -47,6 +47,8 @@
     "Hormann",
     "IJON",
     "Ilya",
+    "indexmap",
+    "indexset",
     "Kensler",
     "libfuzzer",
     "mixof",
