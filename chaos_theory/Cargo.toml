@@ -16,6 +16,7 @@ exclude = ["/UCD/"]
 
 [package.metadata.docs.rs]
 features = ["all"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lints]
 workspace = true

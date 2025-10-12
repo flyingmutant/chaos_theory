@@ -65,6 +65,7 @@ where
 }
 
 /// Create a [`HashSet`] generator.
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 pub fn hash_set<T, S>(elem: impl Generator<Item = T>) -> impl Generator<Item = HashSet<T, S>>
 where
     T: Debug + Hash + Eq,
@@ -74,6 +75,7 @@ where
 }
 
 /// Create a [`HashSet`] generator with a specified size range.
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 pub fn hash_set_with_size<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
@@ -130,6 +132,7 @@ where
 }
 
 /// Create a [`HashMap`] generator.
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 pub fn hash_map<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
@@ -143,6 +146,7 @@ where
 }
 
 /// Create a [`HashMap`] generator with a specified size range.
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 pub fn hash_map_with_size<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,

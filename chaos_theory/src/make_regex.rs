@@ -347,6 +347,7 @@ where
 /// # Panics
 ///
 /// `string_matching` panics when the regular expression can't be parsed or when it can match non-UTF-8 sequences.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
 pub fn string_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = String> + use<> {
     string_slice_matching(expr, fullmatch)
 }
@@ -366,6 +367,7 @@ pub fn string_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = Str
 /// # Panics
 ///
 /// `string_slice_matching` panics when the regular expression can't be parsed or when it can match non-UTF-8 sequences.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
 pub fn string_slice_matching<T>(expr: &str, fullmatch: bool) -> impl Generator<Item = T> + use<T>
 where
     T: From<String> + Deref<Target = str> + Debug,
@@ -421,6 +423,7 @@ where
 /// # Panics
 ///
 /// `bytes_matching` panics when the regular expression can't be parsed.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
 pub fn bytes_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = Vec<u8>> + use<> {
     byte_slice_matching(expr, fullmatch)
 }
@@ -440,6 +443,7 @@ pub fn bytes_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = Vec<
 /// # Panics
 ///
 /// `byte_slice_matching` panics when the regular expression can't be parsed.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
 pub fn byte_slice_matching<T>(expr: &str, fullmatch: bool) -> impl Generator<Item = T> + use<T>
 where
     T: From<Vec<u8>> + Deref<Target = [u8]> + Debug,

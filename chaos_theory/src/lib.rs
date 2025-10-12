@@ -9,6 +9,7 @@
 */
 
 #![cfg_attr(all(test, feature = "_bench"), feature(test))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 extern crate alloc;
 #[cfg(all(test, feature = "_bench"))]

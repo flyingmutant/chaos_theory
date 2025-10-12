@@ -65,6 +65,7 @@ where
 }
 
 /// Create a [`IndexSet`] generator.
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 pub fn index_set<T, S>(elem: impl Generator<Item = T>) -> impl Generator<Item = IndexSet<T, S>>
 where
     T: Debug + Hash + Eq,
@@ -74,6 +75,7 @@ where
 }
 
 /// Create a [`IndexSet`] generator with a specified size range.
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 pub fn index_set_with_size<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
@@ -130,6 +132,7 @@ where
 }
 
 /// Create a [`IndexMap`] generator.
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 pub fn index_map<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
@@ -143,6 +146,7 @@ where
 }
 
 /// Create a [`IndexMap`] generator with a specified size range.
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 pub fn index_map_with_size<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
