@@ -121,7 +121,6 @@
   - recursive
     - `nothing` generator that calls `reject` (e.g. to specify desired tree structure?)
 - derive crate
-- open source release
 
 ## Ideas
 
