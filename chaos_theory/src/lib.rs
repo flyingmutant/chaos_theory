@@ -52,6 +52,8 @@ mod make_collection;
 mod make_combine;
 mod make_core;
 mod make_float;
+#[cfg(feature = "hashbrown")]
+mod make_hashbrown;
 #[cfg(feature = "indexmap")]
 mod make_indexmap;
 mod make_integer;
@@ -94,6 +96,12 @@ pub mod make {
     /// This is equivalent to `<T as Arbitrary>::arbitrary()`, but can sometimes be a bit more concise.
     pub fn arbitrary<T: Arbitrary>() -> impl Generator<Item = T> {
         T::arbitrary()
+    }
+
+    #[cfg(feature = "hashbrown")]
+    /// [`hashbrown`](https://docs.rs/hashbrown) generators.
+    pub mod hashbrown {
+        pub use crate::make_hashbrown::*;
     }
 
     #[cfg(feature = "indexmap")]

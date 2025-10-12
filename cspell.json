@@ -41,6 +41,7 @@
     "FFFD",
     "flatmap",
     "fullmatch",
+    "hashbrown",
     "hashset",
     "hinv",
     "hirs",
