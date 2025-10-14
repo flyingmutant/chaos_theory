@@ -15,7 +15,12 @@ pub(crate) fn reduce_tape(
     limit: Duration,
     trial: impl FnMut(Tape) -> (Tape, Option<PanicInfo>),
 ) -> (Tape, PanicInfo) {
+    debug_assert!(tape.has_meta()); // Not necessary as an invariant, but currently true.
     debug_assert!(!info.invalid_data);
+    // Bail out fast ensuring that we do zero trials if required.
+    if limit.is_zero() {
+        return (tape, info);
+    }
     let mut r = Reducer {
         tape,
         info,
@@ -29,7 +34,7 @@ pub(crate) fn reduce_tape(
         flaky_log_once: Once::new(),
     };
     r.reduce();
-    if r.timed_out && !limit.is_zero() {
+    if r.timed_out {
         let (trials, reductions, elapsed) = (r.trials, r.reductions, r.start.elapsed());
         eprintln!(
             "[chaos_theory] stopping test case reduction early after {trials} attempts ({reductions} reductions), elapsed {elapsed:?} with time limit of {limit:?}"
@@ -37,6 +42,7 @@ pub(crate) fn reduce_tape(
     }
     // Run trial one more time, so that any side-effects it has, are from the tape we are returning
     // and not some intermediary one.
+    // TODO: only do this if we had more than 1 trial (or better, only if last trial was on non-minimal tape).
     let (tape_out, info_out) = (r.trial)(r.tape.clone());
     // Return the output tape since it contains valid metadata.
     debug_assert!(tape_out.has_meta());
@@ -98,8 +104,7 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
     }
 
     fn try_incorporate(&mut self, t: Tape, skip_non_smaller: bool) -> Result<bool, ()> {
-        // Special-case zero limit because `elapsed()` can return zero as well.
-        if self.limit.is_zero() || self.start.elapsed() > self.limit {
+        if self.start.elapsed() > self.limit {
             return Err(());
         }
         if skip_non_smaller && !t.smaller_choices(&self.tape) {

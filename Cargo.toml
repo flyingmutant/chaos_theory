@@ -8,7 +8,7 @@ opt-level = 1
 debug = false
 
 [workspace.package]
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
