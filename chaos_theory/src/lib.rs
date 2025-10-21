@@ -66,6 +66,8 @@ mod make_special;
 mod make_string;
 mod make_sync;
 mod make_time;
+#[cfg(feature = "tinyvec")]
+mod make_tinyvec;
 mod make_tuple;
 
 pub use config::*;
@@ -117,6 +119,12 @@ pub mod make {
     /// [`ordered_float`](https://docs.rs/ordered-float) generators.
     pub mod ordered_float {
         pub use crate::make_ordered_float::*;
+    }
+
+    #[cfg(feature = "tinyvec")]
+    /// [`tinyvec`](https://docs.rs/tinyvec) generators.
+    pub mod tinyvec {
+        pub use crate::make_tinyvec::*;
     }
 }
 

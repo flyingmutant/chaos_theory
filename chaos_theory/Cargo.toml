@@ -23,11 +23,12 @@ workspace = true
 
 [features]
 # default = ["nightly"]
-all = ["hashbrown", "indexmap", "ordered_float", "regex"]
+all = ["hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
 hashbrown = ["dep:hashbrown"]
 indexmap = ["dep:indexmap"]
 ordered_float = ["dep:ordered-float"]
 regex = ["dep:regex", "dep:regex-syntax"]
+tinyvec = ["dep:tinyvec"]
 
 nightly = ["_bench"]
 _bench = []
@@ -38,6 +39,7 @@ indexmap = { workspace = true, optional = true }
 ordered-float = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 regex-syntax = { workspace = true, optional = true }
+tinyvec = { workspace = true, optional = true, features = ["alloc"] }
 
 [dev-dependencies]
 regex.workspace = true
