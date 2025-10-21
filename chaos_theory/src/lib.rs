@@ -58,6 +58,8 @@ mod make_hashbrown;
 #[cfg(feature = "indexmap")]
 mod make_indexmap;
 mod make_integer;
+#[cfg(feature = "ordered_float")]
+mod make_ordered_float;
 #[cfg(feature = "regex")]
 mod make_regex;
 mod make_special;
@@ -109,6 +111,12 @@ pub mod make {
     /// [`indexmap`](https://docs.rs/indexmap) generators.
     pub mod indexmap {
         pub use crate::make_indexmap::*;
+    }
+
+    #[cfg(feature = "ordered_float")]
+    /// [`ordered_float`](https://docs.rs/ordered-float) generators.
+    pub mod ordered_float {
+        pub use crate::make_ordered_float::*;
     }
 }
 
