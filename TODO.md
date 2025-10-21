@@ -1,7 +1,13 @@
 # TODO
 
+- make source contain example ref as dyn any, and unite two APIs completely?
+- consider source being an arc<mutex> internally and have no mutability and no lifetime
+- *structured random crate*, only composable primitives, everything else on top
+
 ## OSS public release
 
+- `--no-capture` + override stdin/stdout by default
+  - defend against people/agents using `println` inside a test
 - guide on how to write a generator impl for struct and for enum
 - rename tape to trace?
 - warn on `as` conversions
