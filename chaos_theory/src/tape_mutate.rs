@@ -76,7 +76,7 @@ pub(crate) fn mutate_events(
                     )
                 } else {
                     mutate_value(rng, t, size, min, max, shrink_only)
-                        .map(|s| s.min(min + MAX_SIZE as u64))
+                        .map(|s| s.min(min.saturating_add(MAX_SIZE as u64)))
                 }
             }
             Some(Event::Meta(..)) => {
