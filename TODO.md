@@ -1,54 +1,103 @@
 # TODO
 
-- make source contain example ref as dyn any, and unite two APIs completely?
-- consider source being an arc<mutex> internally and have no mutability and no lifetime
-- *structured random crate*, only composable primitives, everything else on top
-
-## OSS public release
+## ergonomics
 
 - `--no-capture` + override stdin/stdout by default
   - defend against people/agents using `println` inside a test
-- guide on how to write a generator impl for struct and for enum
-- rename tape to trace?
-- warn on `as` conversions
+  - note about logging in tests
+- derive macro
+- more generators
+  - external
+    - uuid
+    - serde_json
+    - bytes
+  - u128
+  - CString/Cstr
+  - OSString/OSstr
+  - PathBuf/Path
+  - IpAddr/SocketAddr
+  - range types, Bound
+  - MaybeUninit
+  - permutation/shuffle/subsequence/random chunking
+  - recursive
+    - `nothing` generator that calls `reject` (e.g. to specify desired tree structure?)
+
+## docs
+
 - usage examples
-- grep TODO
+- FAQ
+- guide on how to write a generator impl for struct and for enum
+
+## functionality
+
+- NaN
+- recursion
+- cover
+
+## API
+
+- subtests support
+  - integrate with testing matrix (smooth transition grid <-> random walk)
+  - generator = kind of implicit grid, and we do random walks on these grids
+    - sometimes, we just want a full walk
+- make source contain example ref as dyn any, and unite two APIs completely?
+- consider source being an arc<mutex> internally and have no mutability and no lifetime
 - consider renaming `_with_size` to `_n`
-- `no_std` so that people can define generators without `std`
-- expose generator types?
 - `src.any("").filter()` API want? `choose_where` looks simple, `any_of + filter` does not
   - `any` == `choose` from whatever!
 - consider `make::string` + `make::string_of`
   - dot works better + type inference is simpler + python is simpler
   - what to do with `int*` and `float*`?
-- generator-centric API, with `src` becoming `rand` argument?
-- want to create special-case so that `choose` on mutable collections reduces nicely
-- `choose`/`select` stable key
-  - special `Hash`-like trait or just hash?
 - `minimize` API with explicit goal that returns the minimum value
 - `maybe` should be generalized to a "structural `if`" (e.g. support `X && rand()` etc.)
   - on the same note, `repeat` should be generalized to handle while loops as well (`Effect = Noop + Change(n)`?)
+- expose generator types?
+- generator-centric API, with `src` becoming `rand` argument?
+- in `select`, can use syntax inside `"action_name"` to mark things as rare
+  - roll, then see the name. if name is rare and we have no budget, re-roll
+- provide `&impl Hash` thing to explore state space
+- something like `if s.fail("label")` (see [fail crate](https://docs.rs/fail/latest/fail/))
+  - important, real-world case
+  - how to thread `s` into regular user code? don't want code to depend on `chaos_theory` probably
+- provide `likely!` and `unlikely!` macros (functions?) to help with generation
 
-## Intelligent generation
+## internals
 
+- `choose`/`select` stable key
+  - special `Hash`-like trait or just hash?
+- flatten `or` and `mix_of` somehow (draw from the flattened list of generators)
+- find a way to unify int/byte generation:
+  - use flatter "small values" for all integers, without special-casing `u8`
+  - also, fall `choose_value` back to using `choose_index` for small values
+    - make `byte_ascii()` be literally `int_in_range(..=0x7f)`
+- more semantics generation: biased `select`
+  - problem: select bias might be a dynamic thing: consider any FSM-like API
+  - maybe just have a way to nop-exit repeat step when no budget to run rare ops
+  - maybe do this via some kind of smart precondition?
+  - what kind of information to attach: something error/reset-like?
+    - "hint::error", "hint::reset"
+    - how many groups, what about `f64` and the like?
+  - when to attach, before-hand or imperatively during execution?
+  - make sure nesting works well
 - penalize "new entity" creation actions (they increase the state we are testing)
   - maybe: track the current "size stack" (repeat nesting and sizes), and penalize new entity creation in repeat as well?
     this should generalize to a simple algorithm that generates compact nested structures,
     and maybe even handles recursion automatically
 - penalize "reset" actions (they nullify testing efficiency often)
-- custom feedback for fuzzer that estimates operation diversity, flow diversity, parameter diversity
-  - more detailed `select`/`repeat` feedback: "new entry created" / "subsystem reset" / "error"
 - this all should be somehow integrated into `Effect`
   - or maybe some helpers like `src.can_create()`, `src.can_reset()`?
 
-## General
+## research
 
-- cover
+- *structured random crate*, only composable primitives, everything else on top
+  - start from bits and go up
+- this is a tree program with dynamic matching
 - reldata
-- subtests support
-  - integrate with testing matrix (smooth transition grid <-> random walk)
-  - generator = kind of implicit grid, and we do random walks on these grids
-    - sometimes, we just want a full walk
+- executor
+  - partial order sampling (need to know who blocks on what)
+
+## misc
+
 - nice-to-have
   - flaky test detection
   - collect N bugs during one run
@@ -91,56 +140,29 @@
       - problem is, what to do with tree-as-enum? we don't need to `select` the branch that is possible given the size budget,
         but we don't know the size budget upfront
       - with zero budget, we have to somehow choose leaf!
-  - flatten `or` and `mix_of` somehow (draw from the flattened list of generators)
-  - find a way to unify int/byte generation:
-    - use flatter "small values" for all integers, without special-casing `u8`
-    - also, fall `choose_value` back to using `choose_index` for small values
-      - make `byte_ascii()` be literally `int_in_range(..=0x7f)`
-  - more semantics generation: biased `select`
-    - problem: select bias might be a dynamic thing: consider any FSM-like API
-    - maybe just have a way to nop-exit repeat step when no budget to run rare ops
-    - maybe do this via some kind of smart precondition?
-    - what kind of information to attach: something error/reset-like?
-      - "hint::error", "hint::reset"
-      - how many groups, what about `f64` and the like?
-    - when to attach, before-hand or imperatively during execution?
-    - make sure nesting works well
-- additional docs
-  - general usage
-    - note about logging in tests
-    - note about determinism and flaky-ness
-  - README
-  - FAQ
-  - internals
-    - where generator state is stored and why (generators don't live between check iterations)
-      - state is associated with scopes (`repeat` etc, they are kind of not really generators)
-  - examples
-- more generators
-  - u128
-  - CString/Cstr
-  - OSString/OSstr
-  - PathBuf/Path
-  - IpAddr/SocketAddr
-  - range types, Bound
-  - MaybeUninit
-  - permutation/shuffle/subsequence
-  - recursive
-    - `nothing` generator that calls `reject` (e.g. to specify desired tree structure?)
-- derive crate
 
-## Ideas
+## fuzzer
 
+- ideas
+  - log/trace of scopes
+  - incremental feedback
+  - expose std api for sensors
+  - de-prioritize error paths, likely/unlikely
+  - value-based reuse
+  - system-of-N-things
+  - entry selection:
+    - start with random, then go to afl-favored
+  - energy for entry:
+    - start with fixed, then go to afl-explore or entropic
+  - prefix/mutate/suffix approach to mutation
+    - first choose entry based on program state, then inside choose based on coverage
+  - node/target communication:
+    - stdin/stdout for commands
+    - shmem for data in/out
 - for compatibility with binary fuzzer cmplog mutations:
   - store in the tape binary representation of the mutated value
   - if we mutated it, put it on the corresponding scope start and use as an example
   - will need a `CanonicalBinary` trait or something like that which we'll implement for all simple types
-- in `select`, can use syntax inside `"action_name"` to mark things as rare
-  - roll, then see the name. if name is rare and we have no budget, re-roll
-- provide `&impl Hash` thing to explore state space
-- something like `if s.fail("label")` (see [fail crate](https://docs.rs/fail/latest/fail/))
-  - important, real-world case
-  - how to thread `s` into regular user code? don't want code to depend on `chaos_theory` probably
-- provide `likely!` and `unlikely!` macros (functions?) to help with generation
 - reuse raw bytes, somehow
   - string <-> int <-> []byte; do we get this from the tape?
  . - create higher-level data structure, then transfer to lower level (or even bytes), and corrupt/mutate the lower-level
@@ -158,29 +180,5 @@
   - we raise the temperature during the generation, first exploring low-entropy states
   - hmm, we need to generate round (in binary) numbers to get bitflips this way
   - we can increase the temperature of the appended random gradually (e.g. we try to generate filter-non-zero from all-zero input)
-- LIFO priority queue for inputs
-  - lookup A* like algorithms to control this priority queue (we are doing a search, really)
-- what we do is explore paths of state changes
-  - in simple case this is just a single path
-  - in complex cases these are several concurrent paths
-  - this generalizes state-machine / stateful testing AND just tracing what has happened during the run
-- provide fork-like state exploration (completely in user space)
-
-## Fuzzer design ideas
-
-- log/trace of scopes
-- incremental feedback
-- expose std api for sensors
-- de-prioritize error paths, likely/unlikely
-- value-based reuse
-- biased select?
-- system-of-N-things
-- entry selection:
-  - start with random, then go to afl-favored
-- energy for entry:
-  - start with fixed, then go to afl-explore or entropic
-- prefix/mutate/suffix approach to mutation
-  - first choose entry based on program state, then inside choose based on coverage
-- node/target communication:
-  - stdin/stdout for commands
-  - shmem for data in/out
+- custom feedback for fuzzer that estimates operation diversity, flow diversity, parameter diversity
+  - more detailed `select`/`repeat` feedback: "new entry created" / "subsystem reset" / "error"
