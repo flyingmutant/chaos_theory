@@ -33,6 +33,7 @@
 - NaN
 - recursion
 - cover
+- brute-force matching (consider every candidate inside a scope)
 
 ## API
 
