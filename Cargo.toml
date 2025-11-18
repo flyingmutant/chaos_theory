@@ -1,5 +1,5 @@
 [workspace]
-members = ["chaos_theory", "xtask"]
+members = ["chaos_theory", "chaos_theory_core", "chaos_theory_v2", "xtask"]
 exclude = ["chaos_theory_example", "chaos_theory_example_fuzz"]
 resolver = "2"
 
@@ -67,3 +67,5 @@ regex = "1.11.1"
 regex-syntax = "0.8.5"
 tinyvec = "1.10.0"
 xshell = "0.2.6"
+
+chaos_theory_core = { path = "chaos_theory_core" }

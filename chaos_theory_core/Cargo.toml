@@ -1,0 +1,19 @@
+[package]
+name = "chaos_theory_core"
+description = "Language-independent core of chaos_theory"
+publish = false
+
+version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+all = []

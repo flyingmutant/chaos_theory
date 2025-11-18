@@ -12,6 +12,7 @@
     "/chaos_theory/src/tests_crates_regex.rs"
   ],
   "words": [
+    "arrayvec",
     "backedge",
     "binsearch",
     "bitflip",
@@ -43,6 +44,7 @@
     "Evensen",
     "FFFD",
     "flatmap",
+    "frontends",
     "fullmatch",
     "hashbrown",
     "hashset",
