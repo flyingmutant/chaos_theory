@@ -67,6 +67,7 @@ const STRING_SPECIAL: &[&str] = &[
     "hasOwnProperty",
     "then",
     "constructor",
+    "__class__",
     // Strings which can be interpreted as numeric
     "0",
     "1E100",
