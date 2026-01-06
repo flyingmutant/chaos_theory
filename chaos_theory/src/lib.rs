@@ -129,6 +129,8 @@ mod make_integer;
 mod make_ordered_float;
 #[cfg(feature = "regex")]
 mod make_regex;
+#[cfg(feature = "serde_json")]
+mod make_serde_json;
 mod make_special;
 mod make_string;
 #[cfg(feature = "std")]
@@ -188,6 +190,12 @@ pub mod make {
     /// [`indexmap`](https://docs.rs/indexmap) generators.
     pub mod indexmap {
         pub use crate::make_indexmap::*;
+    }
+
+    #[cfg(feature = "serde_json")]
+    /// [`serde_json`](https://docs.rs/serde_json) generators.
+    pub mod serde_json {
+        pub use crate::make_serde_json::*;
     }
 
     #[cfg(feature = "ordered_float")]

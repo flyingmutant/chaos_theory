@@ -17,7 +17,6 @@
 
 - external
   - uuid
-  - serde_json
   - bytes
 - u128
 - CString
