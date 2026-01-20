@@ -52,6 +52,8 @@ const CHAR_SPECIAL: &[char] = &[
     '\u{FFFD}', '\u{FEFF}', '\u{202E}', // cspell:disable-line
     // In UTF-8, Ⱥ increases in length from 2 to 3 bytes when lowercased
     'Ⱥ', //
+    // Lowercasing 'Σ' can be context-dependent (either 'σ' or 'ς')
+    'Σ', //
     // In Shift JIS, ¥ has code 0x5C, normally used for backslash escape
     '¥', //
     // No non-Unicode encoding has both ¥ and Ѩ
