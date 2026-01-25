@@ -12,6 +12,7 @@ use core::marker::PhantomData;
 use core::ops::RangeBounds;
 use hashbrown::{HashMap, HashSet};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 impl<T, S> Arbitrary for HashSet<T, S>
 where
     T: Arbitrary + Hash + Eq,
@@ -22,6 +23,7 @@ where
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
 impl<K, V, S> Arbitrary for HashMap<K, V, S>
 where
     K: Arbitrary + Hash + Eq,

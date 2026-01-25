@@ -9,12 +9,14 @@ use crate::{Arbitrary, Effect, Generator, SourceRaw, range::SizeRange};
 use core::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 use ecow::{EcoString, EcoVec};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
 impl Arbitrary for EcoString {
     fn arbitrary() -> impl Generator<Item = Self> {
         eco_string(<char as Arbitrary>::arbitrary())
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
 impl<T> Arbitrary for EcoVec<T>
 where
     T: Arbitrary + Clone + Debug,

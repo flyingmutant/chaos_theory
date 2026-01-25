@@ -13,6 +13,7 @@ use tinyvec::{Array, ArrayVec, TinyVec};
 
 use crate::{Arbitrary, Effect, Generator, SourceRaw, range::SizeRange};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "tinyvec")))]
 impl<A> Arbitrary for TinyVec<A>
 where
     A: Array,
@@ -23,6 +24,7 @@ where
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "tinyvec")))]
 impl<A> Arbitrary for ArrayVec<A>
 where
     A: Array,

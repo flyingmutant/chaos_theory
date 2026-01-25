@@ -9,6 +9,7 @@ use core::fmt::Debug;
 use core::ops::RangeBounds;
 use ordered_float::{FloatCore, NotNan, OrderedFloat};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
 impl<F> Arbitrary for OrderedFloat<F>
 where
     F: Arbitrary + Float + Debug,
@@ -18,6 +19,7 @@ where
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
 impl<F> Arbitrary for NotNan<F>
 where
     F: Arbitrary + Float + Debug + FloatCore,

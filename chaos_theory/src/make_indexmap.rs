@@ -12,6 +12,7 @@ use core::marker::PhantomData;
 use core::ops::RangeBounds;
 use indexmap::{IndexMap, IndexSet};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 impl<T, S> Arbitrary for IndexSet<T, S>
 where
     T: Arbitrary + Hash + Eq,
@@ -22,6 +23,7 @@ where
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
 impl<K, V, S> Arbitrary for IndexMap<K, V, S>
 where
     K: Arbitrary + Hash + Eq,
