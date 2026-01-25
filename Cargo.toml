@@ -57,6 +57,7 @@ clippy.unreadable_literal = { level = "allow", priority = 2 }       # easier to 
 [workspace.dependencies]
 anyhow = "1.0.98"
 clap = "4.5.37"
+ecow = "0.2.6"
 env_logger = "0.11.8"
 hashbrown = "0.16.0"
 indexmap = "2.11.4"

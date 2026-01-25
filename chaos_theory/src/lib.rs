@@ -52,6 +52,8 @@ mod make_char;
 mod make_collection;
 mod make_combine;
 mod make_core;
+#[cfg(feature = "ecow")]
+mod make_ecow;
 mod make_float;
 #[cfg(feature = "hashbrown")]
 mod make_hashbrown;
@@ -107,6 +109,12 @@ pub mod make {
     /// [`hashbrown`](https://docs.rs/hashbrown) generators.
     pub mod hashbrown {
         pub use crate::make_hashbrown::*;
+    }
+
+    #[cfg(feature = "ecow")]
+    /// [`ecow`](https://docs.rs/ecow) generators.
+    pub mod ecow {
+        pub use crate::make_ecow::*;
     }
 
     #[cfg(feature = "indexmap")]
