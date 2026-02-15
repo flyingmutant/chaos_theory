@@ -64,6 +64,7 @@ impl Validator {
                 id: _,
                 kind,
                 effect,
+                discardable,
                 meta,
             } => {
                 if let Some(meta) = meta
@@ -76,7 +77,8 @@ impl Validator {
                         return Err("invalid variant intern ID");
                     }
                 }
-                let new_scope_state = Self::accept_scope_start(state, *kind, *effect)?;
+                let new_scope_state =
+                    Self::accept_scope_start(state, *kind, *effect, *discardable)?;
                 self.scopes.push((new_scope_state, *effect));
             }
             Event::ScopeEnd => {
@@ -129,6 +131,7 @@ impl Validator {
         state: ValidatorState,
         kind: ScopeKind,
         effect: Effect,
+        discardable: bool,
     ) -> Result<ValidatorState, &'static str> {
         type VS = ValidatorState;
         type SK = ScopeKind;
@@ -146,8 +149,8 @@ impl Validator {
             SK::RepeatElement => match state {
                 VS::InRepeat(_) => Ok(VS::Default),
                 _ => {
-                    if effect == Effect::Noop {
-                        // During reduction, some noop tape elements can appear
+                    if effect == Effect::Noop && discardable {
+                        // During reduction, some discardable noop tape elements can appear
                         // after the required number of normal elements; ignore them.
                         Ok(VS::Default)
                     } else {

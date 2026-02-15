@@ -76,6 +76,7 @@ pub struct Env {
     size_dist: Biased,
     tape_replay: Tape,
     tape_out: Tape,
+    repeat_noop_ixs: Vec<u32>,
     scope_id: ScopeId,
     scope_depth: usize,
     scope_depth_manual: usize,
@@ -724,6 +725,7 @@ impl Env {
             size_dist: Biased::new_temperature(temperature, None),
             tape_replay: tape.unwrap_or_default(),
             tape_out: Tape::new(true),
+            repeat_noop_ixs: Vec::new(),
             scope_id: ScopeId::default(),
             scope_depth: 0,
             scope_depth_manual: 0,
@@ -763,6 +765,7 @@ impl Env {
         self.log_depth = log_depth;
         self.budget_remaining = self.slow.budget;
         self.tape_out.clear();
+        self.repeat_noop_ixs.clear();
         self.scope_id = ScopeId::default();
         self.scope_depth = 0;
         self.scope_depth_manual = 0;
@@ -799,6 +802,29 @@ impl Env {
     ) -> Tape {
         self.tape_out
             .copy_from_checkpoint(chk, fill_choices, copy_meta)
+    }
+
+    pub(crate) fn last_event_ix(&self) -> usize {
+        self.tape_out.last_event_ix()
+    }
+
+    pub(crate) fn repeat_noop_base(&self) -> usize {
+        self.repeat_noop_ixs.len()
+    }
+
+    pub(crate) fn repeat_noop_push(&mut self, ix: usize) {
+        debug_assert!(u32::try_from(ix).is_ok());
+        self.repeat_noop_ixs.push(ix as u32);
+    }
+
+    pub(crate) fn repeat_noop_mark_discardable(&mut self, from: usize) {
+        for &ix in &self.repeat_noop_ixs[from..] {
+            self.tape_out.mark_repeat_noop_discardable(ix as usize);
+        }
+    }
+
+    pub(crate) fn repeat_noop_truncate(&mut self, len: usize) {
+        self.repeat_noop_ixs.truncate(len);
     }
 
     pub(crate) fn should_log(&self) -> bool {
@@ -1446,7 +1472,7 @@ impl<'source, S: AsRef<Env> + AsMut<Env>> Scope<'source, S> {
             manual,
         );
         env.tape_replay.pop_scope_enter(kind);
-        env.tape_out.push_scope_enter(scope_id.0, kind);
+        let _ = env.tape_out.push_scope_enter(scope_id.0, kind);
         env.scope_depth += 1;
         env.scope_depth_manual += usize::from(manual);
         let prev_scope_id = core::mem::replace(&mut env.scope_id, scope_id);

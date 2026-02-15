@@ -197,11 +197,12 @@ fn crossover_merge_repeat(
             inserted += n;
         }
         for _ in 0..n {
-            // Skip all noop elements; hopefully they all were truly no-op.
+            // Skip discardable noop elements; hopefully they all were truly no-op.
             while matches!(
                 src.get(*ix),
                 Some(Event::ScopeStart {
                     effect: Effect::Noop,
+                    discardable: true,
                     ..
                 })
             ) {
@@ -278,10 +279,11 @@ fn fill_merge_scope_info(
                 id,
                 kind,
                 effect,
+                discardable,
                 meta: _,
             } => {
-                // Don't try to merge noop events.
-                if *effect == Effect::Noop {
+                // Don't try to merge discardable noop events.
+                if *effect == Effect::Noop && *discardable {
                     ix = Tape::find_after_scope_end(events, ix + 1);
                     continue;
                 }
@@ -339,10 +341,11 @@ fn crossover_overwrite_section(
                 id,
                 kind,
                 effect,
+                discardable,
                 meta: _,
             } => {
-                // Don't try to overwrite noop scopes.
-                if effect == Effect::Noop {
+                // Don't try to overwrite discardable noop scopes.
+                if effect == Effect::Noop && discardable {
                     i = Tape::find_after_scope_end(events, i + 1);
                     continue;
                 }
@@ -350,11 +353,12 @@ fn crossover_overwrite_section(
                 if j_void > 0 {
                     j_void += 1;
                 } else {
-                    // Skip all noop scopes.
+                    // Skip all discardable noop scopes.
                     while matches!(
                         other.get(j),
                         Some(Event::ScopeStart {
                             effect: Effect::Noop,
+                            discardable: true,
                             ..
                         })
                     ) {
@@ -456,9 +460,14 @@ fn fill_overwrite_scope_info(
     while ix < events.len() {
         let event = &events[ix];
         match event {
-            Event::ScopeStart { id, effect, .. } => {
-                // Don't try to overwrite noop events.
-                if *effect == Effect::Noop {
+            Event::ScopeStart {
+                id,
+                effect,
+                discardable,
+                ..
+            } => {
+                // Don't try to overwrite discardable noop events.
+                if *effect == Effect::Noop && *discardable {
                     ix = Tape::find_after_scope_end(events, ix + 1);
                     continue;
                 }

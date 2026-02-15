@@ -50,6 +50,7 @@ pub(crate) enum Event {
         id: u64,
         kind: ScopeKind,
         effect: Effect,
+        discardable: bool,
         meta: Option<ScopeStartMeta>,
     },
     ScopeEnd,
@@ -141,6 +142,7 @@ impl Event {
                 id,
                 kind,
                 effect,
+                discardable,
                 meta,
             } => {
                 if let Some(meta) = meta
@@ -153,6 +155,10 @@ impl Event {
                     Err("zero scope ID")
                 } else if *effect != Effect::Success && *kind != ScopeKind::RepeatElement {
                     Err("non-success effect not on a repeat element")
+                } else if *discardable
+                    && (*kind != ScopeKind::RepeatElement || *effect != Effect::Noop)
+                {
+                    Err("discardable noop only allowed on repeat element noop scope")
                 } else {
                     Ok(())
                 }
@@ -199,6 +205,7 @@ impl Event {
     const ENCODE_SCOPE_START_REPEAT_SIZE: u8 = b'S';
     const ENCODE_SCOPE_START_REPEAT_ELEMENT: u8 = b'E';
     const ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP: u8 = b'N';
+    const ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP_DISCARD: u8 = b'D';
     const ENCODE_SCOPE_START_REPEAT_ELEMENT_CHANGE: u8 = b'C';
     const ENCODE_SCOPE_START_SELECT_INDEX: u8 = b'I';
     const ENCODE_SCOPE_START_SELECT_VARIANT: u8 = b'V';
@@ -221,6 +228,7 @@ impl Event {
                 id,
                 kind,
                 effect,
+                discardable,
                 meta,
             } => {
                 let id_size = size_of_val(id);
@@ -231,7 +239,13 @@ impl Event {
                     ScopeKind::Plain => Self::ENCODE_SCOPE_START_PLAIN,
                     ScopeKind::RepeatSize => Self::ENCODE_SCOPE_START_REPEAT_SIZE,
                     ScopeKind::RepeatElement => match *effect {
-                        Effect::Noop => Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP,
+                        Effect::Noop => {
+                            if *discardable {
+                                Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP_DISCARD
+                            } else {
+                                Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP
+                            }
+                        }
                         Effect::Change => Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_CHANGE,
                         Effect::Success => Self::ENCODE_SCOPE_START_REPEAT_ELEMENT,
                     },
@@ -350,25 +364,28 @@ impl Event {
         let buf = &buf[1..];
         let (event, buf) = match marker {
             Self::ENCODE_SCOPE_START_PLAIN => {
-                Self::load_scope_start(ScopeKind::Plain, Effect::Success, buf)
+                Self::load_scope_start(ScopeKind::Plain, Effect::Success, false, buf)
             }
             Self::ENCODE_SCOPE_START_REPEAT_SIZE => {
-                Self::load_scope_start(ScopeKind::RepeatSize, Effect::Success, buf)
+                Self::load_scope_start(ScopeKind::RepeatSize, Effect::Success, false, buf)
             }
             Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP => {
-                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Noop, buf)
+                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Noop, false, buf)
+            }
+            Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_NOOP_DISCARD => {
+                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Noop, true, buf)
             }
             Self::ENCODE_SCOPE_START_REPEAT_ELEMENT_CHANGE => {
-                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Change, buf)
+                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Change, false, buf)
             }
             Self::ENCODE_SCOPE_START_REPEAT_ELEMENT => {
-                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Success, buf)
+                Self::load_scope_start(ScopeKind::RepeatElement, Effect::Success, false, buf)
             }
             Self::ENCODE_SCOPE_START_SELECT_INDEX => {
-                Self::load_scope_start(ScopeKind::SelectIndex, Effect::Success, buf)
+                Self::load_scope_start(ScopeKind::SelectIndex, Effect::Success, false, buf)
             }
             Self::ENCODE_SCOPE_START_SELECT_VARIANT => {
-                Self::load_scope_start(ScopeKind::SelectVariant, Effect::Success, buf)
+                Self::load_scope_start(ScopeKind::SelectVariant, Effect::Success, false, buf)
             }
             Self::ENCODE_SCOPE_END => Ok((Self::ScopeEnd, buf)),
             Self::ENCODE_SIZE | Self::ENCODE_SIZE_UNBOUNDED => {
@@ -433,6 +450,7 @@ impl Event {
     fn load_scope_start(
         kind: ScopeKind,
         effect: Effect,
+        discardable: bool,
         buf: &[u8],
     ) -> Result<(Self, &[u8]), &'static str> {
         const ID_SIZE: usize = size_of::<u64>();
@@ -457,6 +475,7 @@ impl Event {
                 id,
                 kind,
                 effect,
+                discardable,
                 meta: meta_opt,
             },
             buf,
@@ -505,10 +524,17 @@ impl Event {
                 id,
                 kind,
                 effect,
+                discardable,
                 meta,
             } => {
                 let open = match effect {
-                    Effect::Noop => "<!",
+                    Effect::Noop => {
+                        if *discardable {
+                            "<!~"
+                        } else {
+                            "<!"
+                        }
+                    }
                     Effect::Change => "<?",
                     Effect::Success => "<",
                 };
@@ -591,8 +617,9 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                         id,
                         kind,
                         effect,
+                        discardable,
                         meta,
-                    }) => Some((id, kind, effect, meta)),
+                    }) => Some((id, kind, effect, discardable, meta)),
                     _ => None,
                 };
                 let example_kind_index = example.map(|e| match *e.1 {
@@ -626,9 +653,14 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                     Some(&Effect::Success)
                 };
                 let effect = src.any("effect", example_effect);
-                let meta = src.maybe("meta", example.map(|e| e.3.is_some()), |src| {
+                let discardable = if kind == ScopeKind::RepeatElement && effect == Effect::Noop {
+                    src.any("discardable", example.map(|e| e.3))
+                } else {
+                    false
+                };
+                let meta = src.maybe("meta", example.map(|e| e.4.is_some()), |src| {
                     // Inline, since meta generation depends on kind, and Arbitrary implementation don't have access to context.
-                    let example = example.and_then(|e| e.3.as_ref());
+                    let example = example.and_then(|e| e.4.as_ref());
                     let label = InternId(src.any("label", example.map(|e| &e.label.0)));
                     let variant = InternId(src.any("variant", example.map(|e| &e.variant.0)));
                     let variant_semantic =
@@ -652,6 +684,7 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                     id,
                     kind,
                     effect,
+                    discardable,
                     meta,
                 }
             }

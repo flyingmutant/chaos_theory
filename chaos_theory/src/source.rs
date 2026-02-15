@@ -561,6 +561,7 @@ impl SourceRaw<'_> {
         setup: impl FnOnce(usize) -> S,
         mut step: impl FnMut(&mut S, &mut Src, Option<T>) -> Effect,
     ) -> Option<S> {
+        let repeat_noop_base = src.as_ref().repeat_noop_base();
         let r = SizeRange::new(n_steps);
         let (must, extra) = {
             let mut src = Scope::new(src, label, "<size>", true, ScopeKind::RepeatSize, false);
@@ -579,6 +580,7 @@ impl SourceRaw<'_> {
         let mut counter = 0;
         while done < must + extra {
             let mut src = Scope::new_repeat_element(src, label, counter, step_version, enum_mode);
+            let scope_start_ix = src.as_ref().last_event_ix();
             // Note: we advance the example each time, otherwise example might give us e.g. Noop infinitely.
             let example = example.as_mut().and_then(Iterator::next);
             let effect = step(&mut state, &mut src, example);
@@ -593,10 +595,15 @@ impl SourceRaw<'_> {
                 }
             } else {
                 src.mark_effect(label, counter as usize, effect);
+                if effect == Effect::Noop {
+                    src.as_mut().repeat_noop_push(scope_start_ix);
+                }
                 reject_conseq_hard += 1;
                 if reject_conseq_hard == REPEAT_REJECT_CONSEQ_HARD_MAX {
                     // Too many total rejects means we should abandon the repeat.
-                    return (done >= must).then_some(state);
+                    let res = (done >= must).then_some(state);
+                    src.as_mut().repeat_noop_truncate(repeat_noop_base);
+                    return res;
                 }
                 reject_conseq_soft += 1;
                 if enum_mode {
@@ -611,6 +618,8 @@ impl SourceRaw<'_> {
             }
             counter += 1;
         }
+        src.as_mut().repeat_noop_mark_discardable(repeat_noop_base);
+        src.as_mut().repeat_noop_truncate(repeat_noop_base);
         Some(state)
     }
 

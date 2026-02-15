@@ -453,13 +453,16 @@ impl Tape {
         self.next_choice_forced = true;
     }
 
-    pub(crate) fn push_scope_enter(&mut self, scope_id: u64, kind: ScopeKind) {
+    pub(crate) fn push_scope_enter(&mut self, scope_id: u64, kind: ScopeKind) -> usize {
+        let ix = self.events.len();
         self.events.push(Event::ScopeStart {
             id: scope_id,
             kind,
             effect: Effect::Success,
+            discardable: false,
             meta: None, // TODO(meta): fill (conditionally?)
         });
+        ix
     }
 
     pub(crate) fn push_scope_exit(&mut self, effect: Effect) {
@@ -519,16 +522,41 @@ impl Tape {
         TTree::from_events(&self.events)
     }
 
+    pub(crate) fn last_event_ix(&self) -> usize {
+        debug_assert!(!self.events.is_empty());
+        self.events.len() - 1
+    }
+
     pub(crate) fn has_noop(&self) -> bool {
         self.events.iter().any(|e| {
             matches!(
                 e,
                 Event::ScopeStart {
                     effect: Effect::Noop,
+                    discardable: true,
                     ..
                 }
             )
         })
+    }
+
+    pub(crate) fn mark_repeat_noop_discardable(&mut self, ix: usize) {
+        let Some(event) = self.events.get_mut(ix) else {
+            unreachable!("internal error: repeat element index out of bounds");
+        };
+        match event {
+            Event::ScopeStart {
+                kind,
+                effect,
+                discardable,
+                ..
+            } => {
+                debug_assert_eq!(*kind, ScopeKind::RepeatElement);
+                debug_assert_eq!(*effect, Effect::Noop);
+                *discardable = true;
+            }
+            _ => unreachable!("internal error: expected repeat element scope start"),
+        }
     }
 
     pub(crate) fn discard_noop(&self) -> Self {
@@ -540,8 +568,12 @@ impl Tape {
         while ix < self.events.len() {
             let event = self.events[ix].clone();
             match event {
-                Event::ScopeStart { effect, .. } => {
-                    if effect == Effect::Noop {
+                Event::ScopeStart {
+                    effect,
+                    discardable,
+                    ..
+                } => {
+                    if effect == Effect::Noop && discardable {
                         ix = Self::find_after_scope_end(&self.events, ix + 1);
                         continue;
                     }

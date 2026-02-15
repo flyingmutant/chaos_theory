@@ -16,6 +16,7 @@ struct TTreeNode {
     scope_id: u64,
     scope_kind: ScopeKind,
     scope_effect: Effect,
+    scope_discardable: bool,
     parent_id: Option<usize>,
     children: Vec<TTreeChild>,
 }
@@ -26,11 +27,13 @@ impl TTreeNode {
         scope_id: u64,
         scope_kind: ScopeKind,
         scope_effect: Effect,
+        scope_discardable: bool,
     ) -> Self {
         Self {
             scope_id,
             scope_kind,
             scope_effect,
+            scope_discardable,
             parent_id,
             children: Vec::new(),
         }
@@ -46,7 +49,7 @@ pub(crate) enum TTreeChild {
     Repeat {
         id: usize,
         size: Option<Event>,
-        elements: Vec<Option<(usize, Effect)>>,
+        elements: Vec<Option<(usize, Effect, bool)>>,
     },
 }
 
@@ -82,7 +85,7 @@ impl TTree {
                     else {
                         unreachable!("internal error: repeat element following normal node");
                     };
-                    elements.push(Some((id, node.scope_effect)));
+                    elements.push(Some((id, node.scope_effect, node.scope_discardable)));
                 }
                 _ => {
                     parent.children.push(TTreeChild::Scope { id });
@@ -102,7 +105,7 @@ impl TTree {
     }
 
     fn add_events(&mut self, events: &[Event]) {
-        let root = TTreeNode::new(None, 0, ScopeKind::Plain, Effect::Success);
+        let root = TTreeNode::new(None, 0, ScopeKind::Plain, Effect::Success, false);
         let mut cur_node_id = Some(self.add_node(root));
         debug_assert_eq!(cur_node_id, Some(0));
         let mut fixup_repeat_size = false;
@@ -112,9 +115,10 @@ impl TTree {
                     id,
                     kind,
                     effect,
+                    discardable,
                     meta: _,
                 } => {
-                    let node = TTreeNode::new(cur_node_id, *id, *kind, *effect);
+                    let node = TTreeNode::new(cur_node_id, *id, *kind, *effect, *discardable);
                     cur_node_id = Some(self.add_node(node));
                     fixup_repeat_size = *kind == ScopeKind::RepeatSize;
                 }
@@ -161,6 +165,7 @@ impl TTree {
                 id: node.scope_id,
                 kind: node.scope_kind,
                 effect: node.scope_effect,
+                discardable: node.scope_discardable,
                 meta: None,
             });
         }
@@ -170,8 +175,8 @@ impl TTree {
                 TTreeChild::Scope { id } => self.to_tape_rec(events, *id, ignore_noop),
                 TTreeChild::Repeat { id, elements, .. } => {
                     self.to_tape_rec(events, *id, ignore_noop);
-                    for (id, effect) in elements.iter().flatten() {
-                        if !ignore_noop || *effect != Effect::Noop {
+                    for (id, effect, discardable) in elements.iter().flatten() {
+                        if !(ignore_noop && *effect == Effect::Noop && *discardable) {
                             self.to_tape_rec(events, *id, ignore_noop);
                         }
                     }
@@ -246,7 +251,15 @@ impl TreeNodeChild<usize> for TTreeChild {
             Self::Scope { id } => v.push(id),
             Self::Repeat { elements, .. } => {
                 // Note: we don't push the repeat size scope.
-                v.extend(elements.into_iter().flatten().map(|(id, _effect)| id));
+                v.extend(
+                    elements
+                        .into_iter()
+                        .flatten()
+                        .filter(|(_id, effect, discardable)| {
+                            !(*effect == Effect::Noop && *discardable)
+                        })
+                        .map(|(id, _effect, _discardable)| id),
+                );
             }
         }
     }
@@ -263,15 +276,15 @@ impl Seq for TTreeChild {
             unreachable!("internal error: malformed repeat");
         };
         let (mut masked, mut masked_noop) = (0, 0);
-        for &(_id, effect) in elements[begin..end].iter().flatten() {
+        for &(_id, effect, discardable) in elements[begin..end].iter().flatten() {
             masked += 1;
-            masked_noop += usize::from(effect == Effect::Noop);
+            masked_noop += usize::from(effect == Effect::Noop && discardable);
         }
         if masked == 0 {
             return None;
         }
         let masked_normal = masked - masked_noop;
-        if *size - (masked_normal as u64) < *min {
+        if (masked_normal as u64) > *size || *size - (masked_normal as u64) < *min {
             return None;
         }
         // Adjust the size to match the real number of elements
@@ -279,7 +292,7 @@ impl Seq for TTreeChild {
         // Otherwise, we'll create tapes with size consistently larger than
         // the number of elements, which will make us use the void unnecessary.
         let size = (*size).min((elements.len() as u64).max(*min));
-        // Mask both noop and normal elements, but report only the number of normal masked.
+        // Mask both discardable noop and normal elements, but report only the number of normal masked.
         let mut elements = elements.clone();
         elements[begin..end].fill(Option::None);
         Some((
@@ -311,12 +324,12 @@ impl Seq for TTreeChild {
         let Self::Repeat { elements, .. } = self else {
             unreachable!("internal error: malformed repeat");
         };
-        // Treat noop elements as pre-masked ones.
+        // Treat discardable noop elements as pre-masked ones.
         elements
             .iter()
             .filter(|c| {
-                if let Some((_, effect)) = c {
-                    *effect == Effect::Noop
+                if let Some((_, effect, discardable)) = c {
+                    *effect == Effect::Noop && *discardable
                 } else {
                     true
                 }

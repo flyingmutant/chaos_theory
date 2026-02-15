@@ -367,10 +367,11 @@ fn mutation_index_variant(
                 id,
                 kind,
                 effect,
+                discardable,
                 meta: _,
             } => {
-                // Don't try to mutate noop events.
-                if *effect == Effect::Noop {
+                // Don't try to mutate discardable noop events.
+                if *effect == Effect::Noop && *discardable {
                     ix = Tape::find_after_scope_end(events, ix + 1);
                     continue;
                 }
@@ -646,6 +647,7 @@ fn mutate_repeat(
             id: u64::MAX,
             kind: ScopeKind::RepeatElement,
             effect: Effect::Success,
+            discardable: false,
             meta: None,
         },
         Event::ScopeEnd,
@@ -695,13 +697,18 @@ fn grab_repeat(
     loop {
         let event = events.get(end);
         match event {
-            Some(Event::ScopeStart { kind, effect, .. }) => {
+            Some(Event::ScopeStart {
+                kind,
+                effect,
+                discardable,
+                ..
+            }) => {
                 if *kind != ScopeKind::RepeatElement {
                     break;
                 }
                 let i = Tape::find_after_scope_end(events, end + 1);
-                // Skip all noop elements; hopefully they all were truly no-op.
-                if *effect != Effect::Noop {
+                // Skip discardable noop elements; hopefully they all were truly no-op.
+                if !(*effect == Effect::Noop && *discardable) {
                     elements.push(Some((end, i)));
                 }
                 end = i;
