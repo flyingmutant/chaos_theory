@@ -6,6 +6,39 @@
 
 /*!
 `chaos_theory` is a modern property-based testing and structure-aware fuzzing library.
+
+It is built around a simple idea: a [`Source`] produces structured randomness, and
+`chaos_theory` records the exact choices so failures can be reproduced, minimized,
+and mutated.
+
+# Quickstart
+
+```rust
+use chaos_theory::{check, make, Arbitrary as _};
+
+#[test]
+fn sort_is_idempotent() {
+    check(|src| {
+        let mut v = src.any("v", make::vec(i32::arbitrary()));
+        let mut w = v.clone();
+        v.sort();
+        w.sort();
+        assert_eq!(v, w);
+    });
+}
+```
+
+When a failure happens, `chaos_theory` prints a `CHAOS_THEORY_REPLAY=...` string
+you can use to reproduce the (typically already minimized) case.
+
+# Highlights
+
+- Property testing and structure-aware fuzzing in one library
+- Bias toward edge cases and boundary values
+- Example-guided generation and seeded inputs
+- Universal swarm testing for exploration
+- Macro-free, imperative API
+- Zero unsafe code and zero required dependencies
 */
 
 #![cfg_attr(all(test, feature = "_bench"), feature(test))]
