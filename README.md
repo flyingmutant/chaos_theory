@@ -2,30 +2,66 @@
 
 chaos_theory is a modern Rust property-based testing and structure-aware fuzzing library.
 
-## Features
+It's built around a simple idea: a `Source` produces structured randomness, and chaos_theory records the exact choices so failures can be reproduced, minimized, and mutated.
 
-- Property-based testing *and* structure-aware fuzzing support
-- Advanced functionality, including:
-  - Data generation biased to explore edge cases
-  - Built-in universal swarm testing
-  - Seeded (example-based) generation
-- Simple, imperative, macro-free API
-- Zero unsafe code
-- Zero required dependencies
+## Quickstart
+
+```rust
+use chaos_theory::{check, make, Arbitrary as _};
+
+#[test]
+fn sort_is_idempotent() {
+    check(|src| {
+        let mut v = src.any("v", make::vec(i32::arbitrary()));
+        let mut w = v.clone();
+        v.sort();
+        w.sort();
+        assert_eq!(v, w);
+    });
+}
+```
+
+When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string you can use to reproduce the (typically already minimized) case.
+
+## Highlights
+
+- Property testing and structure-aware fuzzing in one library
+- Bias toward edge cases and boundary values
+- Example-guided generation and seeded inputs
+- Universal swarm testing for exploration
+- Macro-free, imperative API
+- Zero unsafe code and zero required dependencies
+
+## Fuzzing Quickstart
+
+```rust
+use chaos_theory::fuzz_target_libfuzzer_sys;
+
+fuzz_target_libfuzzer_sys!(|src| {
+    let v = src.any("v", Vec::<u8>::arbitrary());
+    // your invariants here
+});
+```
+
+Before fuzzing, generate seeds with `chaos_theory::fuzz_write_seed`.
 
 ## Documentation
 
-API documentation: [docs.rs/chaos_theory](https://docs.rs/chaos_theory)
+- API docs: https://docs.rs/chaos_theory
+- Guide: `docs/guide.md`
+- Generators: `docs/generators.md`
+- Config and repro: `docs/config.md`
+- Fuzzing: `docs/fuzzing.md`
+- Internals: `docs/internals.md`
 
 ## Status
 
-chaos_theory is pretty good, and is widely relied upon in our internal codebase.
-However, some important functionality (derive macro, proper recursion handling,
-NaN generation) is missing, and there is no documentation besides minimalistic docstrings.
+chaos_theory is used internally and already useful, but it's not officially released yet.
 
-chaos_theory has not been officially released yet, and is certainly lacking
-the required polish. Use at your own risk and don't expect support.
+Notable gaps:
+- Derive macro for `Arbitrary`
+- Proper recursive generators
 
 ## License
 
-chaos_theory is licensed under the [Mozilla Public License Version 2.0](./LICENSE).
+MPL-2.0, see `LICENSE`.
