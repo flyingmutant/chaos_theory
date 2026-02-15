@@ -376,8 +376,28 @@ fn crossover_overwrite_section(
                     // Substitute if we have a hard match.
                     // Don't try to substitute RepeatSize and SelectIndex, which preserves the shape of the tape.
                     // Note: since we match by ID, different select variants would not be substituted. Is this what we want?
-                    if kind != ScopeKind::RepeatSize && kind != ScopeKind::SelectVariant && j_void == 0
-                        && matches!(other[j-1], Event::ScopeStart { id: j_id, kind: j_kind, effect: Effect::Success | Effect::Change, .. } if id == j_id && kind == j_kind)
+                    if kind != ScopeKind::RepeatSize
+                        && kind != ScopeKind::SelectVariant
+                        && j_void == 0
+                        && matches!(
+                            other[j - 1],
+                            Event::ScopeStart {
+                                id: j_id,
+                                kind: j_kind,
+                                effect: Effect::Success | Effect::Change,
+                                ..
+                            } if id == j_id && kind == j_kind
+                        )
+                        // Avoid increasing repeat success count without updating repeat size.
+                        && !(kind == ScopeKind::RepeatElement
+                            && effect != Effect::Success
+                            && matches!(
+                                other[j - 1],
+                                Event::ScopeStart {
+                                    effect: Effect::Success,
+                                    ..
+                                }
+                            ))
                     {
                         let j_after_end = Tape::find_after_scope_end(other, j);
                         Some((j - 1, j_after_end))
