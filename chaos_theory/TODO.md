@@ -2,12 +2,24 @@
 
 ## docs
 
-- intro
-- usage examples
-- FAQ
-  - logging in tests, `--no-capture`, `println`
-- guide on how to write a generator impl for struct and for enum
+- less "boundary values" , more "explore small" (focus on smart data generation)
+- "repro"
+- "safe, meaningful cuts"
+- "simple idea" wording
+- LICENSE link in README
+- doc links in README
+- include docs in `_docs` module (& ensure proper links)
+- guide: repeat "step" not "steps"
+- guide: don't encourage copy-pasting/agents
+- generators: bad seed examples, reserve vec
+- wrap lines
+- remove "intentionally brief" notes
+- fuzzing example uses vec<u8>
+- `CHAOS_THEORY_REPLAY` make auto-filter tests? or just mention the test
+- faq: proptest "centers"?
+- reduction in code vs minimization in docs (do a pass and propose something good)
 - `SKILL.md`
+- update changelog
 
 ## API
 
