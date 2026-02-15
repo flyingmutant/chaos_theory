@@ -2,7 +2,7 @@
 
 ## docs
 
-- into
+- intro
 - usage examples
 - FAQ
   - logging in tests, `--no-capture`, `println`
