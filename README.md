@@ -8,7 +8,7 @@ chaos_theory is a modern Rust property-based testing and structure-aware fuzzing
 - Advanced functionality, including:
   - Data generation biased to explore edge cases
   - Built-in universal swarm testing
-  - Seeded generation
+  - Seeded (example-based) generation
 - Simple, imperative, macro-free API
 - Zero unsafe code
 - Zero required dependencies
