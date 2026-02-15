@@ -194,10 +194,20 @@ impl Event {
 
     pub(crate) fn max_size(&self) -> usize {
         // Try to be reasonably quick and simple.
-        if let Self::Meta(MetaEvent::Intern { id: _id, value }) = self {
-            1 + varint::MAX_SIZE * 2 + value.len()
-        } else {
-            1 + varint::MAX_SIZE * 3
+        match self {
+            Self::Meta(MetaEvent::Intern { id: _id, value }) => {
+                1 + varint::MAX_SIZE * 2 + value.len()
+            }
+            Self::ScopeStart { meta, .. } => {
+                let meta_size = if meta.is_some() {
+                    varint::MAX_SIZE * 5
+                } else {
+                    0
+                };
+                1 + size_of::<u64>() + 1 + meta_size
+            }
+            Self::ScopeEnd => 1,
+            Self::Size { .. } | Self::Index { .. } | Self::Value { .. } => 1 + varint::MAX_SIZE * 3,
         }
     }
 
