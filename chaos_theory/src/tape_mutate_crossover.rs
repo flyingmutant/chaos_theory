@@ -314,6 +314,7 @@ fn fill_merge_scope_info(
 }
 
 // Select a random matching scope and overwrite it and several after with consecutive scopes.
+#[expect(clippy::too_many_lines)]
 fn crossover_overwrite_section(
     events: &[Event],
     other: &[Event],
