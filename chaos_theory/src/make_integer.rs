@@ -272,25 +272,30 @@ mod tests {
 
     #[test]
     fn integer_bound_coverage() {
-        fn prop_bound_coverage<I: Int + Arbitrary>(src: &mut Source, label: &'static str) {
+        fn prop_bound_coverage<I: Int + Arbitrary>(src: &mut Source, label: &str) {
             src.scope(label, |src| {
                 let r: Range<I> = src.any("r");
                 let g = int_in_range::<I>(r);
                 let base_seed: u32 = src.any("base_seed");
-                let (mut got_min, mut got_max, mut got_zero) = (false, false, false);
-                for s in 0..512 {
+                let (mut got_min, mut got_max, mut got_zero) =
+                    (false, false, !r.contains(&I::ZERO));
+                for s in 0..64 {
                     let seed = base_seed.wrapping_add(s);
                     let mut env = Env::custom().with_rng_seed(seed).env(false);
                     let mut src = Source::new(&mut env);
-                    let i = g.next(src.as_raw(), None);
-                    got_min = got_min || i == r.min;
-                    got_max = got_max || i == r.max;
-                    got_zero = got_zero || i == I::ZERO;
-                    if got_min && got_max && (!r.contains(&I::ZERO) || got_zero) {
-                        return;
+                    for _ in 0..64 {
+                        let i = g.next(src.as_raw(), None);
+                        got_min = got_min || i == r.min;
+                        got_max = got_max || i == r.max;
+                        got_zero = got_zero || i == I::ZERO;
+                        if got_min && got_max && got_zero {
+                            return;
+                        }
                     }
                 }
-                panic!("got min {got_min}, max {got_max}, zero {got_zero}");
+                assert!(got_min);
+                assert!(got_max);
+                assert!(got_zero);
             });
         }
 

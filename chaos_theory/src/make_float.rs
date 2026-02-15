@@ -283,32 +283,36 @@ mod tests {
 
     #[test]
     fn range_coverage_test() {
-        fn range_coverage_test_impl<F: Float + Arbitrary>(src: &mut Source) {
-            let r: Range<F> = src.any("r");
-            let g = float_in_range(r);
-            let base_seed: u32 = src.any("base_seed");
-            let (mut got_max, mut got_min, mut got_zero) = (false, false, !r.contains(&F::ZERO));
-            for s in 0..512 {
-                let seed = base_seed.wrapping_add(s);
-                let mut env = Env::custom().with_rng_seed(seed).env(false);
-                let mut src = Source::new(&mut env);
-                let f = g.next(src.as_raw(), None);
-                got_max = got_max || f == r.max;
-                got_min = got_min || f == r.min;
-                got_zero = got_zero || f == F::ZERO;
-            }
-            assert!(got_min);
-            assert!(got_max);
-            assert!(got_zero);
+        fn range_coverage_test_impl<F: Float + Arbitrary>(src: &mut Source, label: &str) {
+            src.scope(label, |src| {
+                let r: Range<F> = src.any("r");
+                let g = float_in_range(r);
+                let base_seed: u32 = src.any("base_seed");
+                let (mut got_max, mut got_min, mut got_zero) =
+                    (false, false, !r.contains(&F::ZERO));
+                for s in 0..64 {
+                    let seed = base_seed.wrapping_add(s);
+                    let mut env = Env::custom().with_rng_seed(seed).env(false);
+                    let mut src = Source::new(&mut env);
+                    for _ in 0..64 {
+                        let f = g.next(src.as_raw(), None);
+                        got_max = got_max || f == r.max;
+                        got_min = got_min || f == r.min;
+                        got_zero = got_zero || f == F::ZERO;
+                        if got_min && got_max && got_zero {
+                            return;
+                        }
+                    }
+                }
+                assert!(got_min);
+                assert!(got_max);
+                assert!(got_zero);
+            });
         }
 
         check(|src| {
-            src.scope("f32", |src| {
-                range_coverage_test_impl::<f32>(src);
-            });
-            src.scope("f64", |src| {
-                range_coverage_test_impl::<f64>(src);
-            });
+            range_coverage_test_impl::<f32>(src, "f32");
+            range_coverage_test_impl::<f64>(src, "f64");
         });
     }
 
