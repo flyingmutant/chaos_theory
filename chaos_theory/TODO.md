@@ -16,10 +16,13 @@
 - remove "intentionally brief" notes
 - fuzzing example uses vec<u8>
 - `CHAOS_THEORY_REPLAY` make auto-filter tests? or just mention the test
+- `CHAOS_THEORY_LOG_ALWAYS` bad advice
 - faq: proptest "centers"?
+- remove explicit types from examples where don't need them
 - reduction in code vs minimization in docs (do a pass and propose something good)
 - `SKILL.md`
 - update changelog
+- examples for functions
 
 ## API
 

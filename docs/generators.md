@@ -7,7 +7,7 @@ This document is about how to use and (when needed) write generators. Most peopl
 You will spend most of your time doing this:
 
 ```rust
-let v = src.any("v", make::vec(i32::arbitrary()));
+let v: Vec<i32> = src.any("v");
 ```
 
 Custom generators are useful for domain types or complex invariants, but they are not required for everyday property tests.
@@ -47,7 +47,7 @@ let seeds = [0u32, 1, 2, 3, 255];
 let g = make::int_in_range(0..=255).seeded(&seeds, true);
 ```
 
-The `example` reference in generators is a hint for reconstructing a value. If you ignore it, tests still work, but shrinking and replay get worse.
+The `example` reference is the reverse direction of generation: it is used to reconstruct the choice trace that would produce a value. If you ignore it, tests still work, but replay and minimization get worse.
 
 ## Filtering And Validity
 
@@ -157,6 +157,6 @@ impl Generator for BytesGen {
 
 ### Passing `example` Through
 
-The rule is simple: if you generate sub-values, pass the corresponding `example` sub-values into their generators. This is how chaos_theory reconstructs known values and shrinks effectively.
+The rule is simple: if you generate sub-values, pass the corresponding `example` sub-values into their generators. This is how chaos_theory reconstructs known values and minimizes effectively.
 
 Avoid calling `Generator::next` directly outside of generator implementations. When writing tests, use `Source::any` or `Source::any_of` instead.

@@ -14,12 +14,12 @@ and mutated.
 # Quickstart
 
 ```rust
-use chaos_theory::{check, make, Arbitrary as _};
+use chaos_theory::check;
 
 #[test]
 fn sort_is_idempotent() {
     check(|src| {
-        let mut v = src.any("v", make::vec(i32::arbitrary()));
+    let mut v: Vec<i32> = src.any("v");
         let mut w = v.clone();
         v.sort();
         w.sort();

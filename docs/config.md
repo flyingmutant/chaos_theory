@@ -20,13 +20,13 @@ use chaos_theory::Env;
 let env = Env::custom().with_replay("...")?.env(true);
 ```
 
-## Check And Reduction Limits
+## Check And Minimization Limits
 
 - `with_check_iters` controls how many valid test cases to try.
-- `with_check_time` is a time limit for generation and checking (not reduction).
-- `with_reduce_time` is the time limit for test case reduction.
+- `with_check_time` is a time limit for generation and checking (not minimization).
+- `with_reduce_time` is the time limit for test case minimization.
 
-If generation is slow, time limits may stop early. Reduction runs after a failure and has its own limit.
+If generation is slow, time limits may stop early. Minimization runs after a failure and has its own limit.
 
 ## Logging Controls
 
@@ -38,7 +38,7 @@ Logging is scoped and intentionally quiet by default. The core idea is:
 
 Options:
 
-- `with_log_depth`: how deep logs are emitted (0 disables scoped logs).
+- `with_log_depth`: how deep logs are emitted (0 disables scoped logs, 1 shows top-level scopes).
 - `with_log_always`: always log, even for passing cases.
 - `with_log_verbose`: include extra details in logs.
 - `with_pretty_print`: pretty-print values in logs.
@@ -64,7 +64,7 @@ All config options can be set via environment variables. These are the ones chao
 - `CHAOS_THEORY_REPLAY_VERBOSE`: include extra replay info
 - `CHAOS_THEORY_CHECK_ITERS`: number of test iterations
 - `CHAOS_THEORY_CHECK_TIME`: time limit for generation + checking
-- `CHAOS_THEORY_REDUCE_TIME`: time limit for reduction
+- `CHAOS_THEORY_REDUCE_TIME`: time limit for minimization
 - `CHAOS_THEORY_PRETTY_PRINT`: pretty-print values in logs
 - `CHAOS_THEORY_LOG_DEPTH`: log depth
 - `CHAOS_THEORY_LOG_ALWAYS`: always emit logs

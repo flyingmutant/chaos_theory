@@ -17,7 +17,7 @@ At a high level, `Env::check` does this:
 1. Create a fresh `Source` for each iteration.
 2. Execute the property and record all choices and events.
 3. Count valid vs invalid cases.
-4. On failure, replay and then reduce the failing trace.
+4. On failure, replay and then minimize the failing trace.
 
 Invalid cases are those where the property calls `assume!` or a generator rejects values too often. Too many invalid cases will stop the run early.
 
@@ -39,7 +39,7 @@ In practice, example handling is mixed with fresh randomness. If a part of the v
 
 `map_reversible` exists to preserve this property for transforms, and custom generators should always thread `example` through to sub-generators.
 
-A core invariant is that any value produced by a generator is a valid forward-mode value that obeys all generator invariants by construction, regardless of whether it came from randomness, examples, seeds, or shrinking.
+A core invariant is that any value produced by a generator is a valid forward-mode value that obeys all generator invariants by construction, regardless of whether it came from randomness, examples, seeds, or minimization.
 
 ## `select` and `repeat`
 
@@ -51,7 +51,7 @@ A core invariant is that any value produced by a generator is a valid forward-mo
 - `Change` means the state may have changed, but there was no clear progress.
 - `Noop` means nothing happened.
 
-These signals are used later to reduce and minimize traces without breaking the property.
+These signals are used later to minimize traces without breaking the property.
 
 ## The Trace (Choices and Events)
 
@@ -68,13 +68,13 @@ Replay runs the property using the recorded choices instead of new randomness. T
 
 ## Minimization and Reduction
 
-After a failure, chaos_theory tries to shrink the trace:
+After a failure, chaos_theory minimizes the trace:
 
 - It removes or shortens entire scopes when possible.
 - It minimizes numeric choices using binary-search-like strategies.
 - It keeps the property failing while making the trace smaller.
 
-This is why labels, `Effect`, and example-aware generation matter. They all help the reducer make safe, meaningful cuts.
+This is why labels, `Effect`, and example-aware generation matter. They all help the minimizer make safe, meaningful cuts.
 
 ## Mutation and Crossover
 

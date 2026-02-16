@@ -73,6 +73,16 @@ There is no special API for state machines; the normal API is the advanced mode.
 
 Use `vdbg!`, `vprintln!`, or check `Source::should_log`. Logs are scoped and only emitted for the failing case by default.
 
+## Why do I only see logs from the minimized failure?
+
+By default, chaos_theory logs only for the failing case, and Rust’s test harness prints captured output for failed tests. That output corresponds to the final minimized replay.
+
+If you want to see other iterations, enable `CHAOS_THEORY_LOG_ALWAYS=1` and increase `CHAOS_THEORY_LOG_DEPTH`. If you want logs to stream instead of only showing up at the end, run tests with `-- --nocapture`.
+
+## How do I inspect a few example values quickly?
+
+Use `Env::example` or `Env::example_of` to generate sample values without running `check`. This is useful for understanding generators and distributions.
+
 ## Do I need to worry about distributions or biasing?
 
 Usually no. chaos_theory already biases toward edge cases and structurally interesting values (for example, built‑in special‑case seeds for bytes/strings and structured float generation).

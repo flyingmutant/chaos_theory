@@ -7,12 +7,12 @@ It's built around a simple idea: a `Source` produces structured randomness, and 
 ## Quickstart
 
 ```rust
-use chaos_theory::{check, make, Arbitrary as _};
+use chaos_theory::check;
 
 #[test]
 fn sort_is_idempotent() {
     check(|src| {
-        let mut v = src.any("v", make::vec(i32::arbitrary()));
+        let mut v: Vec<i32> = src.any("v");
         let mut w = v.clone();
         v.sort();
         w.sort();
@@ -38,7 +38,7 @@ When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string y
 use chaos_theory::fuzz_target_libfuzzer_sys;
 
 fuzz_target_libfuzzer_sys!(|src| {
-    let v = src.any("v", Vec::<u8>::arbitrary());
+    let v: Vec<u8> = src.any("v");
     // your invariants here
 });
 ```
@@ -53,6 +53,7 @@ Before fuzzing, generate seeds with `chaos_theory::fuzz_write_seed`.
 - Config and repro: `docs/config.md`
 - Fuzzing: `docs/fuzzing.md`
 - Internals: `docs/internals.md`
+- FAQ: `docs/FAQ.md`
 
 ## Status
 

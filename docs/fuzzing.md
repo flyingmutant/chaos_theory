@@ -8,7 +8,7 @@ The central idea in chaos_theory is that property testing and fuzzing are the sa
 use chaos_theory::fuzz_target_libfuzzer_sys;
 
 fuzz_target_libfuzzer_sys!(|src| {
-    let v = src.any("v", Vec::<u8>::arbitrary());
+    let v: Vec<u8> = src.any("v");
     // your invariants here
 });
 ```
@@ -20,9 +20,9 @@ Before fuzzing, generate seeds:
 ```rust
 use chaos_theory::fuzz_write_seed;
 
-fuzz_write_seed("corpus", |src| {
-    let _ = src.any("v", Vec::<u8>::arbitrary());
-})?;
+let _ = fuzz_write_seed("corpus", |src| {
+    let _v: Vec<u8> = src.any("v");
+});
 ```
 
 Good defaults:

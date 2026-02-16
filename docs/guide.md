@@ -45,7 +45,7 @@ src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
 });
 ```
 
-You should not encode a variant choice as `any::<u8>()` or a random number. Use `select` so chaos_theory can replay and reduce meaningfully.
+You should not encode a variant choice as `any::<u8>()` or a random number. Use `select` so chaos_theory can replay and minimize meaningfully.
 
 ## `repeat`: Exploration Over Time
 
@@ -66,25 +66,25 @@ src.repeat("steps", |src| {
 - `Change`: state may have changed, but no real progress was made.
 - `Noop`: the step did nothing.
 
-Honest `Effect` values make shrinking and minimization much better.
+Honest `Effect` values make minimization much better.
 
 ### Common Anti-Pattern: Manual Random Loops
 
 Don't do this:
 
 ```rust
-let n = src.any("n");
+let n: usize = src.any("n");
 for _ in 0..n {
     /* ... */
 }
 ```
 
-Use `repeat` instead. `repeat` is structured and shrinkable, while manual random loops are opaque and shrink poorly.
+Use `repeat` instead. `repeat` is structured and minimizes well, while manual random loops are opaque and minimize poorly.
 
 A lesser version of the same issue is:
 
 ```rust
-let do_it = src.any("do_it");
+let do_it: bool = src.any("do_it");
 if do_it { /* ... */ }
 ```
 
