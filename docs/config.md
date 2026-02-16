@@ -1,16 +1,19 @@
 # Config And Repro
 
-This document covers how to control chaos_theory runs and how to reproduce failures. It is intentionally brief.
+This document covers how to control chaos_theory runs and how to reproduce
+failures. It is intentionally brief.
 
 ## The Fast Path: Replay
 
-When a property fails, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string. Use it to reproduce the case:
+When a property fails, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string.
+Use it to reproduce the case:
 
 ```bash
 CHAOS_THEORY_REPLAY=... cargo test
 ```
 
-Replay strings are typically already minimized, so you get the smallest failing case immediately.
+Replay strings are typically already minimized, so you get the smallest failing
+case immediately.
 
 You can also set replay programmatically:
 
@@ -26,7 +29,8 @@ let env = Env::custom().with_replay("...")?.env(true);
 - `with_check_time` is a time limit for generation and checking (not minimization).
 - `with_reduce_time` is the time limit for test case minimization.
 
-If generation is slow, time limits may stop early. Minimization runs after a failure and has its own limit.
+If generation is slow, time limits may stop early. Minimization runs after a
+failure and has its own limit.
 
 ## Logging Controls
 
@@ -54,11 +58,13 @@ Most users never touch these. They are useful for debugging or exploration exper
 - `with_rng_budget`: limits total randomness consumed.
 - `with_rng_choices`: provide explicit choices.
 
-If you hit the RNG budget warning, the test is doing too much work per case or is stuck in too many retries.
+If you hit the RNG budget warning, the test is doing too much work per case or
+is stuck in too many retries.
 
 ## Environment Variables
 
-All config options can be set via environment variables. These are the ones chaos_theory recognizes:
+All config options can be set via environment variables. These are the ones
+chaos_theory recognizes:
 
 - `CHAOS_THEORY_REPLAY`: replay data (seed, temperature, budget, choices)
 - `CHAOS_THEORY_REPLAY_VERBOSE`: include extra replay info

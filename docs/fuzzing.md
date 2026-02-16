@@ -1,6 +1,8 @@
 # Fuzzing
 
-The central idea in chaos_theory is that property testing and fuzzing are the same thing at different time scales. The properties, structure, and invariants should look identical. What changes is the backend and how long you run it.
+The central idea in chaos_theory is that property testing and fuzzing are the
+same thing at different time scales. The properties, structure, and invariants
+should look identical. What changes is the backend and how long you run it.
 
 ## Quickstart (libfuzzer_sys)
 

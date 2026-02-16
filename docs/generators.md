@@ -1,6 +1,8 @@
 # Generators
 
-This document is about how to use and (when needed) write generators. Most people get far with built-ins and composition, but custom generators are absolutely fine when you need them.
+This document is about how to use and (when needed) write generators. Most
+people get far with built-ins and composition, but custom generators are
+absolutely fine when you need them.
 
 ## In Practice
 
@@ -10,7 +12,8 @@ You will spend most of your time doing this:
 let v: Vec<i32> = src.any("v");
 ```
 
-Custom generators are useful for domain types or complex invariants, but they are not required for everyday property tests.
+Custom generators are useful for domain types or complex invariants, but they
+are not required for everyday property tests.
 
 ## Built-Ins (`make::*`)
 
@@ -36,7 +39,8 @@ Useful combinators:
 - `collect` and `collect_n` for collections
 - `and_then` for flat-map style composition
 
-`map_reversible` is the high-quality option: it helps chaos_theory reconstruct examples and minimize better.
+`map_reversible` is the high-quality option: it helps chaos_theory reconstruct
+examples and minimize better.
 
 ## Seeds And Examples
 
@@ -47,7 +51,9 @@ let seeds = [0u32, 1, 2, 3, 255];
 let g = make::int_in_range(0..=255).seeded(&seeds, true);
 ```
 
-The `example` reference is the reverse direction of generation: it is used to reconstruct the choice trace that would produce a value. If you ignore it, tests still work, but replay and minimization get worse.
+The `example` reference is the reverse direction of generation: it is used to
+reconstruct the choice trace that would produce a value. If you ignore it, tests
+still work, but replay and minimization get worse.
 
 ## Filtering And Validity
 
@@ -65,7 +71,8 @@ There are two main approaches:
 - Use `make::from_fn` for small generators
 - Implement `Generator` directly for full control
 
-Most of this becomes unnecessary once a derive macro for `Arbitrary` exists, but it is still useful for domain-specific logic.
+Most of this becomes unnecessary once a derive macro for `Arbitrary` exists, but
+it is still useful for domain-specific logic.
 
 ### Struct-Like Types
 
@@ -157,6 +164,9 @@ impl Generator for BytesGen {
 
 ### Passing `example` Through
 
-The rule is simple: if you generate sub-values, pass the corresponding `example` sub-values into their generators. This is how chaos_theory reconstructs known values and minimizes effectively.
+The rule is simple: if you generate sub-values, pass the corresponding `example`
+sub-values into their generators. This is how chaos_theory reconstructs known
+values and minimizes effectively.
 
-Avoid calling `Generator::next` directly outside of generator implementations. When writing tests, use `Source::any` or `Source::any_of` instead.
+Avoid calling `Generator::next` directly outside of generator implementations.
+When writing tests, use `Source::any` or `Source::any_of` instead.

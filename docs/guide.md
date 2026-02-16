@@ -1,6 +1,8 @@
 # Guide
 
-This guide is intentionally short. It covers how to write properties with `Source`, with a focus on the two core building blocks after `any`: `repeat` and `select`.
+This guide is intentionally short. It covers how to write properties with
+`Source`, with a focus on the two core building blocks after `any`: `repeat` and
+`select`.
 
 ## The Shape Of A Property
 
@@ -16,7 +18,8 @@ check(|src| {
 });
 ```
 
-`Source` gives you structured randomness. Your job is to use it to explore real behavior, not to roll your own RNG logic.
+`Source` gives you structured randomness. Your job is to use it to explore real
+behavior, not to roll your own RNG logic.
 
 ## Working With `Source`
 
@@ -28,7 +31,10 @@ The basic operations:
 - `repeat` repeats a step, using `Effect` to report what happened.
 - `maybe` and `find` are for optional steps and recoverable failures.
 
-Labels matter. Use short, stable labels (like `"action"` or `"key"`). They are not required for chaos_theory to work, but they make replay output and reproduction steps readable. With good labels, the failing case description is often enough to spot the issue immediately.
+Labels matter. Use short, stable labels (like `"action"` or `"key"`). They are
+not required for chaos_theory to work, but they make replay output and
+reproduction steps readable. With good labels, the failing case description is
+often enough to spot the issue immediately.
 
 ## `select`: Variants With Meaning
 
@@ -45,7 +51,8 @@ src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
 });
 ```
 
-You should not encode a variant choice as `any::<u8>()` or a random number. Use `select` so chaos_theory can replay and minimize meaningfully.
+You should not encode a variant choice as `any::<u8>()` or a random number. Use
+`select` so chaos_theory can replay and minimize meaningfully.
 
 ## `repeat`: Exploration Over Time
 
@@ -79,7 +86,8 @@ for _ in 0..n {
 }
 ```
 
-Use `repeat` instead. `repeat` is structured and minimizes well, while manual random loops are opaque and minimize poorly.
+Use `repeat` instead. `repeat` is structured and minimizes well, while manual
+random loops are opaque and minimize poorly.
 
 A lesser version of the same issue is:
 
@@ -92,7 +100,8 @@ Prefer `maybe` or `select` so the choice is tracked structurally.
 
 ## Stateful Testing (State Machines)
 
-chaos_theory does not have a special API for state machines. The normal API is already the advanced mode.
+chaos_theory does not have a special API for state machines. The normal API is
+already the advanced mode.
 
 The most common pattern is:
 
@@ -126,7 +135,8 @@ Too many invalid cases will make `check` fail early because it cannot generate e
 
 ## Debugging Output
 
-Use `should_log`, `vdbg!`, and `vprintln!` so output appears only for the failing case. It keeps tests fast and logs focused.
+Use `should_log`, `vdbg!`, and `vprintln!` so output appears only for the
+failing case. It keeps tests fast and logs focused.
 
 ## Generators Are Optional
 
@@ -136,4 +146,5 @@ Most users never write custom generators. You can get far with:
 - composing with `select`, `repeat`, and `any`,
 - occasional use of `from_fn` if needed.
 
-When custom generators are necessary, copy/paste from examples or delegate to a coding agent. A derive macro will make this much easier in the future.
+When custom generators are necessary, copy/paste from examples or delegate to a
+coding agent. A derive macro will make this much easier in the future.
