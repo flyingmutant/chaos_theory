@@ -527,7 +527,7 @@ impl Tape {
         self.events.len() - 1
     }
 
-    pub(crate) fn has_noop(&self) -> bool {
+    pub(crate) fn has_discardable(&self) -> bool {
         self.events.iter().any(|e| {
             matches!(
                 e,
@@ -569,6 +569,8 @@ impl Tape {
             let event = self.events[ix].clone();
             match event {
                 Event::ScopeStart {
+                    id,
+                    kind,
                     effect,
                     discardable,
                     ..
@@ -577,7 +579,13 @@ impl Tape {
                         ix = Self::find_after_scope_end(&self.events, ix + 1);
                         continue;
                     }
-                    events.push(event);
+                    events.push(Event::ScopeStart {
+                        id,
+                        kind,
+                        effect,
+                        discardable,
+                        meta: None, // Clear meta.
+                    });
                 }
                 Event::ScopeEnd => {
                     events.push(event);
@@ -820,7 +828,7 @@ mod tests {
             let tape = state.prop_fill_tape(src, false, true, false);
             let tree = tape.clone().into_tree();
             let tape_disc = tree.to_tape(true);
-            if tape.has_noop() {
+            if tape.has_discardable() {
                 assert!(tape_disc.choices.len() < tape.choices.len());
             } else {
                 assert_eq!(tape_disc, tape);
@@ -837,7 +845,7 @@ mod tests {
             let mut state = RgbState::default();
             let tape = state.prop_fill_tape(src, false, true, false);
             let tape_disc = tape.discard_noop();
-            assert!(!tape.has_noop() || tape_disc.choices.len() < tape.choices.len());
+            assert!(!tape.has_discardable() || tape_disc.choices.len() < tape.choices.len());
             let mut state_ = RgbState::default();
             state_.prop_replay_from_tape(src, tape_disc);
             assert_eq!(state, state_);

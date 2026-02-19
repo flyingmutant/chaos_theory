@@ -126,12 +126,15 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         if let Some(t_info) = t_info
             && t_info.same_location(&self.info)
         {
-            let t_best = if t_out.has_noop() {
+            let t_best = if t_out.has_discardable() {
                 let t_disc = t_out.discard_noop();
                 // Try to make sure discarded data did not affect the test result.
                 self.trials += 1;
-                let (t_out2, t_info2) = (self.trial)(t_disc.clone());
-                if t_out2 == t_disc && t_info2.as_ref() == Some(&t_info) {
+                let (t_disc_out, t_disc_info) = (self.trial)(t_disc.clone());
+                // Use `discard_noop` here to get rid of all metadata in output tape (with extra allocation, unfortunately).
+                if (!t_disc_out.has_discardable() && t_disc_out.discard_noop() == t_disc)
+                    && t_disc_info.as_ref() == Some(&t_info)
+                {
                     t_disc
                 } else {
                     self.flaky_log_once.call_once(|| {
