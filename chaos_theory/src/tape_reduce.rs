@@ -127,7 +127,10 @@ impl TTree {
                     debug_assert!(node.parent_id.is_some());
                     cur_node_id = node.parent_id;
                 }
-                Event::Size { .. } | Event::Index { .. } | Event::Value { .. } => {
+                Event::Size { .. }
+                | Event::Index { .. }
+                | Event::Value { .. }
+                | Event::Token { .. } => {
                     if fixup_repeat_size {
                         fixup_repeat_size = false;
                         let parent_id = self.node(cur_node_id).parent_id;
@@ -227,6 +230,9 @@ impl TreeNodeChild<usize> for TTreeChild {
                 (self, 0, 0, false)
             }
             Self::Choice(mut event) => {
+                if matches!(event, Event::Token { .. }) {
+                    return (Self::Choice(event), 0, 0, false);
+                }
                 // Note: we minimize the choice value, not the event value.
                 // Simpler choices can sometimes not lead to simpler event values
                 // (e.g. unsetting the bits in the choice to make it round will not make the event value round).

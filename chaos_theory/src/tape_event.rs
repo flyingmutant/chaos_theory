@@ -69,6 +69,9 @@ pub(crate) enum Event {
         min: u64,
         max: u64,
     },
+    Token {
+        value: u64,
+    },
     Meta(MetaEvent),
 }
 
@@ -105,6 +108,7 @@ impl Event {
             Self::Size { size, min, .. } => Some(*size - *min),
             Self::Value { value, min, .. } => Some(*value - *min),
             Self::Index { index, .. } => Some(*index),
+            Self::Token { value } => Some(*value),
             _ => None,
         }
     }
@@ -112,7 +116,7 @@ impl Event {
     pub(crate) fn set_choice_value(&mut self, choice: u64) {
         let v = match self {
             Self::Size { min, .. } | Self::Value { min, .. } => choice + *min,
-            Self::Index { .. } => choice,
+            Self::Index { .. } | Self::Token { .. } => choice,
             _ => unreachable!("internal error: setting choice for non-choice event"),
         };
         self.set_value(v);
@@ -131,6 +135,9 @@ impl Event {
             Self::Index { index, max, .. } => {
                 debug_assert!(v <= *max);
                 *index = v;
+            }
+            Self::Token { value } => {
+                *value = v;
             }
             _ => unreachable!("internal error: setting value for non-choice event"),
         }
@@ -163,7 +170,7 @@ impl Event {
                     Ok(())
                 }
             }
-            Self::ScopeEnd | Self::Meta(MetaEvent::Intern { .. }) => Ok(()),
+            Self::ScopeEnd | Self::Meta(MetaEvent::Intern { .. }) | Self::Token { .. } => Ok(()),
             Self::Size { size, min, max } => {
                 if min > max {
                     Err("size min > size max")
@@ -208,6 +215,7 @@ impl Event {
             }
             Self::ScopeEnd => 1,
             Self::Size { .. } | Self::Index { .. } | Self::Value { .. } => 1 + varint::MAX_SIZE * 3,
+            Self::Token { .. } => 1 + varint::MAX_SIZE,
         }
     }
 
@@ -226,8 +234,10 @@ impl Event {
     const ENCODE_INDEX_FORCED: u8 = b'f';
     const ENCODE_VALUE: u8 = b'v';
     const ENCODE_VALUE_UNBOUNDED: u8 = b'u';
+    const ENCODE_TOKEN: u8 = b'T';
     const ENCODE_META_INTERN: u8 = b'Z';
 
+    #[expect(clippy::too_many_lines)]
     pub(crate) fn save<'buf>(
         &self,
         mut buf: &'buf mut [u8],
@@ -307,6 +317,14 @@ impl Event {
                 *max,
                 buf,
             ),
+            Self::Token { value } => {
+                if buf.is_empty() {
+                    return Err(BUFFER_TOO_SHORT);
+                }
+                buf[0] = Self::ENCODE_TOKEN;
+                buf = &mut buf[1..];
+                varint::encode(*value, buf)
+            }
             Self::Meta(meta) => {
                 if ignore_meta {
                     return Ok(buf);
@@ -412,6 +430,10 @@ impl Event {
                 let (value, min, max, buf) =
                     Self::load_choice_triple(marker == Self::ENCODE_VALUE_UNBOUNDED, buf)?;
                 Ok((Self::Value { value, min, max }, buf))
+            }
+            Self::ENCODE_TOKEN => {
+                let (value, buf) = varint::decode(buf)?;
+                Ok((Self::Token { value }, buf))
             }
             Self::ENCODE_META_INTERN => {
                 let (id, buf) = Self::load_u32(buf)?;
@@ -583,6 +605,9 @@ impl Event {
                     write!(f, "V({value}, {min}..={max})")
                 }
             }
+            Self::Token { value } => {
+                write!(f, "T({value})")
+            }
             Self::Meta(MetaEvent::Intern { id, value }) => {
                 write!(f, "Z({id} -> {value:?})")
             }
@@ -611,9 +636,18 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
         Event::Size { .. } => 2,
         Event::Index { .. } => 3,
         Event::Value { .. } => 4,
-        Event::Meta(MetaEvent::Intern { .. }) => 5,
+        Event::Token { .. } => 5,
+        Event::Meta(MetaEvent::Intern { .. }) => 6,
     });
-    let variants = &["start", "end", "size", "index", "value", "meta_intern"];
+    let variants = &[
+        "start",
+        "end",
+        "size",
+        "index",
+        "value",
+        "token",
+        "meta_intern",
+    ];
     let variants_num = NonZero::new(variants.len()).expect("internal error: no variants");
     src.select(
         "<event>",
@@ -729,6 +763,14 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                 let value =
                     src.any_of("value", make::int_in_range(min..=max), example.map(|e| e.0));
                 Event::Value { value, min, max }
+            }
+            "token" => {
+                let example = match example {
+                    Some(Event::Token { value }) => Some(value),
+                    _ => None,
+                };
+                let value = src.any("value", example);
+                Event::Token { value }
             }
             "meta_intern" => {
                 let example = match example {

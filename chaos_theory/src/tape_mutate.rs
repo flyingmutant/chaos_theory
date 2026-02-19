@@ -49,6 +49,7 @@ pub(crate) fn mutate_events(
             Some(Event::Value { value, min, max }) => {
                 mutate_value(rng, t, value, min, max, shrink_only)
             }
+            Some(Event::Token { .. }) => None,
             Some(Event::Index { index, max, forced }) => {
                 debug_assert!(!forced);
                 mutate_value(rng, t, index, 0, max, shrink_only)
@@ -437,7 +438,7 @@ fn mutation_index_variant(
                     free[depth_index_choice(depth)].accept(rng, ix);
                 }
             }
-            Event::Meta(..) => {}
+            Event::Token { .. } | Event::Meta(..) => {}
         }
         ix += 1;
     }

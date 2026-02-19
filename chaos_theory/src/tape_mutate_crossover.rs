@@ -434,14 +434,22 @@ fn crossover_overwrite_section(
                     j = Tape::find_after_scope_end(other, j);
                 }
             }
-            Event::Size { .. } | Event::Index { .. } | Event::Value { .. } => {
+            Event::Size { .. }
+            | Event::Index { .. }
+            | Event::Value { .. }
+            | Event::Token { .. } => {
                 result.push(event);
                 i += 1;
                 // Advance j past the choice.
                 if j_void == 0
                     && matches!(
                         other.get(j),
-                        Some(Event::Size { .. } | Event::Index { .. } | Event::Value { .. })
+                        Some(
+                            Event::Size { .. }
+                                | Event::Index { .. }
+                                | Event::Value { .. }
+                                | Event::Token { .. }
+                        )
                     )
                 {
                     j += 1;

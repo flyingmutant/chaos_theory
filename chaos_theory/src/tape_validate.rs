@@ -103,7 +103,7 @@ impl Validator {
                 }
                 _ => return Err("index choice in unexpected state"),
             },
-            Event::Value { .. } => match state {
+            Event::Value { .. } | Event::Token { .. } => match state {
                 VS::Default => {}
                 _ => return Err("value choice in unexpected state"),
             },

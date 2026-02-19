@@ -406,7 +406,12 @@ impl Tape {
         // Only consume and return an event if it is a choice one
         // (for simplicity we don't care about exact event kind).
         match self.events.get(self.event_reuse_ix as usize) {
-            Some(event @ (Event::Size { .. } | Event::Index { .. } | Event::Value { .. })) => {
+            Some(
+                event @ (Event::Size { .. }
+                | Event::Index { .. }
+                | Event::Value { .. }
+                | Event::Token { .. }),
+            ) => {
                 self.event_reuse_ix += 1;
                 Some(event.unwrap_choice_value())
             }
@@ -424,6 +429,12 @@ impl Tape {
             min: r.min,
             max: r.max,
         };
+        self.choices.push(e.unwrap_choice_value());
+        self.events.push(e);
+    }
+
+    pub(crate) fn push_token(&mut self, v: u64) {
+        let e = Event::Token { value: v };
         self.choices.push(e.unwrap_choice_value());
         self.events.push(e);
     }
@@ -590,7 +601,10 @@ impl Tape {
                 Event::ScopeEnd => {
                     events.push(event);
                 }
-                Event::Size { .. } | Event::Index { .. } | Event::Value { .. } => {
+                Event::Size { .. }
+                | Event::Index { .. }
+                | Event::Value { .. }
+                | Event::Token { .. } => {
                     choices.push(event.unwrap_choice_value());
                     events.push(event);
                 }

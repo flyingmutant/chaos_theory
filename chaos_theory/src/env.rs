@@ -1221,6 +1221,14 @@ impl Env {
         value
     }
 
+    pub(crate) fn choose_token(&mut self, example: Option<u64>) -> u64 {
+        let reuse = self.tape_replay.pop_choice(&mut self.budget_remaining);
+        let value = example.or(reuse).unwrap_or_else(|| self.rng.next());
+        self.budget_remaining = self.budget_remaining.saturating_sub(value.bit_len().max(1));
+        self.tape_out.push_token(value);
+        value
+    }
+
     fn seed_replay_tape<G: Generator>(&mut self, g: &G, seeds: &[G::Item]) -> Option<Tape> {
         self.produce_seed_tape(g, USE_SEED_PROB, seeds)
             .map(|mut t| {

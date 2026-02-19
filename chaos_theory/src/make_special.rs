@@ -60,6 +60,26 @@ pub fn index(n: usize) -> impl Generator<Item = Option<usize>> {
     Index { n }
 }
 
+#[derive(Debug)]
+struct Token;
+
+impl Generator for Token {
+    type Item = u128;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let example_lo = example.map(|v| *v as u64);
+        let example_hi = example.map(|v| (v >> 64) as u64);
+        let lo = src.as_mut().choose_token(example_lo);
+        let hi = src.as_mut().choose_token(example_hi);
+        (u128::from(hi) << 64) | u128::from(lo)
+    }
+}
+
+/// Create a generator of random unique token values.
+pub fn token() -> impl Generator<Item = u128> {
+    Token
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
