@@ -275,16 +275,18 @@ impl Seq for TTreeChild {
         else {
             unreachable!("internal error: malformed repeat");
         };
-        let (mut masked, mut masked_noop) = (0, 0);
+        let (mut masked, mut masked_discardable_noop, mut masked_success) = (0, 0, 0);
         for &(_id, effect, discardable) in elements[begin..end].iter().flatten() {
             masked += 1;
-            masked_noop += usize::from(effect == Effect::Noop && discardable);
+            masked_discardable_noop += usize::from(effect == Effect::Noop && discardable);
+            masked_success += usize::from(effect == Effect::Success);
         }
         if masked == 0 {
             return None;
         }
-        let masked_normal = masked - masked_noop;
-        if (masked_normal as u64) > *size || *size - (masked_normal as u64) < *min {
+        let masked_remaining = masked - masked_discardable_noop;
+        // Repeat size tracks successful elements only.
+        if (masked_success as u64) > *size || *size - (masked_success as u64) < *min {
             return None;
         }
         // Adjust the size to match the real number of elements
@@ -292,20 +294,20 @@ impl Seq for TTreeChild {
         // Otherwise, we'll create tapes with size consistently larger than
         // the number of elements, which will make us use the void unnecessary.
         let size = (*size).min((elements.len() as u64).max(*min));
-        // Mask both discardable noop and normal elements, but report only the number of normal masked.
+        // Mask elements in the range, but only count ones that weren't pre-masked (discardable noop).
         let mut elements = elements.clone();
         elements[begin..end].fill(Option::None);
         Some((
             Self::Repeat {
                 id: *id,
                 size: Some(Event::Size {
-                    size: size - masked_normal as u64,
+                    size: size - masked_success as u64,
                     min: *min,
                     max: *max,
                 }),
                 elements,
             },
-            masked_normal,
+            masked_remaining,
         ))
     }
 
