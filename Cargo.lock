@@ -81,7 +81,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "chaos_theory"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "ecow",
  "hashbrown",
@@ -94,11 +94,11 @@ dependencies = [
 
 [[package]]
 name = "chaos_theory_core"
-version = "0.1.8"
+version = "0.1.9"
 
 [[package]]
 name = "chaos_theory_v2"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "chaos_theory_core",
 ]
