@@ -26,7 +26,7 @@ When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string y
 ## Highlights
 
 - Property testing and structure-aware fuzzing in one library
-- Bias toward edge cases and boundary values
+- Smart biased generation (small values, boundary values and built‑in seeds).
 - Example-guided generation and seeded inputs
 - Universal swarm testing for exploration
 - Macro-free, imperative API

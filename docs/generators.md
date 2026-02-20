@@ -30,6 +30,14 @@ Common categories:
 
 If a generator exists, prefer using it instead of re-implementing the logic.
 
+## Default Distribution
+
+chaos_theory is designed to give you a useful distribution by default. Numeric
+choices are heavily biased toward small values, built‑in generators include
+curated seed values, boundary values are prioritized and swarm testing is always on.
+The goal is smart data generation that explores the state space quickly
+without you having to tune distributions by hand.
+
 ## Composing Generators
 
 Useful combinators:

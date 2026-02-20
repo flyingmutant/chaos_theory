@@ -109,9 +109,10 @@ running `check`. This is useful for understanding generators and distributions.
 
 ## Do I need to worry about distributions or biasing?
 
-Usually no. chaos_theory already biases toward edge cases and structurally
-interesting values (for example, built‑in special‑case seeds for bytes/strings
-and structured float generation).
+Usually no. chaos_theory aims to give a practical default distribution out of the box
+with no need for additional tuning: numeric choices skew small, built‑in generators
+include curated seed values, boundary values are prioritized and swarm testing
+varies choice subspaces across runs.
 
 If you do have concrete examples, you can seed generators with them. This is
 similar to fuzzing dictionaries, but structural and compositional.
@@ -143,7 +144,7 @@ test.
 
 - Reproducible failures with minimal cases.
 - Structure‑aware mutation for fuzzing.
-- Built‑in edge‑case biasing.
+- Smart biased generation (small values, boundary values and built‑in seeds).
 - Universal swarm testing baked into choice selection.
 - A single property definition for both PBT and fuzzing.
 
