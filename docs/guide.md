@@ -52,7 +52,7 @@ src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
 ```
 
 You should not encode a variant choice as `any::<u8>()` or a random number. Use
-`select` so chaos_theory can replay and minimize meaningfully.
+`select` so replay and minimization can preserve the variant choice.
 
 ## `repeat`: Exploration Over Time
 
@@ -69,7 +69,7 @@ src.repeat("steps", |src| {
 
 `Effect` matters:
 
-- `Success`: you did useful work (state changed or a meaningful check ran).
+- `Success`: successful state change during iteration.
 - `Change`: state may have changed, but no real progress was made.
 - `Noop`: the step did nothing.
 

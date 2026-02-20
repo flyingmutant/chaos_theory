@@ -98,8 +98,8 @@ After a failure, chaos_theory minimizes the trace:
 - It minimizes numeric choices using binary-search-like strategies.
 - It keeps the property failing while making the trace smaller.
 
-This is why labels, `Effect`, and example-aware generation matter. They all help
-the minimizer make safe, meaningful cuts.
+This is why labels, `Effect`, and example-aware generation matter. They let the
+minimizer remove or shrink scopes without breaking replay.
 
 ## Mutation and Crossover
 
