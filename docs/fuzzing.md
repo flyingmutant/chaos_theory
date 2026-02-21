@@ -36,7 +36,7 @@ for _ in 0..32 {
 
 This can conveniently be done from an ignored test.
 
-## Direct Hooks (Advanced)
+## Direct Hooks
 
 If you need custom fuzzer integration:
 

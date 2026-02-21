@@ -67,11 +67,11 @@ src.repeat("step", |src| {
 
 `Effect` matters:
 
-- `Success`: successful state change during iteration.
-- `Change`: state may have changed, but no real progress was made.
-- `Noop`: the step did nothing (example: action was non-applicable).
+- `Success`: useful work was done.
+- `Change`: state may have changed, but no clear progress.
+- `Noop`: nothing happened to the system (example: action was non-applicable).
 
-Honest `Effect` values make minimization much better.
+Honest `Effect` values make exploration and minimization much more efficient.
 
 ### Common Anti-Pattern: Manual Random Loops
 
@@ -99,7 +99,7 @@ Prefer `maybe` or `select` so the execution shape is tracked structurally.
 ## Stateful Testing (State Machines)
 
 chaos_theory does not have a special API for state machines. The normal API is
-already the advanced mode.
+already the "advanced" mode.
 
 The most common pattern is:
 

@@ -68,7 +68,7 @@ describe structured alternatives and keep them stable across replay.
 
 - `Success` means useful work was done.
 - `Change` means the state may have changed, but there was no clear progress.
-- `Noop` means nothing happened.
+- `Noop` means nothing happened to the system.
 
 ## The Trace (Choices and Events)
 
