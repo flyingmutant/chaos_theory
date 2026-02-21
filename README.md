@@ -6,6 +6,9 @@ You drive tests using `Source` to get structured pseudo-random values and contro
 chaos_theory ensures that this exploration is efficient and any failures found
 are automatically minimized.
 
+[![crates.io](https://img.shields.io/crates/v/chaos_theory.svg)](https://crates.io/crates/chaos_theory)
+[![docs.rs](https://img.shields.io/docsrs/chaos_theory)](https://docs.rs/chaos_theory)
+
 ## Quickstart
 
 ```rust
