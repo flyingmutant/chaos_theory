@@ -14,16 +14,22 @@ are automatically minimized.
 # Quickstart
 
 ```rust
-use chaos_theory::check;
+use chaos_theory::{check, make::string_matching};
 
 #[test]
-fn sort_is_idempotent() {
+fn slug_and_id_roundtrip() {
     check(|src| {
-        let mut v: Vec<i32> = src.any("v");
-        let mut w = v.clone();
-        v.sort();
-        w.sort();
-        assert_eq!(v, w);
+        let slug = src.any_of("slug", string_matching("[a-z0-9]+(-[a-z0-9]+)*", true));
+        let id: u32 = src.any("id");
+
+        let s = format!("{slug}-{id}");
+        let (slug_parsed, id_parsed) = s
+            .rsplit_once('-')
+            .map(|(s, i)| (s, i.parse::<u32>().unwrap()))
+            .unwrap();
+
+        assert_eq!(slug_parsed, slug);
+        assert_eq!(id_parsed, id);
     });
 }
 ```
