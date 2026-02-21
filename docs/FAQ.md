@@ -18,26 +18,20 @@ quite a few design ideas left over after implementing rapid. Thus chaos_theory w
 
 ## How is it different from proptest?
 
-- chaos_theory centers on an imperative `Source` API (`any`, `select`, `repeat`)
-  that is suitable for any kind of test, including state machine tests;
-  proptest is macro-heavy and has a separate crate for state machine testing support.
-- chaos_theory has automatic swarm testing built-in.
-- chaos_theory supports example-guided (seeded) data generation.
-- chaos_theory uses the same property code for property testing and fuzzing;
-  proptest is only for property testing.
-- proptest is more mature and feature‑rich; chaos_theory is newer and currently
-  lacks a derive macro and recursion helpers.
+chaos_theory is built around simple macro-free imperative API, has fuzzing support,
+and cool tricks like built-in swarm testing and example-based data generation.
 
-## How is it different from `arbitrary` and libFuzzer‑style fuzzing?
+proptest is more mature and feature‑rich; chaos_theory is newer and currently
+lacks important features like derive macro and recursion helpers.
 
-- `arbitrary` turns raw bytes into values; chaos_theory generates values
-  structurally and records the choices that led there.
-- libFuzzer mutates bytes; chaos_theory mutates structure, which tends to
-  make exploration more efficient by preserving more invariants during mutation.
-- In chaos_theory, the same property function is used for property testing and
-  fuzzing; the backend changes, not the test.
-- chaos_theory still uses libFuzzer (via `libfuzzer_sys`) for fuzzing
-  but supplies a structure‑aware mutator and replay format.
+## How is it different from `arbitrary` plus `libfuzzer_sys`?
+
+chaos_theory has fuzzing as an optional extra you can use if and when you want to.
+
+chaos_theory gives you much more flexible data generation, more efficient state space
+exploration (thanks to structural mutation), and better minimization (again, thanks
+to being fully structure-aware). It still uses `libfuzzer_sys` for the main fuzzing
+loop and corpus management, but fully takes over data generation and mutation.
 
 If you already have a byte‑based protocol and `arbitrary` derives, that can be
 simpler. chaos_theory shines when structure matters and you want unified testing
