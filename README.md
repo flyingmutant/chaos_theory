@@ -49,11 +49,17 @@ you can use to reproduce the (typically already minimized) case.
 
 ## Status
 
-chaos_theory is used internally and already useful, but it's not officially released yet.
+Beta – chaos_theory works well and is useful, but does not guarantee API stability.
 
 Notable gaps:
 - Derive macro for `Arbitrary`
 - Proper recursive generators
+
+## Contributing
+
+- Feedback – bug reports, issues, proposals – is welcome
+- Pull requests require prior discussion before being open
+- All AI usage must be disclosed
 
 ## License
 
