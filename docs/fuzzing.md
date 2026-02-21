@@ -7,44 +7,41 @@ should look identical. What changes is the backend and how long you run it.
 ## Quickstart (libfuzzer_sys)
 
 ```rust
-use chaos_theory::fuzz_target_libfuzzer_sys;
+use chaos_theory::{fuzz_target_libfuzzer_sys, Source};
 
-fuzz_target_libfuzzer_sys!(|src| {
-    let v: Vec<u8> = src.any("v");
+fn prop(src: &mut Source) {
+    let points: Vec<(i32, i32)> = src.any("points");
     // your invariants here
-});
+}
+
+fuzz_target_libfuzzer_sys!(prop);
 ```
+
+Fuzzer failures are non-minimized to avoid triggering a fuzzer timeout during minimization.
+A common pattern is to use the same property in a regular `check` test and run it with
+the `CHAOS_THEORY_REPLAY=...` value found during a fuzzing run to minimize and reproduce
+a failure without using the fuzzer.
 
 ## Seeds
 
-Before fuzzing, generate seeds:
+Before fuzzing, generate the seeds once:
 
 ```rust
 use chaos_theory::fuzz_write_seed;
 
-let _ = fuzz_write_seed("corpus", |src| {
-    let _v: Vec<u8> = src.any("v");
-});
+for _ in 0..32 {
+    fuzz_write_seed("corpus", prop).unwrap();
+}
 ```
 
-Good defaults:
-
-- Start with ~32 seeds for simple systems.
-- Increase for complex systems.
-- Minimize the corpus before long fuzzing runs.
+This can conveniently be done from an ignored test.
 
 ## Direct Hooks (Advanced)
 
-If you need custom integration:
+If you need custom fuzzer integration:
 
 - `fuzz_check` validates fuzzer-provided input.
 - `fuzz_mutate` mutates input with structure-aware rules.
 - `fuzz_mutate_crossover` combines two inputs.
 
 These are the same building blocks used by the `libfuzzer_sys` wrapper.
-
-## Notes
-
-- Properties should be written exactly like property tests.
-- Avoid external randomness and wall-clock dependencies inside the property.
-- Use `CHAOS_THEORY_REPLAY=...` to reproduce a failure found by the fuzzer.

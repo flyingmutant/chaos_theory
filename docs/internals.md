@@ -6,7 +6,7 @@ possible.
 
 ## Mental Model
 
-Think of a test run as a conversation between three pieces:
+Think of a test run as an interaction between three pieces:
 
 - `Env` drives the run and owns configuration.
 - `Source` produces structured randomness.
@@ -70,8 +70,6 @@ describe structured alternatives and keep them stable across replay.
 - `Change` means the state may have changed, but there was no clear progress.
 - `Noop` means nothing happened.
 
-These signals are used later to minimize traces without breaking the property.
-
 ## The Trace (Choices and Events)
 
 Internally, `Tape` stores two streams:
@@ -98,8 +96,7 @@ After a failure, chaos_theory minimizes the trace:
 - It minimizes numeric choices using binary-search-like strategies.
 - It keeps the property failing while making the trace smaller.
 
-This is why labels, `Effect`, and example-aware generation matter. They let the
-minimizer remove or shrink scopes without breaking replay.
+Labels and `Effect` allow this to be done efficiently.
 
 ## Mutation and Crossover
 

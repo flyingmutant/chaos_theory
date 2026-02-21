@@ -1,7 +1,7 @@
-# Config And Repro
+# Configuration
 
-This document covers how to control chaos_theory runs and how to reproduce
-failures. It is intentionally brief.
+This document briefly covers how to control chaos_theory runs and how to reproduce
+failures.
 
 ## The Fast Path: Replay
 
@@ -9,7 +9,7 @@ When a property fails, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string.
 Use it to reproduce the case:
 
 ```bash
-CHAOS_THEORY_REPLAY=... cargo test
+CHAOS_THEORY_REPLAY=... cargo test failing_test
 ```
 
 Replay strings are typically already minimized, so you get the smallest failing
@@ -20,25 +20,26 @@ You can also set replay programmatically:
 ```rust
 use chaos_theory::Env;
 
-let env = Env::custom().with_replay("...")?.env(true);
+let env = Env::custom()
+    .with_replay("...")
+    .expect("valid replay data")
+    .env(true);
 ```
 
 ## Check And Minimization Limits
 
 - `with_check_iters` controls how many valid test cases to try.
-- `with_check_time` is a time limit for generation and checking (not minimization).
+- `with_check_time` is a total time limit for test case runs (not minimization).
 - `with_reduce_time` is the time limit for test case minimization.
 
-If generation is slow, time limits may stop early. Minimization runs after a
+If test cases are slow, the time limit may stop the test early. Minimization runs after a
 failure and has its own limit.
 
 ## Logging Controls
 
-Logging is scoped and intentionally quiet by default. The core idea is:
-
-- logs are only shown for the relevant failing case,
-- scope depth controls how deep logs are emitted,
-- verbosity controls how much detail is printed.
+Logging is scoped (by nested labeled scopes created by `Source` methods) and quiet by default:
+only shown for the relevant failing case. Scope depth controls how deep logs are emitted,
+verbosity controls how much detail is printed.
 
 Options:
 
@@ -47,7 +48,8 @@ Options:
 - `with_log_verbose`: include extra details in logs.
 - `with_pretty_print`: pretty-print values in logs.
 
-If you use `vdbg!` or `vprintln!`, they automatically obey these settings.
+If you use `vdbg!` or `vprintln!`, they automatically obey these settings. Alternatively,
+use `Source::should_log` to guard calls to your logging functions of choice.
 
 ## RNG Controls (Advanced)
 
@@ -68,8 +70,8 @@ chaos_theory recognizes:
 
 - `CHAOS_THEORY_REPLAY`: replay data (seed, temperature, budget, choices)
 - `CHAOS_THEORY_REPLAY_VERBOSE`: include extra replay info
-- `CHAOS_THEORY_CHECK_ITERS`: number of test iterations
-- `CHAOS_THEORY_CHECK_TIME`: time limit for generation + checking
+- `CHAOS_THEORY_CHECK_ITERS`: number of test cases to run
+- `CHAOS_THEORY_CHECK_TIME`: total time limit for test case runs
 - `CHAOS_THEORY_REDUCE_TIME`: time limit for minimization
 - `CHAOS_THEORY_PRETTY_PRINT`: pretty-print values in logs
 - `CHAOS_THEORY_LOG_DEPTH`: log depth
@@ -79,5 +81,3 @@ chaos_theory recognizes:
 - `CHAOS_THEORY_RNG_TEMPERATURE`: RNG temperature
 - `CHAOS_THEORY_RNG_BUDGET`: RNG budget
 - `CHAOS_THEORY_RNG_CHOICES`: explicit RNG choices
-
-Coverage-related variables also exist but are not part of the public API surface.

@@ -7,9 +7,9 @@
 /*!
 `chaos_theory` is a modern property-based testing and structure-aware fuzzing library.
 
-It is built around a simple idea: a [`Source`] produces structured randomness, and
-`chaos_theory` records the exact choices so failures can be reproduced, minimized,
-and mutated.
+You drive tests using [`Source`] to get pseudo-random values and control flow;
+chaos_theory records choices, their structure and metadata to efficiently explore
+the state space and automatically minimize any failures found.
 
 # Quickstart
 
@@ -34,9 +34,11 @@ you can use to reproduce the (typically already minimized) case.
 # Highlights
 
 - Property testing and structure-aware fuzzing in one library
-- Smart biased generation (small values, boundary values and built‑in seeds).
-- Example-guided generation and seeded inputs
-- Universal swarm testing for exploration
+- Efficient state space exploration:
+  - bias towards small values and edge cases
+  - structural mutations and crossover
+  - example-guided generation
+  - built-in swarm testing
 - Macro-free, imperative API
 - Zero unsafe code and zero required dependencies
 */

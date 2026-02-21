@@ -9,7 +9,7 @@ absolutely fine when you need them.
 You will spend most of your time doing this:
 
 ```rust
-let v: Vec<i32> = src.any("v");
+let v: Vec<String> = src.any("v");
 ```
 
 Custom generators are useful for domain types or complex invariants, but they
@@ -34,7 +34,7 @@ If a generator exists, prefer using it instead of re-implementing the logic.
 
 chaos_theory is designed to give you a useful distribution by default. Numeric
 choices are heavily biased toward small values, built‑in generators include
-curated seed values, boundary values are prioritized and swarm testing is always on.
+curated seed values, boundary values are prioritized, and swarm testing is always on.
 The goal is smart data generation that explores the state space quickly
 without you having to tune distributions by hand.
 
@@ -47,28 +47,26 @@ Useful combinators:
 - `collect` and `collect_n` for collections
 - `and_then` for flat-map style composition
 
-`map_reversible` is the high-quality option: it helps chaos_theory reconstruct
-examples and minimize better.
-
-## Seeds And Examples
+## Seeded Generation
 
 Use seeds when you have real examples that should guide exploration:
 
 ```rust
-let seeds = [0u32, 1, 2, 3, 255];
-let g = make::int_in_range(0..=255).seeded(&seeds, true);
+use chaos_theory::make;
+
+let cities = ["Tokyo".to_owned(), "Moscow".to_owned(), "Shanghai".to_owned()];
+let city = make::string_matching("[A-Za-z '-]+", true).seeded(&cities, true);
 ```
 
-The `example` reference is the reverse direction of generation: it is used to
-reconstruct the choice trace that would produce a value. If you ignore it, tests
-still work, but replay and minimization get worse.
+Built-in generators already have seeds pre-configured internally,
+so use `seeded` only to provide seeds that are specific to your domain.
 
 ## Filtering And Validity
 
 Prefer recoverable filtering:
 
-- `Generator::filter` returns `Option`
-- `filter_assume` and `assume!` are last resorts
+- `Generator::filter` returns `Option` you can handle
+- `filter_assume` and `assume!` can mark the whole test case as invalid on failure
 
 Too many invalid cases will make `check` fail early.
 
@@ -87,6 +85,8 @@ it is still useful for domain-specific logic.
 The pattern is “generate fields, then build the struct”. Always pass field examples when present.
 
 ```rust
+use chaos_theory::{Generator, SourceRaw};
+
 #[derive(Debug)]
 struct Point {
     x: i32,
@@ -99,8 +99,8 @@ impl Generator for PointGen {
     type Item = Point;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Point>) -> Point {
-        let x = i32::arbitrary().next(src, example.map(|e| &e.x));
-        let y = i32::arbitrary().next(src, example.map(|e| &e.y));
+        let x = src.any("x", example.map(|e| &e.x));
+        let y = src.any("y", example.map(|e| &e.y));
         Point { x, y }
     }
 }
@@ -111,6 +111,9 @@ impl Generator for PointGen {
 Use `select` to choose a variant with a stable label:
 
 ```rust
+use core::num::NonZero;
+use chaos_theory::{Generator, SourceRaw};
+
 #[derive(Debug)]
 enum Op {
     Add(i32),
@@ -128,15 +131,18 @@ impl Generator for OpGen {
             Op::Reset => 1,
         });
         let variants = ["add", "reset"];
+        let variants_num =
+            NonZero::new(variants.len()).expect("internal error: no variants");
         src.select(
             "<op>",
             example_ix,
-            variants.len().try_into().expect("variants"),
+            variants_num,
             |ix| variants[ix],
             |src, variant, _| match variant {
                 "add" => {
-                    let ex = match example { Some(Op::Add(v)) => Some(v), _ => None };
-                    Op::Add(i32::arbitrary().next(src, ex))
+                    let v_example = match example { Some(Op::Add(v)) => Some(v), _ => None };
+                    let v = src.any("v", v_example);
+                    Op::Add(v)
                 }
                 "reset" => Op::Reset,
                 _ => unreachable!(),
@@ -148,33 +154,42 @@ impl Generator for OpGen {
 
 ### Collection-Like Types
 
-Use `repeat` to build the collection and report effects honestly:
+Use `repeat` to build the collection:
 
 ```rust
+use chaos_theory::{Arbitrary, Effect, Generator, SourceRaw};
+
 struct BytesGen;
 
 impl Generator for BytesGen {
     type Item = Vec<u8>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Vec<u8>>) -> Vec<u8> {
-        let mut out = Vec::new();
-        let mut i = 0usize;
-        src.repeat("<bytes>", example.map(|v| v.iter()), .., |_| ((), 0), |_v, src, ex| {
-            let b = u8::arbitrary().next(src, ex);
-            out.push(b);
-            i += 1;
-            Effect::Success
-        });
-        out
+        let res = src.repeat(
+            "<bytes>",
+            example.map(IntoIterator::into_iter),
+            ..,
+            |n| Vec::with_capacity(n),
+            |v, src, example| {
+                let b = u8::arbitrary().next(src, example);
+                v.push(b);
+                Effect::Success
+            },
+        );
+        res.expect("bytes repeat must succeed")
     }
 }
 ```
 
 ### Passing `example` Through
 
+The `example` reference is the reverse direction of generation:
+it is used to reconstruct the choice trace that would produce a value.
+This is what makes the seed-based generation work: seeds are converted to a trace,
+then this trace, as-is or mutated, is used to produce a seed-based value.
+
 The rule is simple: if you generate sub-values, pass the corresponding `example`
 sub-values into their generators. This is how chaos_theory reconstructs known
 values and minimizes effectively.
 
-Avoid calling `Generator::next` directly outside of generator implementations.
-When writing tests, use `Source::any` or `Source::any_of` instead.
+Avoid calling `Generator::next` directly. Use `Source::any` or `Source::any_of` instead.

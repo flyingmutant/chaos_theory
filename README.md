@@ -2,7 +2,9 @@
 
 chaos_theory is a modern Rust property-based testing and structure-aware fuzzing library.
 
-It's built around a simple idea: a `Source` produces structured randomness, and chaos_theory records the exact choices so failures can be reproduced, minimized, and mutated.
+You drive tests using `Source` to get pseudo-random values and control flow;
+chaos_theory records choices, their structure, and metadata to efficiently explore
+the state space and automatically minimize any failures found.
 
 ## Quickstart
 
@@ -21,39 +23,29 @@ fn sort_is_idempotent() {
 }
 ```
 
-When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string you can use to reproduce the (typically already minimized) case.
+When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string
+you can use to reproduce the (typically already minimized) case.
 
 ## Highlights
 
 - Property testing and structure-aware fuzzing in one library
-- Smart biased generation (small values, boundary values and built‑in seeds).
-- Example-guided generation and seeded inputs
-- Universal swarm testing for exploration
+- Efficient state space exploration:
+  - bias towards small values and edge cases
+  - structural mutations and crossover
+  - example-guided generation
+  - built-in swarm testing
 - Macro-free, imperative API
 - Zero unsafe code and zero required dependencies
-
-## Fuzzing Quickstart
-
-```rust
-use chaos_theory::fuzz_target_libfuzzer_sys;
-
-fuzz_target_libfuzzer_sys!(|src| {
-    let v: Vec<u8> = src.any("v");
-    // your invariants here
-});
-```
-
-Before fuzzing, generate seeds with `chaos_theory::fuzz_write_seed`.
 
 ## Documentation
 
 - API docs: https://docs.rs/chaos_theory
-- Guide: `docs/guide.md`
-- Generators: `docs/generators.md`
-- Config and repro: `docs/config.md`
-- Fuzzing: `docs/fuzzing.md`
-- Internals: `docs/internals.md`
-- FAQ: `docs/FAQ.md`
+- Guide: [docs/guide.md](./docs/guide.md)
+- Generators: [docs/generators.md](./docs/generators.md)
+- Configuration: [docs/config.md](./docs/config.md)
+- Fuzzing: [docs/fuzzing.md](./docs/fuzzing.md)
+- Internals: [docs/internals.md](./docs/internals.md)
+- FAQ: [docs/FAQ.md](./docs/FAQ.md)
 
 ## Status
 
@@ -65,4 +57,4 @@ Notable gaps:
 
 ## License
 
-MPL-2.0, see `LICENSE`.
+MPL-2.0, see [LICENSE](./LICENSE).
