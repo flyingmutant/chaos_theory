@@ -2,9 +2,8 @@
 
 ## docs
 
-- update changelog
-- examples for functions
-- skills
+- usage examples
+- skill or one-pager for coding agents
 
 ## API
 
