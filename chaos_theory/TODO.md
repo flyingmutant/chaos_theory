@@ -2,14 +2,8 @@
 
 ## docs
 
-- overall quality pass
-  - faq: proptest "centers"?
-  - remove explicit types from examples where don't need them
-  - reduction in code vs minimization in docs (do a pass and propose something good)
 - update changelog
 - examples for functions
-- design notes, better/more comparisons
-
 - skills
 
 ## API
@@ -27,9 +21,9 @@
   - serde_json
   - bytes
 - u128
-- CString/Cstr
-- OSString/OSstr
-- PathBuf/Path
+- CString
+- OSString
+- PathBuf
 - IpAddr/SocketAddr
 - range types, Bound
 - MaybeUninit
