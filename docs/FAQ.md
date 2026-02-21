@@ -5,7 +5,7 @@
 chaos_theory is a property‑based testing and structure‑aware fuzzing library.
 
 You explore a system's behavior using structured pseudo-random values and control flow,
-and the engine ensures that this exploration is efficient and any failures found
+chaos_theory ensures that this exploration is efficient and any failures found
 are automatically minimized.
 
 ## Why did you build it?

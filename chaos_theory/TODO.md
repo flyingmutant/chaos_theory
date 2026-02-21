@@ -2,6 +2,8 @@
 
 ## docs
 
+- crates.io + docs.rs badges
+- better "main" example
 - usage examples
 - skill or one-pager for coding agents
 

@@ -2,9 +2,9 @@
 
 chaos_theory is a modern Rust property-based testing and structure-aware fuzzing library.
 
-You drive tests using `Source` to get pseudo-random values and control flow;
-chaos_theory records choices, their structure, and metadata to efficiently explore
-the state space and automatically minimize any failures found.
+You drive tests using `Source` to get structured pseudo-random values and control flow,
+chaos_theory ensures that this exploration is efficient and any failures found
+are automatically minimized.
 
 ## Quickstart
 
