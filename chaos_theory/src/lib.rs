@@ -8,7 +8,7 @@
 `chaos_theory` is a modern property-based testing and structure-aware fuzzing library.
 
 You drive tests using [`Source`] to get pseudo-random values and control flow;
-chaos_theory records choices, their structure and metadata to efficiently explore
+`chaos_theory` records choices, their structure and metadata to efficiently explore
 the state space and automatically minimize any failures found.
 
 # Quickstart
