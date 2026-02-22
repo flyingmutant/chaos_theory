@@ -7,3 +7,4 @@
 
 /chaos_theory/UCD/**                     linguist-vendored
 /chaos_theory/gen/**                     linguist-generated
+/chaos_theory/src/tests_crates_regex.rs  linguist-language=Rust
