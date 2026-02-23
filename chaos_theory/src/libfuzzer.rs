@@ -6,7 +6,7 @@
 
 /// Define a [`libfuzzer_sys`](https://docs.rs/libfuzzer-sys) fuzz target.
 ///
-/// Don't forget to use [`crate::fuzz_write_seed`] before fuzzing.
+/// Don't forget to use [`fuzz_write_seed`](crate::fuzz_write_seed) before fuzzing.
 ///
 /// Example:
 ///
@@ -22,7 +22,7 @@
 /// ```
 ///
 /// Fuzzer failures are not minimized to avoid triggering libFuzzer timeout detection;
-/// replay with `CHAOS_THEORY_REPLAY=...` using [`crate::check`] to reproduce and minimize.
+/// replay with `CHAOS_THEORY_REPLAY=...` using [`check`](crate::check) to reproduce and minimize.
 #[macro_export]
 macro_rules! fuzz_target_libfuzzer_sys {
     ($prop:expr) => {
