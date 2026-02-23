@@ -51,9 +51,6 @@ you can use to reproduce the (typically already minimized) case.
 - API docs: https://docs.rs/chaos_theory
 - Guide: [docs/guide.md](./docs/guide.md)
 - Generators: [docs/generators.md](./docs/generators.md)
-- Configuration: [docs/config.md](./docs/config.md)
-- Fuzzing: [docs/fuzzing.md](./docs/fuzzing.md)
-- Internals: [docs/internals.md](./docs/internals.md)
 - FAQ: [docs/FAQ.md](./docs/FAQ.md)
 
 ## Status
