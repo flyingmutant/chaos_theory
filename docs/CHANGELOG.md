@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Nothing yet.
+
+## 0.2.0 (2026-02-23)
+
 - Documentation polish.
 
 ## 0.1.10 (2026-02-19)
