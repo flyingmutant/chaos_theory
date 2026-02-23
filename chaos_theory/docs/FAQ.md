@@ -16,12 +16,12 @@ in the past, I built a property-based library for Go that I quite like:
 I couldn't find something that was both simple and powerful – and I also had
 quite a few design ideas left over after implementing rapid. Thus chaos_theory was born.
 
-## How is it different from proptest?
+## How is it different from `proptest`?
 
 chaos_theory is built around simple macro-free imperative API, has fuzzing support,
 and cool tricks like built-in swarm testing and example-based data generation.
 
-proptest is more mature and feature‑rich; chaos_theory is newer and currently
+`proptest` is more mature and feature‑rich; chaos_theory is newer and currently
 lacks important features like derive macro and recursion helpers.
 
 ## How is it different from `arbitrary` plus `libfuzzer_sys`?
@@ -38,7 +38,8 @@ chaos_theory shines when structure matters and you want unified testing and fuzz
 
 ## How do I model state machines or stateful systems?
 
-Use `repeat` + `select` and keep a reference model. A common shape is:
+Use [`repeat`][source_repeat] + [`select`][source_select] and keep a reference model.
+A common shape is:
 
 - setup SUT and model,
 - `repeat` steps that `select` an action,
@@ -62,28 +63,51 @@ similar to fuzzing dictionaries, but structural and compositional.
 Prefer structured generation, as heavy filtering can lead to slow or failed tests.
 
 - Check if there is a ready-made generator for your case
-  (for example, `string_matching` or `int_in_range`).
+  (for example, [`string_matching`][make_string_matching] or
+  [`int_in_range`][make_int_in_range]).
 - Consider if you can build values satisfying the constraints directly,
-  using tools like `from_fn`, `repeat`, `select`, or generator combinators.
+  using tools like [`from_fn`][make_from_fn], [`repeat`][source_repeat],
+  [`select`][source_select], or [`Generator`][generator] combinators.
 
 Sometimes constraints are awkward to encode structurally. In those cases,
-`filter_assume` or `assume!` are the right tools. Use them deliberately
-and keep rejection rates low.
+[`filter_assume`][generator_filter_assume] or [`assume!`][assume] are
+the right tools. Use them deliberately and keep rejection rates low.
 
 ## Why did `check` fail with “only generated N valid tests”?
 
 The property rejected too many generated values. Common causes:
 
-- `assume!` is used too often.
-- `filter_assume` predicates reject too much.
-- `repeat` steps return `Noop` too often.
+- [`assume!`][assume] is used too often.
+- [`filter_assume`][generator_filter_assume] predicates reject too much.
+- [`repeat`][source_repeat] steps return [`Noop`][effect_noop] too often.
 
 Reduce rejection rates, generate constrained data structurally,
 or make invalid cases part of your model instead of discarding them.
 
 ## How do I avoid log spam from all successful `check` iterations?
 
-Use `vdbg!`, `vprintln!`, or check `Source::should_log`. chaos_theory logs
-are scoped and only emitted for the failing case by default.
+Use [`vdbg!`][vdbg], [`vprintln!`][vprintln], or check
+[`Source::should_log`][source_should_log]. chaos_theory logs are scoped and only emitted
+for the failing case by default.
 
 If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
+
+[source]: crate::Source
+[source_repeat]: crate::Source::repeat
+[source_select]: crate::Source::select
+[source_should_log]: crate::Source::should_log
+
+[effect_noop]: crate::Effect::Noop
+
+[generator]: crate::Generator
+[generator_filter_assume]: crate::Generator::filter_assume
+[generator_seeded]: crate::Generator::seeded
+
+[check]: crate::check
+[assume]: crate::assume
+[vdbg]: crate::vdbg
+[vprintln]: crate::vprintln
+
+[make_from_fn]: crate::make::from_fn
+[make_int_in_range]: crate::make::int_in_range
+[make_string_matching]: crate::make::string_matching
