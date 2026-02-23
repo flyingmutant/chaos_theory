@@ -1041,14 +1041,18 @@ impl Env {
 }
 
 /// Result of the [`Source::repeat`] or [`SourceRaw::repeat`](crate::SourceRaw::repeat) step.
+///
+/// Correct `Effect` values make exploration and minimization much more efficient.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[must_use]
 pub enum Effect {
-    /// No state change has happened: for example, selected action was inapplicable.
+    /// Nothing has happened to the system, step can be discarded without affecting the execution.
+    ///
+    /// Common example is selected action being inapplicable in the current system state.
     Noop,
-    /// State change (or *possible* state change) without progress: for example, the collection did not grow.
+    /// System state may have changed, but no real progress has been made.
     Change,
-    /// Successful state change.
+    /// Useful work was done.
     Success,
 }
 

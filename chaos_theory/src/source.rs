@@ -22,7 +22,11 @@ const REPEAT_REJECT_CONSEQ_HARD_MAX: u32 = MAX_SIZE as u32 + 1; // TODO: add a p
 const UNABLE_PERFORM_MINIMUM_REPEAT: &str =
     "unable to perform minimum number of repeat steps successfully";
 
-/// Primary interface for working with pseudo-random data.
+/// Primary interface for working with pseudo-random data and control flow.
+///
+/// Prefer structural pseudo-random control flow like [`Source::repeat`], [`Source::select`]
+/// and [`Source::maybe`] to manual constructs like `let n = src.any(...); for _ in 0..n { ... }` –
+/// it makes exploration and minimization much more efficient.
 #[derive(Debug)]
 pub struct Source<'env> {
     raw: SourceRaw<'env>,

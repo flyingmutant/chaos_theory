@@ -7,6 +7,22 @@
 /// Define a [`libfuzzer_sys`](https://docs.rs/libfuzzer-sys) fuzz target.
 ///
 /// Don't forget to use [`crate::fuzz_write_seed`] before fuzzing.
+///
+/// Example:
+///
+/// ```rust
+/// use chaos_theory::{fuzz_target_libfuzzer_sys, Source};
+///
+/// fn prop(src: &mut Source) {
+///     let points: Vec<(i32, i32)> = src.any("points");
+///     // invariants here
+/// }
+///
+/// fuzz_target_libfuzzer_sys!(prop);
+/// ```
+///
+/// Fuzzer failures are not minimized to avoid triggering libFuzzer timeout detection;
+/// replay with `CHAOS_THEORY_REPLAY=...` using [`crate::check`] to reproduce and minimize.
 #[macro_export]
 macro_rules! fuzz_target_libfuzzer_sys {
     ($prop:expr) => {

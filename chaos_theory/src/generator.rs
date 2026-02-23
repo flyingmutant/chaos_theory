@@ -39,6 +39,9 @@ pub trait Generator: Debug {
     ///
     /// If `mutate_seeds` is false, seed values will always be used as-is. Otherwise,
     /// randomly mutated versions of seeds will be used together with non-mutated ones.
+    ///
+    /// Only specify seeds when you have real domain examples that should guide exploration;
+    /// built-in generators already include curated seeds.
     fn seeded(self, seeds: &[Self::Item], mutate_seeds: bool) -> impl Generator<Item = Self::Item>
     where
         Self: Sized,
@@ -54,6 +57,9 @@ pub trait Generator: Debug {
     ///
     /// If `mutate_seeds` is false, seed values will always be used as-is. Otherwise,
     /// randomly mutated versions of seeds will be used together with non-mutated ones.
+    ///
+    /// Only specify seeds when you have real domain examples that should guide exploration;
+    /// built-in generators already include curated seeds.
     fn seeded_owned(
         self,
         seeds: Vec<Self::Item>,

@@ -45,3 +45,4 @@ tinyvec = { workspace = true, optional = true, features = ["alloc"] }
 
 [dev-dependencies]
 regex.workspace = true
+libfuzzer-sys.workspace = true
