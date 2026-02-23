@@ -81,6 +81,7 @@
     "repr",
     "rint",
     "rrxmrrxmsx",
+    "rsplit",
     "rustc",
     "rustdoc",
     "RUSTFLAGS",
