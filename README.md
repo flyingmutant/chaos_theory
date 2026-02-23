@@ -50,7 +50,6 @@ you can use to reproduce the (typically already minimized) case.
 
 - API docs: https://docs.rs/chaos_theory
 - Guide: [docs/guide.md](./docs/guide.md)
-- Generators: [docs/generators.md](./docs/generators.md)
 - FAQ: [docs/FAQ.md](./docs/FAQ.md)
 
 ## Status
