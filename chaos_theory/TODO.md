@@ -2,7 +2,6 @@
 
 ## docs
 
-- no `crate::` in doc strings
 - usage examples
 - skill or one-pager for coding agents
 
