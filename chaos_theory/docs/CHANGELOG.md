@@ -4,6 +4,10 @@
 
 - Nothing yet.
 
+## 0.2.1 (2026-02-23)
+
+- Move all documentation over to the crate docs.
+
 ## 0.2.0 (2026-02-23)
 
 - Documentation polish.
