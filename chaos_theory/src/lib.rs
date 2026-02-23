@@ -14,6 +14,8 @@ are automatically minimized.
 # Quickstart
 
 ```rust
+# #[cfg(feature = "regex")]
+# {
 use chaos_theory::{check, make::string_matching};
 
 #[test]
@@ -32,6 +34,7 @@ fn slug_and_id_roundtrip() {
         assert_eq!(id_parsed, id);
     });
 }
+# }
 ```
 
 When a failure happens, `chaos_theory` prints a `CHAOS_THEORY_REPLAY=...` string
