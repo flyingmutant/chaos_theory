@@ -33,50 +33,8 @@ exploration (thanks to structural mutation), and better minimization (again, tha
 to being fully structure-aware). It still uses `libfuzzer_sys` for the main fuzzing
 loop and corpus management, but fully takes over data generation and mutation.
 
-If you already have a byte‑based protocol and `arbitrary` derives, that can be
-simpler. chaos_theory shines when structure matters and you want unified testing
-and fuzzing.
-
-## Do I need to write custom generators?
-
-Usually no. Built‑ins in `make::*` plus `Source::any`, `select`, and `repeat`
-cover most tests. Custom generators are fine for domain types or tight
-invariants, but they are not a requirement.
-
-## Why are labels important?
-
-Labels are used in the printed reproduction steps. Good labels make the failure
-description readable and often point directly to the bug. They also encode
-structural information about execution, which improves structure-aware mutation.
-
-## How do I reproduce a failing case?
-
-Use the replay string that chaos_theory prints:
-
-```bash
-CHAOS_THEORY_REPLAY=... cargo test failing_test
-```
-
-Replay strings are typically already minimized.
-
-## Why did `check` stop early with “not enough valid cases”?
-
-The property rejected too many generated values. Common causes:
-
-- `assume!` is used too often.
-- `filter_assume` predicates reject too much.
-- `repeat` steps return `Noop` too often.
-
-Prefer recoverable `filter`, reduce rejection rates, or make invalid cases part
-of your model instead of discarding them.
-
-## What does `Effect` mean in `repeat`?
-
-- `Success`: useful work was done.
-- `Change`: state may have changed, but no clear progress.
-- `Noop`: nothing happened to the system.
-
-Honest `Effect` values make exploration and minimization much more efficient.
+If you have a byte‑based protocol and `arbitrary` derives, that can be simpler.
+chaos_theory shines when structure matters and you want unified testing and fuzzing.
 
 ## How do I model state machines or stateful systems?
 
@@ -89,42 +47,22 @@ Use `repeat` + `select` and keep a reference model. A common shape is:
 
 There is no special API for state machines.
 
-## How do I log only the failing case?
-
-Use `vdbg!`, `vprintln!`, or check `Source::should_log`. Logs are scoped and
-only emitted for the failing case by default.
-
-## Why do I only see logs from the minimized failure?
-
-By default, chaos_theory logs only for the failing case, and Rust’s test harness
-prints captured output for failed tests. That output corresponds to the final
-minimized replay.
-
-If you want to see other iterations, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
-If you want logs to stream instead of only showing up at the end, run tests with
-`-- --nocapture`.
-
-## How do I inspect a few example values quickly?
-
-Use `Env::example` or `Env::example_of` to generate sample values without
-running `check`. This is useful for understanding generators and distributions.
-
 ## Do I need to worry about distributions or biasing?
 
 Usually no. chaos_theory aims to give a practical default distribution out of the box
-with no need for additional tuning: numeric choices skew small, built‑in generators
-include curated seed values, boundary values are prioritized, and swarm testing
-varies choice subspaces across runs.
+with no need for additional tuning: choices skew small to prefer interesting subspaces,
+built‑in generators include curated seed values, boundary values are prioritized,
+and swarm testing varies choice subspaces across runs.
 
 If you do have concrete examples, you can seed generators with them. This is
 similar to fuzzing dictionaries, but structural and compositional.
 
 ## How do I generate constrained data?
 
-Prefer structured generation, as heavy filtering can lead to slow tests.
+Prefer structured generation, as heavy filtering can lead to slow or failed tests.
 
 - Check if there is a ready-made generator for your case
-  (for example, `string_matches` or `int_in_range`).
+  (for example, `string_matching` or `int_in_range`).
 - Consider if you can build values satisfying the constraints directly,
   using tools like `from_fn`, `repeat`, `select`, or generator combinators.
 
@@ -132,19 +70,20 @@ Sometimes constraints are awkward to encode structurally. In those cases,
 `filter_assume` or `assume!` are the right tools. Use them deliberately
 and keep rejection rates low.
 
-## Why is my test slow?
+## Why did `check` fail with “only generated N valid tests”?
 
-Common reasons:
+The property rejected too many generated values. Common causes:
 
-- too much work inside a single test case,
-- heavy logging,
-- too many test cases rejected due to filtering.
+- `assume!` is used too often.
+- `filter_assume` predicates reject too much.
+- `repeat` steps return `Noop` too often.
 
-Try reducing per‑case work, decreasing logging, or rewriting constraints as
-structure instead of filters. The overhead of chaos_theory itself is very low,
-so slow tests are almost always about the property or system under test.
+Reduce rejection rates, generate constrained data structurally,
+or make invalid cases part of your model instead of discarding them.
 
-## What are the current limitations?
+## How do I avoid log spam from all successful `check` iterations?
 
-- No derive macro for `Arbitrary` yet.
-- Recursion handling is not done yet.
+Use `vdbg!`, `vprintln!`, or check `Source::should_log`. chaos_theory logs
+are scoped and only emitted for the failing case by default.
+
+If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.

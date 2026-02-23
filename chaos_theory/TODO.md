@@ -3,7 +3,6 @@
 ## docs
 
 - no `crate::` in doc strings
-- include faq + changelog into module docs
 - usage examples
 - skill or one-pager for coding agents
 
