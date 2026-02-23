@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 (2026-02-23)
 
-- Nothing yet.
+- Make FAQ link to API items.
 
 ## 0.2.1 (2026-02-23)
 
