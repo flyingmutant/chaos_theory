@@ -42,6 +42,7 @@ often enough to spot the issue immediately.
 `select` is how you define structured choices:
 
 ```rust
+# fn prop(src: &mut chaos_theory::Source) {
 src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
     match action {
         "insert" => { /* ... */ }
@@ -50,6 +51,7 @@ src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
         _ => unreachable!(),
     }
 });
+# }
 ```
 
 You should not encode a variant choice as `any::<u8>()` or a random number. Use
@@ -62,10 +64,12 @@ You should not encode a variant choice as `any::<u8>()` or a random number. Use
 ```rust
 use chaos_theory::Effect;
 
+# fn prop(src: &mut chaos_theory::Source) {
 src.repeat("step", |src| {
     // perform one step
     Effect::Success
 });
+# }
 ```
 
 `Effect` matters:
@@ -81,10 +85,12 @@ Honest `Effect` values make exploration and minimization much more efficient.
 Don't do this:
 
 ```rust
+# fn prop(src: &mut chaos_theory::Source) {
 let n: usize = src.any("n");
 for _ in 0..n {
     /* use src here */
 }
+# }
 ```
 
 Use `repeat` instead. `repeat` is structured and minimizes well, while manual
@@ -93,8 +99,10 @@ random loops are opaque and minimize poorly.
 Another version of the same issue is:
 
 ```rust
+# fn prop(src: &mut chaos_theory::Source) {
 let do_it: bool = src.any("do_it");
 if do_it { /* use src here */ }
+# }
 ```
 
 Prefer `maybe` or `select` so the execution shape is tracked structurally.
@@ -113,14 +121,17 @@ The most common pattern is:
 Example shape:
 
 ```rust
+# fn prop(src: &mut chaos_theory::Source) {
 src.repeat("step", |src| {
     src.select("action", &["insert", "remove", "get"], |src, action, _| {
         // apply action to SUT
         // apply action to model
         // assert invariants
         // return Effect for the chosen action
+        # todo!()
     })
 });
+# }
 ```
 
 Nested `repeat` and `select` are normal and encouraged for complex stateful systems.
@@ -155,7 +166,9 @@ are not required for everyday property tests.
 You will spend most of your time doing this:
 
 ```rust
+# fn prop(src: &mut chaos_theory::Source) {
 let v: Vec<String> = src.any("v");
+# }
 ```
 
 ### Built-Ins (`make::*`)
@@ -195,10 +208,12 @@ Useful combinators:
 Use seeds when you have real examples that should guide exploration:
 
 ```rust
-use chaos_theory::make;
-
+# use chaos_theory::{make, Source, Generator as _};
+# #[cfg(feature = "regex")]
+# fn prop(src: &mut Source) {
 let cities = ["Tokyo".to_owned(), "Moscow".to_owned(), "Shanghai".to_owned()];
 let city = make::string_matching("[A-Za-z '-]+", true).seeded(&cities, true);
+# }
 ```
 
 Built-in generators already have seeds pre-configured internally,
@@ -227,6 +242,7 @@ struct Point {
     y: i32,
 }
 
+#[derive(Debug)]
 struct PointGen;
 
 impl Generator for PointGen {
@@ -254,6 +270,7 @@ enum Op {
     Reset,
 }
 
+#[derive(Debug)]
 struct OpGen;
 
 impl Generator for OpGen {
@@ -293,6 +310,7 @@ Use `repeat` to build the collection:
 ```rust
 use chaos_theory::{Arbitrary, Effect, Generator, SourceRaw};
 
+#[derive(Debug)]
 struct BytesGen;
 
 impl Generator for BytesGen {

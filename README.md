@@ -48,9 +48,7 @@ you can use to reproduce the case.
 
 ## Documentation
 
-- API docs: https://docs.rs/chaos_theory
-- FAQ: [docs/FAQ.md](./docs/FAQ.md)
-- Guide: [docs/guide.md](./docs/guide.md)
+https://docs.rs/chaos_theory
 
 ## Status
 

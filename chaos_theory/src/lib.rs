@@ -50,6 +50,12 @@ you can use to reproduce the case.
   - built-in swarm testing
 - Macro-free, imperative API
 - Zero unsafe code and zero required dependencies
+
+# Documentation
+
+- [FAQ](crate::_docs::faq)
+- [Guide](crate::_docs::guide)
+- [Changelog](crate::_docs::changelog)
 */
 
 #![cfg_attr(all(test, feature = "_bench"), feature(test))]
@@ -90,6 +96,9 @@ mod tests_shrinking_challenge;
 mod unwind;
 mod util;
 mod varint;
+
+#[cfg(doc)]
+pub mod _docs;
 
 mod make_cell;
 mod make_char;
