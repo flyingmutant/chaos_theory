@@ -1,10 +1,10 @@
 # Guide
 
 This is a short guide to chaos_theory basics. It covers how to write properties with
-`Source`, with a focus on the two core building blocks after `any`: `repeat` and `select`,
-and includes an overview of generators.
+[`Source`][source], with a focus on the two core building blocks after [`any`][source_any]:
+[`repeat`][source_repeat] and [`select`][source_select], and includes an overview of generators.
 
-*This is an AI-generated document that was manually reviewed and edited.*
+*Note: original version of this document was AI-generated.*
 
 ## The Shape Of A Property
 
@@ -20,17 +20,18 @@ check(|src| {
 });
 ```
 
-`Source` gives you structured randomness. Your job is to explore the system using it.
+[`Source`][source] gives you structured randomness. Your job is to explore the system using it.
 
 ## Working With `Source`
 
 The basic operations:
 
-- `any` / `any_of` generate values from `Arbitrary` or from a generator.
-- `choose` selects an element from a slice.
-- `select` chooses a labeled variant and runs a branch.
-- `repeat` repeats a step, using `Effect` to report what happened.
-- `maybe` and `find` are for optional steps and recoverable failures.
+- [`any`][source_any] / [`any_of`][source_any_of] generate values from [`Arbitrary`][arbitrary]
+  or from a generator.
+- [`choose`][source_choose] selects an element from a slice.
+- [`select`][source_select] chooses a labeled variant and runs a branch.
+- [`repeat`][source_repeat] repeats a step, using [`Effect`][effect] to report what happened.
+- [`maybe`][source_maybe] and [`find`][source_find] are for optional steps and recoverable failures.
 
 Labels matter. Use short, stable labels (like `"action"` or `"key"`). They are
 not required for chaos_theory to work, but they make replay output and
@@ -39,7 +40,7 @@ often enough to spot the issue immediately.
 
 ## `select`: Variants With Meaning
 
-`select` is how you define structured choices:
+[`select`][source_select] is how you define structured choices:
 
 ```rust
 # fn prop(src: &mut chaos_theory::Source) {
@@ -55,11 +56,12 @@ src.select("action", &["insert", "remove", "get"], |src, action, _ix| {
 ```
 
 You should not encode a variant choice as `any::<u8>()` or a random number. Use
-`select` so replay and minimization can preserve the variant choice when necessary.
+[`select`][source_select] so replay and minimization can preserve the variant choice
+when necessary.
 
 ## `repeat`: Exploration Over Time
 
-`repeat` is the right way to explore sequences:
+[`repeat`][source_repeat] is the right way to explore sequences:
 
 ```rust
 use chaos_theory::Effect;
@@ -72,13 +74,13 @@ src.repeat("step", |src| {
 # }
 ```
 
-`Effect` matters:
+[`Effect`][effect] matters:
 
-- `Success`: useful work was done.
-- `Change`: state may have changed, but no clear progress.
-- `Noop`: nothing happened to the system (example: action was non-applicable).
+- [`Success`][effect_success]: useful work was done.
+- [`Change`][effect_change]: state may have changed, but no clear progress.
+- [`Noop`][effect_noop]: nothing happened to the system (example: action was non-applicable).
 
-Honest `Effect` values make exploration and minimization much more efficient.
+Honest [`Effect`][effect] values make exploration and minimization much more efficient.
 
 ### Common Anti-Pattern: Manual Random Loops
 
@@ -93,8 +95,8 @@ for _ in 0..n {
 # }
 ```
 
-Use `repeat` instead. `repeat` is structured and minimizes well, while manual
-random loops are opaque and minimize poorly.
+Use [`repeat`][source_repeat] instead. `repeat` is structured and minimizes
+well, while manual random loops are opaque and minimize poorly.
 
 Another version of the same issue is:
 
@@ -105,7 +107,8 @@ if do_it { /* use src here */ }
 # }
 ```
 
-Prefer `maybe` or `select` so the execution shape is tracked structurally.
+Prefer [`maybe`][source_maybe] or [`select`][source_select] so the execution shape is tracked
+structurally.
 
 ## Stateful Testing (State Machines)
 
@@ -115,7 +118,7 @@ already the "advanced" mode.
 The most common pattern is:
 
 1. Build the system under test and a reference model.
-2. `repeat` a step that selects and applies an action.
+2. [`repeat`][source_repeat] a step that selects and applies an action.
 3. Assert invariants or compare against the model.
 
 Example shape:
@@ -134,29 +137,33 @@ src.repeat("step", |src| {
 # }
 ```
 
-Nested `repeat` and `select` are normal and encouraged for complex stateful systems.
+Nested [`repeat`][source_repeat] and [`select`][source_select] are normal and encouraged
+for complex stateful systems.
 
 ## Filtering And Validity
 
 If you need to reject invalid values, prefer recoverable filtering:
 
-- `Generator::filter` returns `Option` so you can handle failure without panicking.
-- `filter_assume` and `assume!` mark the whole test case as invalid when the condition fails.
+- [`Generator::filter`][generator_filter] returns `Option` so you can handle failure
+  without panicking.
+- [`filter_assume`][generator_filter_assume] and [`assume!`][assume] mark the whole test case as
+  invalid when the condition fails.
 
-Too many invalid cases will make `check` fail early because it cannot generate enough valid tests.
+Too many invalid cases will make [`check`][check] fail early because it cannot generate enough
+valid tests.
 
 ## Debugging Output
 
-Use `should_log`, `vdbg!`, and `vprintln!` so output appears only for the
-failing case. It keeps tests fast and logs focused.
+Use [`should_log`][source_should_log], [`vdbg!`][vdbg], and [`vprintln!`][vprintln] so output
+appears only for the failing case. It keeps tests fast and logs focused.
 
 ## Generators
 
 Most users never write custom generators. You can get far with:
 
-- built-in generators in `make::*`,
-- composing with `select`, `repeat`, and `any`,
-- occasional use of `from_fn` if needed.
+- built-in generators in [`make::*`][make],
+- composing with [`select`][source_select], [`repeat`][source_repeat], and [`any`][source_any],
+- occasional use of [`from_fn`][make_from_fn] if needed.
 
 Custom generators are useful for domain types or complex invariants, but they
 are not required for everyday property tests.
@@ -175,14 +182,22 @@ let v: Vec<String> = src.any("v");
 
 Common categories:
 
-- Core: `just`, `one_of`, `mix_of`, `option`, `result`
-- Numbers: `int_in_range`, `float_in_range`
-- Strings and chars: `string`, `string_with_size`, `char_ascii`, `byte_ascii`
-- Collections: `vec`, `vec_with_size`, `btree_map`, `hash_map`, `btree_set`, `hash_set`
-- Time: `duration_in_range`, `system_time_in_range`
-- Sync and cells: `mutex`, `rw_lock`, `once_lock`, `cell`, `ref_cell`
-- Regex (feature-gated): `string_matching`, `bytes_matching`
-- Extra crates (feature-gated): `hashbrown`, `indexmap`, `ordered_float`, `tinyvec`, `ecow`
+- Core: [`just`][make_just], [`one_of`][make_one_of], [`mix_of`][make_mix_of],
+  [`option`][make_option], [`result`][make_result]
+- Numbers: [`int_in_range`][make_int_in_range], [`float_in_range`][make_float_in_range]
+- Strings and chars: [`string`][make_string], [`string_with_size`][make_string_with_size],
+  [`char_ascii`][make_char_ascii], [`byte_ascii`][make_byte_ascii]
+- Collections: [`vec`][make_vec], [`vec_with_size`][make_vec_with_size],
+  [`btree_map`][make_btree_map], [`hash_map`][make_hash_map],
+  [`btree_set`][make_btree_set], [`hash_set`][make_hash_set]
+- Time: [`duration_in_range`][make_duration_in_range],
+  [`system_time_in_range`][make_system_time_in_range]
+- Sync and cells: [`mutex`][make_mutex], [`rw_lock`][make_rw_lock],
+  [`once_lock`][make_once_lock], [`cell`][make_cell], [`ref_cell`][make_ref_cell]
+- Regex (feature-gated): [`string_matching`][make_string_matching],
+  [`bytes_matching`][make_bytes_matching]
+- Extra crates (feature-gated): [`hashbrown`][make_hashbrown], [`indexmap`][make_indexmap],
+  [`ordered_float`][make_ordered_float], [`tinyvec`][make_tinyvec], [`ecow`][make_ecow]
 
 If a generator exists, prefer using it instead of re-implementing the logic.
 
@@ -198,10 +213,10 @@ without you having to tune distributions by hand.
 
 Useful combinators:
 
-- `map` and `map_reversible` for transforms
-- `or` and `mix_of` for alternatives
-- `collect` and `collect_n` for collections
-- `and_then` for flat-map style composition
+- [`map`][generator_map] and [`map_reversible`][generator_map_reversible] for transforms
+- [`or`][generator_or] and [`mix_of`][make_mix_of] for alternatives
+- [`collect`][generator_collect] and [`collect_n`][generator_collect_n] for collections
+- [`and_then`][generator_and_then] for flat-map style composition
 
 ### Seeded Generation
 
@@ -216,17 +231,17 @@ let city = make::string_matching("[A-Za-z '-]+", true).seeded(&cities, true);
 # }
 ```
 
-Built-in generators already have seeds pre-configured internally,
-so use `seeded` only to provide seeds that are specific to your domain.
+Built-in generators already have seeds pre-configured internally, so use [`seeded`][generator_seeded]
+only to provide seeds that are specific to your domain.
 
 ### Writing Custom Generators
 
 There are two main approaches:
 
-- Use `make::from_fn` for small generators
-- Implement `Generator` directly for full control
+- Use [`make::from_fn`][make_from_fn] for small generators
+- Implement [`Generator`][generator] directly for full control
 
-Most of this becomes unnecessary once a derive macro for `Arbitrary` exists, but
+Most of this becomes unnecessary once a derive macro for [`Arbitrary`][arbitrary] exists, but
 it is still useful for domain-specific logic.
 
 #### Struct-Like Types
@@ -258,7 +273,7 @@ impl Generator for PointGen {
 
 #### Enum-Like Types
 
-Use `select` to choose a variant with a stable label:
+Use [`select`][sourceraw_select] to choose a variant with a stable label:
 
 ```rust
 use core::num::NonZero;
@@ -305,7 +320,7 @@ impl Generator for OpGen {
 
 #### Collection-Like Types
 
-Use `repeat` to build the collection:
+Use [`repeat`][sourceraw_repeat] to build the collection:
 
 ```rust
 use chaos_theory::{Arbitrary, Effect, Generator, SourceRaw};
@@ -344,4 +359,74 @@ The rule is simple: if you generate sub-values, pass the corresponding `example`
 sub-values into their generators. This is how chaos_theory reconstructs known
 values and minimizes effectively.
 
-Avoid calling `Generator::next` directly. Use `Source::any` or `Source::any_of` instead.
+Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][source_any] or
+[`Source::any_of`][source_any_of] instead.
+
+[source]: crate::Source
+[source_any]: crate::Source::any
+[source_any_of]: crate::Source::any_of
+[source_choose]: crate::Source::choose
+[source_select]: crate::Source::select
+[source_repeat]: crate::Source::repeat
+[source_maybe]: crate::Source::maybe
+[source_find]: crate::Source::find
+[source_should_log]: crate::Source::should_log
+[sourceraw_select]: crate::SourceRaw::select
+[sourceraw_repeat]: crate::SourceRaw::repeat
+
+[effect]: crate::Effect
+[effect_success]: crate::Effect::Success
+[effect_change]: crate::Effect::Change
+[effect_noop]: crate::Effect::Noop
+
+[arbitrary]: crate::Arbitrary
+[generator]: crate::Generator
+[generator_filter]: crate::Generator::filter
+[generator_filter_assume]: crate::Generator::filter_assume
+[generator_map]: crate::Generator::map
+[generator_map_reversible]: crate::Generator::map_reversible
+[generator_or]: crate::Generator::or
+[generator_collect]: crate::Generator::collect
+[generator_collect_n]: crate::Generator::collect_n
+[generator_and_then]: crate::Generator::and_then
+[generator_seeded]: crate::Generator::seeded
+[generator_next]: crate::Generator::next
+
+[check]: crate::check
+[assume]: crate::assume
+[vdbg]: crate::vdbg
+[vprintln]: crate::vprintln
+
+[make]: crate::make
+[make_from_fn]: crate::make::from_fn
+[make_mix_of]: crate::make::mix_of
+[make_just]: crate::make::just
+[make_one_of]: crate::make::one_of
+[make_option]: crate::make::option
+[make_result]: crate::make::result
+[make_int_in_range]: crate::make::int_in_range
+[make_float_in_range]: crate::make::float_in_range
+[make_string]: crate::make::string
+[make_string_with_size]: crate::make::string_with_size
+[make_char_ascii]: crate::make::char_ascii
+[make_byte_ascii]: crate::make::byte_ascii
+[make_vec]: crate::make::vec
+[make_vec_with_size]: crate::make::vec_with_size
+[make_btree_map]: crate::make::btree_map
+[make_hash_map]: crate::make::hash_map
+[make_btree_set]: crate::make::btree_set
+[make_hash_set]: crate::make::hash_set
+[make_duration_in_range]: crate::make::duration_in_range
+[make_system_time_in_range]: crate::make::system_time_in_range
+[make_mutex]: crate::make::mutex
+[make_rw_lock]: crate::make::rw_lock
+[make_once_lock]: crate::make::once_lock
+[make_cell]: crate::make::cell
+[make_ref_cell]: crate::make::ref_cell
+[make_string_matching]: crate::make::string_matching
+[make_bytes_matching]: crate::make::bytes_matching
+[make_hashbrown]: crate::make::hashbrown
+[make_indexmap]: crate::make::indexmap
+[make_ordered_float]: crate::make::ordered_float
+[make_tinyvec]: crate::make::tinyvec
+[make_ecow]: crate::make::ecow
