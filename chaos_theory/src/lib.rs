@@ -38,7 +38,7 @@ fn slug_and_id_roundtrip() {
 ```
 
 When a failure happens, `chaos_theory` prints a `CHAOS_THEORY_REPLAY=...` string
-you can use to reproduce the (typically already minimized) case.
+you can use to reproduce the case.
 
 # Highlights
 
