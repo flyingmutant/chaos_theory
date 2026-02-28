@@ -22,7 +22,7 @@ chaos_theory is built around simple macro-free imperative API, has fuzzing suppo
 and cool tricks like built-in swarm testing and example-based data generation.
 
 `proptest` is more mature and feature‑rich; chaos_theory is newer and currently
-lacks important features like derive macro and recursion helpers.
+lacks some important features like recursion helpers.
 
 ## How is it different from `arbitrary` plus `libfuzzer_sys`?
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add optional `derive` feature with `#[derive(chaos_theory::Arbitrary)]` support.
+
 ## 0.2.2 (2026-02-23)
 
 - Make FAQ link to API items.

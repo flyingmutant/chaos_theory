@@ -31,5 +31,4 @@
 
 ## features
 
-- derive macro
 - consider saving failures, at least temporarily

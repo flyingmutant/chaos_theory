@@ -234,6 +234,31 @@ let city = make::string_matching("[A-Za-z '-]+", true).seeded(&cities, true);
 Built-in generators already have seeds pre-configured internally, so use [`seeded`][generator_seeded]
 only to provide seeds that are specific to your domain.
 
+### Deriving `Arbitrary`
+
+For most domain types, prefer derive instead of hand-writing generators.
+
+Enable derive support:
+
+```toml
+[dev-dependencies]
+chaos_theory = { version = "0.3", features = ["derive"] }
+```
+
+Then derive:
+
+```rust
+# #[cfg(feature = "derive")]
+#[derive(Debug, chaos_theory::Arbitrary)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+```
+
+Derive-generated implementations follow the same rules as hand-written ones:
+variant choices are structural (`select`) and `example` is threaded through fields.
+
 ### Writing Custom Generators
 
 There are two main approaches:
@@ -241,8 +266,8 @@ There are two main approaches:
 - Use [`make::from_fn`][make_from_fn] for small generators
 - Implement [`Generator`][generator] directly for full control
 
-Most of this becomes unnecessary once a derive macro for [`Arbitrary`][arbitrary] exists, but
-it is still useful for domain-specific logic.
+With derive support for [`Arbitrary`][arbitrary], most of this is unnecessary for plain data
+models, but it is still useful for domain-specific logic.
 
 #### Struct-Like Types
 

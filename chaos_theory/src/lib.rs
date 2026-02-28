@@ -48,7 +48,7 @@ you can use to reproduce the case.
   - structural mutations and crossover
   - example-guided generation
   - built-in swarm testing
-- Macro-free, imperative API
+- Macro-free, imperative API (with optional derive macro for [`Arbitrary`])
 - Zero unsafe code and zero required dependencies
 
 # Documentation
@@ -64,6 +64,9 @@ you can use to reproduce the case.
 extern crate alloc;
 #[cfg(all(test, feature = "_bench"))]
 extern crate test;
+
+#[cfg(feature = "derive")]
+pub use chaos_theory_derive::Arbitrary;
 
 use std::path::Path;
 

@@ -43,7 +43,7 @@ you can use to reproduce the case.
   - structural mutations and crossover
   - example-guided generation
   - built-in swarm testing
-- Macro-free, imperative API
+- Macro-free, imperative API (with optional derive macro for `Arbitrary`)
 - Zero unsafe code and zero required dependencies
 
 ## Documentation
@@ -55,7 +55,6 @@ https://docs.rs/chaos_theory
 Beta – chaos_theory works well and is useful, but does not guarantee API stability.
 
 Notable gaps:
-- Derive macro for `Arbitrary`
 - Proper recursive generators
 
 ## Contributing

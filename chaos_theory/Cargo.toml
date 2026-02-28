@@ -23,7 +23,8 @@ workspace = true
 
 [features]
 # default = ["nightly"]
-all = ["ecow", "hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
+all = ["derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
+derive = ["dep:chaos_theory_derive"]
 ecow = ["dep:ecow"]
 hashbrown = ["dep:hashbrown"]
 indexmap = ["dep:indexmap"]
@@ -35,6 +36,7 @@ nightly = ["_bench"]
 _bench = []
 
 [dependencies]
+chaos_theory_derive = { workspace = true, optional = true }
 ecow = { workspace = true, optional = true }
 hashbrown = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true }
