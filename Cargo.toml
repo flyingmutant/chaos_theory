@@ -8,7 +8,7 @@ opt-level = 1
 debug = false
 
 [workspace.package]
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
@@ -75,4 +75,4 @@ tinyvec = "1.10.0"
 xshell = "0.2.6"
 
 chaos_theory_core = { path = "chaos_theory_core" }
-chaos_theory_derive = { version = "0.2.2", path = "chaos_theory_derive" }
+chaos_theory_derive = { version = "0.3.0", path = "chaos_theory_derive" }

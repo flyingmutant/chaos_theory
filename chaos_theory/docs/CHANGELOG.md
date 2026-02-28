@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 (2026-02-28)
 
 - Add optional `derive` feature with `#[derive(chaos_theory::Arbitrary)]` support.
 
