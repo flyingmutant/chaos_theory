@@ -12,7 +12,6 @@ extern crate alloc;
 extern crate std;
 
 mod label;
-mod prng;
 mod tracer;
 
 pub use tracer::{SpanId, Tracer};

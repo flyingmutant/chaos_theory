@@ -1,11 +1,11 @@
 /*!
-Version of `chaos_theory` built on top of `chaos_theory_core`.
+Next version of `chaos_theory`.
 */
 
 #![expect(missing_docs)] // TODO
 
+mod context;
 mod env;
-mod source;
 
+pub use context::Context;
 pub use env::Env;
-pub use source::Source;

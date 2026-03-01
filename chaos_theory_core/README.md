@@ -1,5 +1,23 @@
 # chaos_theory core
 
+## a plan?
+
+- hard mode first: context-dependent generation
+- lean into forward mode
+- "what is happening" for obs
+  - trace-first
+    - create/enter/exit span with a label
+    - wha
+  - cmplog-friendly
+  - allow to query where we are in the trace (including globally, across many runs)
+    - the coordinates should allow to encode stateful generation
+    - encode entity creation, reset etc., choice from a set with a stable key
+  - use this knowledge to generate pseudo-random values
+    - auto-regressively work with previously generated trace parts
+- composable specification of behavior
+  - data (shape) + functions (stateless) + classes (stateful)
+- generate libraries for all languages (except rust)
+
 ## new ideas
 
 - skip "value"/generator things almost completely; the core is pseudo-random process control (that may not generate anything, really)

@@ -34,7 +34,7 @@ enum Event {
     SpanNew { span: SpanId, parent: SpanId },
     SpanEnter { span: SpanId },
     SpanExit { span: SpanId },
-    SpanAttrLabel { span: SpanId, label: Label },
+    SpanLabel { span: SpanId, label: Label },
 }
 
 enum SpanKind {
@@ -134,13 +134,47 @@ impl Tracer {
         self.trace.push(Event::SpanExit { span });
     }
 
-    pub fn span_attr_label(&mut self, span: SpanId, label: &str) {
+    pub fn span_label(&mut self, span: SpanId, label: &str) {
         debug_assert!(self.span_exists(span));
         self.span_mut(span).label = Label::from(label);
-        self.trace.push(Event::SpanAttrLabel {
+        self.trace.push(Event::SpanLabel {
             span,
             label: Label::from(label),
         });
+    }
+
+    // we only have one kind of progress per span
+    pub fn span_progress_require(&mut self, span: SpanId, progress_min: u64, progress_max: u64) {
+        debug_assert!(self.span_exists(span));
+        debug_assert!(progress_min <= progress_max);
+        // assert is not a repeat yet
+        todo!()
+    }
+
+    pub fn span_progress(&mut self, span: SpanId, _progress: Option<i64>) {
+        debug_assert!(self.span_exists(span));
+        // assert parent is repeat
+        todo!()
+    }
+
+    pub fn span_variants_num(&mut self, span: SpanId, _n: u32) {
+        debug_assert!(self.span_exists(span));
+        // assert is not a select yet
+        todo!()
+    }
+
+    // TODO: bad, we need possibility set as a separate entity
+    // TODO: use some kind of anchor?
+    pub fn span_variants_label(&mut self, span: SpanId, _i: u32, _label: &str) {
+        debug_assert!(self.span_exists(span));
+        // assert span is select & i is in bounds
+        todo!()
+    }
+
+    pub fn span_variant(&mut self, span: SpanId, _i: u32, _label: &str) {
+        debug_assert!(self.span_exists(span));
+        // assert parent is select & i is in bounds
+        todo!()
     }
 }
 

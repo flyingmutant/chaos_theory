@@ -1,6 +1,6 @@
 [package]
 name = "chaos_theory_v2"
-description = "Version of chaos_theory built on top of chaos_theory_core"
+description = "Next version of chaos_theory"
 publish = false
 
 version.workspace = true
