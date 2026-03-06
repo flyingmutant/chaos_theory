@@ -156,11 +156,30 @@ fn run_asm(sh: &Shell, filter: Option<String>) -> Result<()> {
 fn run_ci(sh: &Shell, all: bool, full: bool, package: &str) -> Result<()> {
     run_lint(sh, all, package, full)?;
     run_test(sh, all, package, "")?;
+    if package.is_empty() || package == "chaos_theory" {
+        run_no_std(sh)?;
+    }
     if full {
         run_bench(sh, all, true, package, "")?;
         run_spell(sh)?;
     }
 
+    Ok(())
+}
+
+fn run_no_std(sh: &Shell) -> Result<()> {
+    cmd!(
+        sh,
+        "cargo check -p chaos_theory --no-default-features --features no_std --target wasm32-unknown-unknown --quiet"
+    )
+    .env("RUSTFLAGS", "-D warnings")
+    .run()?;
+    cmd!(
+        sh,
+        "cargo check -p chaos_theory --no-default-features --features no_std,derive --target wasm32-unknown-unknown --quiet"
+    )
+    .env("RUSTFLAGS", "-D warnings")
+    .run()?;
     Ok(())
 }
 
@@ -192,12 +211,17 @@ fn run_lint(sh: &Shell, all: bool, package: &str, nightly: bool) -> Result<()> {
     for &dir in root_dirs(all) {
         let _guard = sh.push_dir(dir);
         cmd!(sh, "cargo fmt --check {package_args...}").run()?;
-        cmd!(
-            sh,
-            "cargo check --all-targets --no-default-features --quiet {package_args...}"
-        )
-        .env("RUSTFLAGS", "-D warnings")
-        .run()?;
+        cmd!(sh, "cargo check --all-targets --quiet {package_args...}")
+            .env("RUSTFLAGS", "-D warnings")
+            .run()?;
+        if dir.is_empty() && (package.is_empty() || package == "chaos_theory") {
+            cmd!(
+                sh,
+                "cargo check -p chaos_theory --no-default-features --features no_std --quiet"
+            )
+            .env("RUSTFLAGS", "-D warnings")
+            .run()?;
+        }
         let feat = root_dir_all_features(dir, false);
         cmd!(
             sh,

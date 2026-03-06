@@ -23,14 +23,16 @@ rustdoc-args = ["--cfg", "docsrs"]
 workspace = true
 
 [features]
-# default = ["nightly"]
-all = ["derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
+default = ["std"]
+all = ["std", "derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
+std = []
+no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
 ecow = ["dep:ecow"]
 hashbrown = ["dep:hashbrown"]
 indexmap = ["dep:indexmap"]
 ordered_float = ["dep:ordered-float"]
-regex = ["dep:regex", "dep:regex-syntax"]
+regex = ["std", "dep:regex", "dep:regex-syntax"]
 tinyvec = ["dep:tinyvec"]
 
 nightly = ["_bench"]
@@ -45,6 +47,7 @@ ordered-float = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 regex-syntax = { workspace = true, optional = true }
 tinyvec = { workspace = true, optional = true, features = ["alloc"] }
+libm = { workspace = true, optional = true }
 
 [dev-dependencies]
 regex.workspace = true

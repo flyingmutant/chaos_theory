@@ -1,5 +1,11 @@
 [workspace]
-members = ["chaos_theory", "chaos_theory_core", "chaos_theory_derive", "chaos_theory_v2", "xtask"]
+members = [
+  "chaos_theory",
+  "chaos_theory_core",
+  "chaos_theory_derive",
+  "chaos_theory_v2",
+  "xtask",
+]
 exclude = ["chaos_theory_example", "chaos_theory_example_fuzz"]
 resolver = "2"
 
@@ -63,6 +69,7 @@ env_logger = "0.11.8"
 hashbrown = "0.16.0"
 indexmap = "2.11.4"
 libfuzzer-sys = "0.4.12"
+libm = "0.2.16"
 log = "0.4.27"
 ordered-float = "5.1.0"
 prettyplease = "0.2"

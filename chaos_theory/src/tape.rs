@@ -4,14 +4,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::sync::Arc;
+use alloc::{string::String, sync::Arc, vec, vec::Vec};
 use core::{
     cmp::Ordering,
     fmt::{self, Debug},
     hash::{Hash as _, Hasher as _},
 };
-use std::sync::LazyLock;
 
+#[cfg(feature = "std")]
+use crate::tape_reduce::TTree;
 use crate::{
     Effect, Map, base64,
     hash::FxHasher,
@@ -20,7 +21,6 @@ use crate::{
     tape_event::{Event, InternId, MetaEvent, ScopeKind},
     tape_mutate::{MutationCache, mutate_events},
     tape_mutate_crossover::{CrossoverCache, crossover_events},
-    tape_reduce::TTree,
     tape_validate::Validator,
     varint,
 };
@@ -47,11 +47,9 @@ pub(crate) struct Tape {
     meta: Option<TapeMeta>,
 }
 
-#[cfg(target_pointer_width = "64")]
-const _: () = assert!(size_of::<Option<Tape>>() == 120);
-
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct TapeMeta {
+    empty: Arc<str>,
     interned_lookup: Vec<Arc<str>>,    // quick resolution
     interned: Map<Arc<str>, InternId>, // quick interning
 }
@@ -59,8 +57,7 @@ pub(crate) struct TapeMeta {
 impl TapeMeta {
     pub(crate) fn get(&self, id: InternId) -> Option<&Arc<str>> {
         if id.0 == 0 {
-            static EMPTY_ARC: LazyLock<Arc<str>> = LazyLock::new(|| String::new().into());
-            Some(&EMPTY_ARC)
+            Some(&self.empty)
         } else {
             let ix = id.0 - 1;
             self.interned_lookup.get(ix as usize)
@@ -98,6 +95,7 @@ impl TapeMeta {
     fn reserve(&mut self, other: &Self) {
         // TODO(meta): scale like other things in `reserve_for_replay`.
         self.interned_lookup.reserve(other.interned_lookup.len());
+        #[cfg(feature = "std")]
         self.interned.reserve(other.interned.len());
     }
 
@@ -112,6 +110,16 @@ impl TapeMeta {
                     }
                 }
             }
+        }
+    }
+}
+
+impl Default for TapeMeta {
+    fn default() -> Self {
+        Self {
+            empty: Arc::from(""),
+            interned_lookup: Vec::new(),
+            interned: Map::default(),
         }
     }
 }
@@ -223,7 +231,10 @@ impl Tape {
 
     pub(crate) fn hash(&self) -> u64 {
         // Use a seed from wyhash, to avoid starting from zero hash which stays zero when adding zeroes to it.
+        #[cfg(target_pointer_width = "64")]
         const SEED: usize = 0x2d358dccaa6c78a5;
+        #[cfg(target_pointer_width = "32")]
+        const SEED: usize = 0x93d765dd;
         let mut hasher = FxHasher::with_seed(SEED);
         self.events.hash(&mut hasher);
         hasher.finish()
@@ -529,6 +540,7 @@ impl Tape {
         )
     }
 
+    #[cfg(feature = "std")]
     pub(crate) fn into_tree(self) -> TTree {
         TTree::from_events(&self.events)
     }

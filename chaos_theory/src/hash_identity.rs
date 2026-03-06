@@ -40,5 +40,12 @@ impl Hasher for IdentityHasher {
 
 pub(crate) type IdentityBuildHasher = BuildHasherDefault<IdentityHasher>;
 
+#[cfg(feature = "std")]
 pub(crate) type NoHashSet<K> = std::collections::HashSet<K, IdentityBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub(crate) type NoHashSet<K> = alloc::collections::BTreeSet<K>;
+
+#[cfg(feature = "std")]
 pub(crate) type NoHashMap<K, V> = std::collections::HashMap<K, V, IdentityBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub(crate) type NoHashMap<K, V> = alloc::collections::BTreeMap<K, V>;

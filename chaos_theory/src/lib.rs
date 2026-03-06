@@ -59,15 +59,22 @@ you can use to reproduce the case.
 */
 
 #![cfg_attr(all(test, feature = "_bench"), feature(test))]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), allow(dead_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#[cfg(all(not(feature = "std"), not(feature = "no_std")))]
+compile_error!("Enable `feature = \"no_std\"` when building `chaos_theory` without `std`.");
 
 extern crate alloc;
+#[cfg(feature = "derive")]
+extern crate self as chaos_theory;
 #[cfg(all(test, feature = "_bench"))]
 extern crate test;
 
 #[cfg(feature = "derive")]
 pub use chaos_theory_derive::Arbitrary;
 
+#[cfg(feature = "std")]
 use std::path::Path;
 
 mod base64;
@@ -84,15 +91,17 @@ mod num;
 mod permute;
 mod rand;
 mod range;
+#[cfg(feature = "std")]
 mod reduce;
 mod source;
 mod tape;
 mod tape_event;
 mod tape_mutate;
 mod tape_mutate_crossover;
+#[cfg(feature = "std")]
 mod tape_reduce;
 mod tape_validate;
-#[cfg(test)]
+#[cfg(any(test, all(not(feature = "std"), feature = "derive")))]
 mod tests;
 #[cfg(test)]
 mod tests_shrinking_challenge;
@@ -122,6 +131,7 @@ mod make_ordered_float;
 mod make_regex;
 mod make_special;
 mod make_string;
+#[cfg(feature = "std")]
 mod make_sync;
 mod make_time;
 #[cfg(feature = "tinyvec")]
@@ -149,6 +159,7 @@ pub mod make {
     pub use crate::make_regex::*;
     pub use crate::make_special::*;
     pub use crate::make_string::*;
+    #[cfg(feature = "std")]
     pub use crate::make_sync::*;
     pub use crate::make_time::*;
 
@@ -196,6 +207,7 @@ pub mod make {
 ///
 /// To customize the `check` behavior, use [`Env::custom`] and [`Env::check`]
 /// (or specify environment variables mentioned in [`Config::env`](crate::Config::env) documentation).
+#[cfg(feature = "std")]
 pub fn check(prop: impl Fn(&mut Source)) {
     Env::new().check(prop);
 }
@@ -214,6 +226,7 @@ pub fn check(prop: impl Fn(&mut Source)) {
 /// # Errors
 ///
 /// `fuzz_write_seed` fails when valid test case can not be generated or in case of a filesystem error.
+#[cfg(feature = "std")]
 pub fn fuzz_write_seed(
     seed_dir: impl AsRef<Path>,
     prop: impl Fn(&mut Source),
@@ -226,6 +239,7 @@ pub fn fuzz_write_seed(
 /// You probably want to use higher-level wrapper like
 /// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
 #[must_use]
+#[cfg(feature = "std")]
 pub fn fuzz_check(
     input: &[u8],
     out: Option<(&mut [u8], &mut usize)>,
@@ -239,6 +253,7 @@ pub fn fuzz_check(
 /// You probably want to use higher-level wrapper like
 /// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
 #[expect(clippy::type_complexity)]
+#[cfg(feature = "std")]
 pub fn fuzz_mutate(
     data: &mut [u8],
     size: usize,
@@ -254,6 +269,7 @@ pub fn fuzz_mutate(
 ///
 /// You probably want to use higher-level wrapper like
 /// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
+#[cfg(feature = "std")]
 pub fn fuzz_mutate_crossover(
     input: &[u8],
     other: &[u8],
@@ -264,5 +280,21 @@ pub fn fuzz_mutate_crossover(
     Env::new().fuzz_mutate_crossover(input, other, out, seed, allow_void)
 }
 
+/// Advance the deterministic `no_std` seed sequence by `steps`.
+///
+/// This affects default seeding in `no_std`, such as [`Env::new`].
+/// On targets without 32-bit atomics, the `no_std` fallback seed is fixed and this has no effect.
+#[cfg(not(feature = "std"))]
+pub fn jump_seed_sequence(steps: u64) {
+    rand::jump_seed_sequence(steps);
+}
+
+#[cfg(feature = "std")]
 pub(crate) type Set<K> = std::collections::HashSet<K, hash::FxBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub(crate) type Set<K> = alloc::collections::BTreeSet<K>;
+
+#[cfg(feature = "std")]
 pub(crate) type Map<K, V> = std::collections::HashMap<K, V, hash::FxBuildHasher>;
+#[cfg(not(feature = "std"))]
+pub(crate) type Map<K, V> = alloc::collections::BTreeMap<K, V>;

@@ -6,16 +6,20 @@
 
 use alloc::{
     borrow::Cow,
+    boxed::Box,
     collections::{BTreeMap, BTreeSet, BinaryHeap, LinkedList, VecDeque},
     rc::Rc,
     sync::Arc,
+    vec::Vec,
 };
+#[cfg(feature = "std")]
+use core::hash::{BuildHasher, Hash};
 use core::{
     fmt::Debug,
-    hash::{BuildHasher, Hash},
     marker::PhantomData,
     ops::{Deref, RangeBounds},
 };
+#[cfg(feature = "std")]
 use std::collections::{HashMap, HashSet};
 
 use crate::{
@@ -107,6 +111,7 @@ impl<K: Arbitrary + Ord, V: Arbitrary> Arbitrary for BTreeMap<K, V> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<T, S> Arbitrary for HashSet<T, S>
 where
     T: Arbitrary + Hash + Eq,
@@ -117,6 +122,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K, V, S> Arbitrary for HashMap<K, V, S>
 where
     K: Arbitrary + Hash + Eq,
@@ -381,6 +387,7 @@ where
     BTreeMap_ { key, value, size }
 }
 
+#[cfg(feature = "std")]
 #[derive(Debug)]
 struct HashSet_<G, S> {
     elem: G,
@@ -388,6 +395,7 @@ struct HashSet_<G, S> {
     _marker: PhantomData<S>,
 }
 
+#[cfg(feature = "std")]
 impl<G: Generator, S> Generator for HashSet_<G, S>
 where
     G::Item: Hash + Eq,
@@ -413,6 +421,7 @@ where
 }
 
 /// Create a [`HashSet`] generator.
+#[cfg(feature = "std")]
 pub fn hash_set<T, S>(elem: impl Generator<Item = T>) -> impl Generator<Item = HashSet<T, S>>
 where
     T: Debug + Hash + Eq,
@@ -422,6 +431,7 @@ where
 }
 
 /// Create a [`HashSet`] generator with a specified size range.
+#[cfg(feature = "std")]
 pub fn hash_set_with_size<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
@@ -438,6 +448,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 #[derive(Debug)]
 struct HashMap_<GK, GV, S> {
     key: GK,
@@ -446,6 +457,7 @@ struct HashMap_<GK, GV, S> {
     _marker: PhantomData<S>,
 }
 
+#[cfg(feature = "std")]
 impl<GK: Generator, GV: Generator, S> Generator for HashMap_<GK, GV, S>
 where
     GK::Item: Hash + Eq,
@@ -478,6 +490,7 @@ where
 }
 
 /// Create a [`HashMap`] generator.
+#[cfg(feature = "std")]
 pub fn hash_map<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
@@ -491,6 +504,7 @@ where
 }
 
 /// Create a [`HashMap`] generator with a specified size range.
+#[cfg(feature = "std")]
 pub fn hash_map_with_size<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,

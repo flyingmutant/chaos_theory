@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::sync::Arc;
+use alloc::{string::String, sync::Arc, vec::Vec};
 use core::{fmt::Debug, fmt::Display, num::NonZero};
 
 use crate::{Arbitrary, Effect, Generator, SourceRaw, make, tape::TapeMeta, varint};

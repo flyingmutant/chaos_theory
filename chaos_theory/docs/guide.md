@@ -22,6 +22,20 @@ check(|src| {
 
 [`Source`][source] gives you structured randomness. Your job is to explore the system using it.
 
+## `no_std` Usage
+
+`chaos_theory` enables `std` by default. To use it in `no_std + alloc`, disable defaults:
+
+```toml
+[dependencies]
+chaos_theory = { version = "0.3", default-features = false, features = ["no_std", "derive"] }
+```
+
+In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceRaw`,
+`Env::example`, `make::*` core/alloc generators), while `check` and fuzzing APIs remain `std`-only.
+`Config::env(true)` does not read environment variables in `no_std`.
+Default seeding is deterministic there and can be advanced with `jump_seed_sequence`.
+
 ## Working With `Source`
 
 The basic operations:

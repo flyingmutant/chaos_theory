@@ -4,19 +4,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use core::{
-    fmt::Debug,
-    ops::{Bound, RangeBounds},
-    time::Duration,
-};
+#[cfg(feature = "std")]
+use core::ops::Bound;
+use core::{fmt::Debug, ops::RangeBounds, time::Duration};
+#[cfg(feature = "std")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, range::Range};
+#[cfg(feature = "std")]
+use crate::Tweak;
+use crate::{Arbitrary, Generator, Ranged, SourceRaw, make, range::Range};
 
 const NANOS_PER_SEC: u32 = 1_000_000_000;
 const DURATION_SMALLEST: Duration = Duration::new(0, 1);
+#[cfg(feature = "std")]
 const DURATION_SMALLEST_SYSTEM_TIME: Duration = Duration::new(0, 100); // match Windows clock precision
+#[cfg(feature = "std")]
 const DURATION_MAX_FROM_EPOCH: Duration = Duration::from_secs(500 * 365 * 24 * 60 * 60); // 2470/01/01 00:00:00; fits in 64 bits as nanoseconds
+#[cfg(feature = "std")]
 const DURATION_ANCHOR_FROM_EPOCH: Duration = Duration::from_secs(946684800); // 2000/01/01 00:00:00
 
 impl Arbitrary for Duration {
@@ -25,6 +29,7 @@ impl Arbitrary for Duration {
     }
 }
 
+#[cfg(feature = "std")]
 impl Arbitrary for SystemTime {
     fn arbitrary() -> impl Generator<Item = Self> {
         system_time_in_range(..)
@@ -100,17 +105,20 @@ pub fn duration_in_range(r: impl RangeBounds<Duration>) -> impl Generator<Item =
     }
 }
 
+#[cfg(feature = "std")]
 fn duration_since_epoch(t: SystemTime) -> Duration {
     t.duration_since(UNIX_EPOCH)
         .expect("internal error: unable to get duration since epoch")
 }
 
+#[cfg(feature = "std")]
 fn time_since_epoch(d: Duration) -> SystemTime {
     UNIX_EPOCH
         .checked_add(d)
         .expect("internal error: unable to get time since epoch")
 }
 
+#[cfg(feature = "std")]
 impl Generator for SystemTime_ {
     type Item = SystemTime;
 
@@ -136,12 +144,14 @@ impl Generator for SystemTime_ {
     }
 }
 
+#[cfg(feature = "std")]
 struct SystemTime_ {
     range: Range<Duration>,
     before: Option<Range<Duration>>,
     after: Option<Range<Duration>>,
 }
 
+#[cfg(feature = "std")]
 impl Debug for SystemTime_ {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_tuple("SystemTime")
@@ -155,6 +165,7 @@ impl Debug for SystemTime_ {
 ///
 /// Left range bound defaults to [`UNIX_EPOCH`], right range bound defaults to 500 years since [`UNIX_EPOCH`].
 #[expect(clippy::missing_panics_doc)]
+#[cfg(feature = "std")]
 pub fn system_time_in_range(r: impl RangeBounds<SystemTime>) -> impl Generator<Item = SystemTime> {
     let min = match r.start_bound() {
         Bound::Unbounded => UNIX_EPOCH,
@@ -198,6 +209,7 @@ mod tests {
         tests::{print_debug_examples, prop_smoke},
     };
     use core::{ops::RangeBounds as _, time::Duration};
+    #[cfg(feature = "std")]
     use std::time::SystemTime;
 
     #[test]
@@ -232,6 +244,7 @@ mod tests {
         print_debug_examples(&make::arbitrary::<Duration>(), None, Ord::cmp);
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn system_time_smoke() {
         check(|src| {
@@ -239,6 +252,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn system_time_gen_in_range() {
         check(|src| {
@@ -251,6 +265,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn system_time_gen_example() {
         check(|src| {
@@ -260,6 +275,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn system_time_examples() {
         print_debug_examples(&make::arbitrary::<SystemTime>(), None, Ord::cmp);
@@ -270,6 +286,7 @@ mod tests {
 mod benches {
     use crate::{Arbitrary as _, tests::bench_gen_next};
     use core::time::Duration;
+    #[cfg(feature = "std")]
     use std::time::SystemTime;
 
     #[bench]
@@ -278,6 +295,7 @@ mod benches {
         bench_gen_next(b, &g);
     }
 
+    #[cfg(feature = "std")]
     #[bench]
     fn gen_system_time(b: &mut test::Bencher) {
         let g = SystemTime::arbitrary();

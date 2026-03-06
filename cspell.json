@@ -61,10 +61,13 @@
     "indexset",
     "Kensler",
     "libfuzzer",
+    "libm",
     "mixof",
     "MULT",
+    "mpsc",
     "nanos",
     "nocapture",
+    "nostd",
     "Nonspacing",
     "oneshot",
     "OPDD",
@@ -85,6 +88,7 @@
     "rsplit",
     "rustc",
     "rustdoc",
+    "rustup",
     "RUSTFLAGS",
     "serde",
     "Shcherbak",
@@ -92,8 +96,10 @@
     "Shortlex",
     "splitmix",
     "subsec",
+    "subchecks",
     "subtests",
     "testdata",
+    "thumbv7m",
     "tinyvec",
     "Titlecase",
     "Uninit",
@@ -108,6 +114,8 @@
     "Wyrand",
     "xshell",
     "xtask",
-    "Zipf"
+    "Zipf",
+    "eabi",
+    "ints"
   ]
 }

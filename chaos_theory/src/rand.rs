@@ -4,6 +4,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
+use core::sync::atomic::AtomicU32;
+#[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
+use core::sync::atomic::Ordering;
+
 use crate::math::{fast_reduce_u64, wide_mul};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -116,12 +121,36 @@ pub(crate) fn random_seed_32() -> u32 {
 
 /// Return a pseudo-random 64-bit seed. For `no_std` environments, a single deterministic
 /// sequence (controllable by [`jump_seed_sequence`]) is used.
+#[cfg(feature = "std")]
 #[must_use]
 pub(crate) fn random_seed() -> u64 {
     use core::hash::{BuildHasher as _, Hasher as _};
     use std::collections::hash_map::RandomState;
     RandomState::new().build_hasher().finish()
 }
+
+#[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
+static RANDOM_SEED_SEQUENCE: AtomicU32 = AtomicU32::new(1);
+
+#[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
+#[must_use]
+pub(crate) fn random_seed() -> u64 {
+    u64::from(RANDOM_SEED_SEQUENCE.fetch_add(1, Ordering::Relaxed))
+}
+
+#[cfg(all(not(feature = "std"), not(target_has_atomic = "32")))]
+#[must_use]
+pub(crate) fn random_seed() -> u64 {
+    42
+}
+
+#[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
+pub(crate) fn jump_seed_sequence(steps: u64) {
+    RANDOM_SEED_SEQUENCE.fetch_add(steps as u32, Ordering::Relaxed);
+}
+
+#[cfg(all(not(feature = "std"), not(target_has_atomic = "32")))]
+pub(crate) fn jump_seed_sequence(_steps: u64) {}
 
 // https://prng.di.unimi.it/splitmix64.c
 fn splitmix64(x: &mut u64) -> u64 {
