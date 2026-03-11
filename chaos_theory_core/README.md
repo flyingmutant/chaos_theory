@@ -3,6 +3,7 @@
 ## a plan?
 
 - hard mode first: context-dependent generation
+  - `arbitrary_given`, with mutable context?
 - lean into forward mode
 - "what is happening" for obs
   - trace-first
