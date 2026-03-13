@@ -322,14 +322,10 @@ impl Config {
         #[cfg(not(feature = "std"))]
         {
             let _ = use_env_vars;
-            let seed = self.seed.unwrap_or_else(random_seed_32);
-            let temperature = self.temperature.unwrap_or(crate::TEMPERATURE_DEFAULT);
-            let budget = self.budget.unwrap_or(BUDGET_DEFAULT);
-
             Env::with_params(
-                seed,
-                temperature,
-                budget,
+                self.seed.unwrap_or_else(random_seed_32),
+                self.temperature.unwrap_or(crate::TEMPERATURE_DEFAULT),
+                self.budget.unwrap_or(BUDGET_DEFAULT),
                 self.tape,
                 self.cover_depth.unwrap_or(COVER_DEPTH_DEFAULT),
                 self.cover_require.unwrap_or(COVER_REQUIRE_DEFAULT),
