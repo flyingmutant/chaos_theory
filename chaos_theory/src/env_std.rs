@@ -27,7 +27,6 @@ use crate::{
     tape::Tape,
     tape_mutate::MutationCache,
     tape_mutate_crossover::CrossoverCache,
-    unwind,
     unwind::PanicInfo,
 };
 
@@ -37,17 +36,6 @@ const INVALID_CHECKS_MULT: usize = 10;
 const INVALID_CHECKS_MIN: usize = 256;
 const CHECK_UNEXPECTED_NO_PANIC: &str =
     "check unexpectedly did not panic; flaky test or test code change?";
-
-pub(super) fn depth_bias_q(depth: usize) -> f64 {
-    (depth as f64).mul_add(0.25, 2.0)
-}
-
-pub(super) fn call_prop_silent<T>(
-    prop: impl FnOnce(&mut Source) -> T,
-    src: &mut Source,
-) -> Result<T, PanicInfo> {
-    unwind::catch_silent(|src| Env::call_prop(prop, src), src)
-}
 
 pub(super) fn log_value_impl(env: &Env, label: &str, v: &impl Debug) {
     let empty = "";

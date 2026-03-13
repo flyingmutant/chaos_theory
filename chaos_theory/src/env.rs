@@ -38,25 +38,6 @@ mod std_impl;
 use std_impl::FuzzInput;
 
 #[cfg(not(feature = "std"))]
-fn depth_bias_q(depth: usize) -> f64 {
-    depth as f64 * 0.25 + 2.0
-}
-
-#[cfg(feature = "std")]
-use std_impl::depth_bias_q;
-
-#[cfg(not(feature = "std"))]
-fn call_prop_silent<T>(
-    prop: impl FnOnce(&mut Source) -> T,
-    src: &mut Source,
-) -> Result<T, PanicInfo> {
-    Ok(Env::call_prop(prop, src))
-}
-
-#[cfg(feature = "std")]
-use std_impl::call_prop_silent;
-
-#[cfg(not(feature = "std"))]
 fn log_value_impl(_env: &Env, _label: &str, _v: &impl Debug) {}
 
 #[cfg(feature = "std")]
@@ -234,7 +215,10 @@ impl Env {
         prop: impl FnOnce(&mut Source) -> T,
         src: &mut Source,
     ) -> Result<T, PanicInfo> {
-        call_prop_silent(prop, src)
+        #[cfg(not(feature = "std"))]
+        return Ok(Self::call_prop(prop, src));
+        #[cfg(feature = "std")]
+        return crate::unwind::catch_silent(|src| Self::call_prop(prop, src), src);
     }
 }
 
@@ -581,7 +565,10 @@ impl Env {
         // This is a hacky way to work around recursive data generation for cases
         // where recursion is expressed in terms of size (and not e.g. tree-as-enum).
         let t = self.temperature >> (depth / 2);
-        let q = depth_bias_q(depth);
+        #[cfg(not(feature = "std"))]
+        let q = depth as f64 * 0.25 + 2.0;
+        #[cfg(feature = "std")]
+        let q = (depth as f64).mul_add(0.25, 2.0);
         let d = Biased::new_temperature(t, Some(q));
         d.sample(&mut self.rng, n)
     }
