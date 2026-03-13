@@ -7,6 +7,12 @@
 
 use core::hash::{BuildHasher, Hasher};
 
+// Avoid starting from zero hash which stays zero when adding zeroes to it.
+pub(crate) fn hasher_fixed_seed_a() -> FxHasher {
+    const SEED: u64 = SEED1.reverse_bits() ^ PREVENT_TRIVIAL_ZERO_COLLAPSE;
+    FxHasher::with_seed(SEED as usize)
+}
+
 pub(crate) fn hash_str(s: &str) -> u64 {
     hash_bytes(s.as_bytes())
 }

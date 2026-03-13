@@ -230,12 +230,7 @@ impl Tape {
     }
 
     pub(crate) fn hash(&self) -> u64 {
-        // Use a seed from wyhash, to avoid starting from zero hash which stays zero when adding zeroes to it.
-        #[cfg(target_pointer_width = "64")]
-        const SEED: usize = 0x2d358dccaa6c78a5;
-        #[cfg(target_pointer_width = "32")]
-        const SEED: usize = 0x93d765dd;
-        let mut hasher = FxHasher::with_seed(SEED);
+        let mut hasher = crate::hash::hasher_fixed_seed_a();
         self.events.hash(&mut hasher);
         hasher.finish()
     }
