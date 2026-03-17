@@ -34,20 +34,8 @@ pub(crate) fn slow_test_enabled() -> bool {
     std_impl::slow_test_enabled()
 }
 
-pub(crate) fn reproduce_inform(
-    seed: u32,
-    temperature: u8,
-    budget: usize,
-    tape: &Tape,
-    verbose: bool,
-    min: bool,
-) {
-    #[cfg(feature = "std")]
-    std_impl::reproduce_inform(seed, temperature, budget, tape, verbose, min);
-
-    #[cfg(not(feature = "std"))]
-    let _ = (seed, temperature, budget, tape, verbose, min);
-}
+#[cfg(feature = "std")]
+pub(crate) use std_impl::reproduce_inform;
 
 fn replay_format(typ: &str, seed: u32, temperature: u8, budget: usize, tape: &Tape) -> String {
     let t = match typ {

@@ -91,7 +91,7 @@ pub(super) fn slow_test_enabled() -> bool {
     param_fallback(SLOW_TEST_VAR, false, Some(&ENV), parse_bool)
 }
 
-pub(super) fn reproduce_inform(
+pub(crate) fn reproduce_inform(
     seed: u32,
     temperature: u8,
     budget: usize,
