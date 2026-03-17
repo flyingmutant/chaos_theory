@@ -404,7 +404,11 @@ where
     type Item = HashSet<G::Item, S>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let example_seq = example.map(|e| e.iter());
+        let example_seq = example.map(|e| {
+            let mut items: Vec<_> = e.iter().collect();
+            items.sort_unstable_by_key(|value| value_fingerprint(*value));
+            items.into_iter()
+        });
         let res = src.repeat(
             "<hashset>",
             example_seq,
@@ -466,7 +470,11 @@ where
     type Item = HashMap<GK::Item, GV::Item, S>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let example_seq = example.map(|e| e.iter());
+        let example_seq = example.map(|e| {
+            let mut items: Vec<_> = e.iter().collect();
+            items.sort_unstable_by_key(|(key, _)| value_fingerprint(*key));
+            items.into_iter()
+        });
         let res = src.repeat(
             "<hashmap>",
             example_seq,
@@ -522,6 +530,16 @@ where
         size,
         _marker: PhantomData,
     }
+}
+
+pub(crate) fn value_fingerprint(value: &impl core::hash::Hash) -> (u64, u64) {
+    use core::hash::Hasher as _;
+    // We assume for non-adversarial input, 128 bits of hash is enough to form a unique fingerprint.
+    let mut a = crate::hash::hasher_fixed_seed_a();
+    let mut b = crate::hash::hasher_fixed_seed_b();
+    value.hash(&mut a);
+    value.hash(&mut b);
+    (a.finish(), b.finish())
 }
 
 #[cfg(test)]

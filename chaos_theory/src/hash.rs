@@ -13,6 +13,11 @@ pub(crate) fn hasher_fixed_seed_a() -> FxHasher {
     FxHasher::with_seed(SEED as usize)
 }
 
+pub(crate) fn hasher_fixed_seed_b() -> FxHasher {
+    const SEED: u64 = SEED2.reverse_bits() + PREVENT_TRIVIAL_ZERO_COLLAPSE;
+    FxHasher::with_seed(SEED as usize)
+}
+
 pub(crate) fn hash_str(s: &str) -> u64 {
     hash_bytes(s.as_bytes())
 }

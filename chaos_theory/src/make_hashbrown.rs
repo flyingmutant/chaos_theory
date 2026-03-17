@@ -4,8 +4,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use crate::make::value_fingerprint;
 use crate::{Arbitrary, Generator, range::SizeRange};
 use crate::{Effect, OptionExt as _, SourceRaw, UNABLE_GENERATE_UNIQUE};
+use alloc::vec::Vec;
 use core::fmt::Debug;
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
@@ -50,7 +52,11 @@ where
     type Item = HashSet<G::Item, S>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let example_seq = example.map(|e| e.iter());
+        let example_seq = example.map(|e| {
+            let mut items: Vec<_> = e.iter().collect();
+            items.sort_unstable_by_key(|value| value_fingerprint(*value));
+            items.into_iter()
+        });
         let res = src.repeat(
             "<hashset>",
             example_seq,
@@ -110,7 +116,11 @@ where
     type Item = HashMap<GK::Item, GV::Item, S>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let example_seq = example.map(|e| e.iter());
+        let example_seq = example.map(|e| {
+            let mut items: Vec<_> = e.iter().collect();
+            items.sort_unstable_by_key(|(key, _)| value_fingerprint(*key));
+            items.into_iter()
+        });
         let res = src.repeat(
             "<hashmap>",
             example_seq,
