@@ -230,7 +230,7 @@ impl Env {
             let mut src = self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
             // Panic for real, unless the test is flaky.
             Self::call_prop(prop, &mut src);
-            unreachable!(
+            panic!(
                 "{CHECK_UNEXPECTED_NO_PANIC}\nPanic we were trying to reproduce ({}:{}): {}",
                 err.file, err.line, err.message
             );
@@ -269,7 +269,7 @@ impl Env {
                     self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
                 // Panic with last invalid data (to help debug the issue), unless the test is flaky.
                 Self::call_prop(prop, &mut src);
-                unreachable!("{CHECK_UNEXPECTED_NO_PANIC}");
+                panic!("{CHECK_UNEXPECTED_NO_PANIC}");
             }
         }
     }
