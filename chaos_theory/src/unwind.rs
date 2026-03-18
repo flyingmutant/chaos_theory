@@ -17,6 +17,7 @@ mod std_impl;
 // We have to resort to string prefix hacks, because using custom wrapper type with `panic_any`
 // results in a panic message just saying "Box<dyn Any>" (from `PanicHookInfo::payload_as_str`).
 pub(crate) const ASSUME_FAILED_PREFIX: &str = "[chaos_theory] assumption failed: ";
+pub(crate) const DETERMINISM_FAILED_PREFIX: &str = "[chaos_theory] determinism check failed: ";
 
 #[doc(hidden)]
 #[track_caller]
@@ -24,9 +25,14 @@ pub fn __panic_assume(msg: &str) -> ! {
     panic!("{ASSUME_FAILED_PREFIX}{msg}");
 }
 
+pub(crate) fn panic_determinism(msg: impl Display) -> ! {
+    panic!("{DETERMINISM_FAILED_PREFIX}{msg}");
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct PanicInfo {
     pub invalid_data: bool,
+    pub determinism_failure: bool,
     pub message: String,
     pub file: String,
     pub line: u32,
@@ -49,7 +55,7 @@ pub(crate) fn catch_silent<T, U>(func: impl FnOnce(T) -> U, arg: T) -> Result<U,
     Ok((func)(arg))
 }
 
-pub(crate) fn panic_message(e: Box<dyn Any + Send>) -> (String, bool) {
+pub(crate) fn panic_message(e: Box<dyn Any + Send>) -> (String, bool, bool) {
     let mut s = match e.downcast::<String>() {
         Ok(s) => *s,
         Err(e) => match e.downcast::<&str>() {
@@ -67,7 +73,8 @@ pub(crate) fn panic_message(e: Box<dyn Any + Send>) -> (String, bool) {
         s = "<panic with empty payload>".into();
     }
     let is_assume = s.starts_with(ASSUME_FAILED_PREFIX);
-    (s, is_assume)
+    let is_determinism_failure = s.starts_with(DETERMINISM_FAILED_PREFIX);
+    (s, is_assume, is_determinism_failure)
 }
 
 #[doc(hidden)]
@@ -75,7 +82,7 @@ pub const __ASSUME_FAILED_PREFIX: &str = ASSUME_FAILED_PREFIX;
 
 #[doc(hidden)]
 #[must_use]
-pub fn __panic_message(err: Box<dyn Any + Send>) -> (String, bool) {
+pub fn __panic_message(err: Box<dyn Any + Send>) -> (String, bool, bool) {
     panic_message(err)
 }
 

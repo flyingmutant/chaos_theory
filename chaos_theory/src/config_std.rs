@@ -6,7 +6,7 @@
 
 use alloc::string::String;
 use core::{
-    fmt::{Debug, Display},
+    fmt::{Debug, Display, Write as _},
     time::Duration,
 };
 use std::sync::{Once, OnceLock};
@@ -20,6 +20,7 @@ const REPLAY_VERBOSE_VAR: &str = "CHAOS_THEORY_REPLAY_VERBOSE";
 const COVER_DEPTH_VAR: &str = "CHAOS_THEORY_COVER_DEPTH";
 const COVER_REQUIRE_VAR: &str = "CHAOS_THEORY_COVER_REQUIRE";
 const CHECK_ITERS_VAR: &str = "CHAOS_THEORY_CHECK_ITERS";
+const CHECK_DETERMINISM_VAR: &str = "CHAOS_THEORY_CHECK_DETERMINISM";
 const CHECK_TIME_VAR: &str = "CHAOS_THEORY_CHECK_TIME";
 const REDUCE_TIME_VAR: &str = "CHAOS_THEORY_REDUCE_TIME";
 const PRETTY_PRINT_VAR: &str = "CHAOS_THEORY_PRETTY_PRINT";
@@ -38,6 +39,7 @@ const KNOWN_CONFIG_VARS: &[&str] = &[
     COVER_DEPTH_VAR,
     COVER_REQUIRE_VAR,
     CHECK_ITERS_VAR,
+    CHECK_DETERMINISM_VAR,
     CHECK_TIME_VAR,
     REDUCE_TIME_VAR,
     PRETTY_PRINT_VAR,
@@ -97,18 +99,30 @@ pub(crate) fn reproduce_inform(
     budget: usize,
     tape: &Tape,
     verbose: bool,
+    check_determinism: bool,
     min: bool,
 ) {
     let typ = if verbose {
         // Outputting events from fuzzer runs is more convenient, since fuzzer expects events as input, too.
+        // We also do it for determinism-related failures, which also favor event-based replay.
         super::REPLAY_TYPE_EVENTS
     } else {
+        debug_assert!(!check_determinism);
         super::REPLAY_TYPE_CHOICES
     };
     let replay = super::replay_format(typ, seed, temperature, budget, tape);
     let suffix = if min { " and minimize" } else { "" };
+    let mut env_vars = String::new();
+    let _ = write!(env_vars, "{REPLAY_VAR}={replay}");
+    if check_determinism {
+        let _ = write!(env_vars, " {CHECK_DETERMINISM_VAR}=true");
+    }
+    eprintln!("[chaos_theory] run test with `{env_vars}` to reproduce{suffix} the failure");
+}
+
+pub(crate) fn non_determinism_inform(msg: impl Display) {
     eprintln!(
-        "[chaos_theory] run test with `{REPLAY_VAR}={replay}` environment variable to reproduce{suffix} the failure"
+        "[chaos_theory] warning: determinism self-replay diverged ({msg}); enable `{CHECK_DETERMINISM_VAR}=true` to fail on replay divergence"
     );
 }
 
@@ -174,6 +188,16 @@ pub(super) fn check_iters_fallback(use_ev: bool) -> usize {
         super::CHECK_ITERS_DEFAULT,
         use_ev.then_some(&ENV),
         |s| s.chars().filter(|c| *c != '_').collect::<String>().parse(),
+    )
+}
+
+pub(super) fn check_determinism_fallback(use_ev: bool) -> bool {
+    static ENV: OnceLock<String> = OnceLock::new();
+    param_fallback(
+        CHECK_DETERMINISM_VAR,
+        super::CHECK_DETERMINISM_DEFAULT,
+        use_ev.then_some(&ENV),
+        parse_bool,
     )
 }
 

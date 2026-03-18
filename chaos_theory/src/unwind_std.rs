@@ -13,10 +13,11 @@ use super::{PanicInfo, panic_message};
 pub(super) fn catch_silent<T, U>(func: impl FnOnce(T) -> U, arg: T) -> Result<U, PanicInfo> {
     let r = __catch_silent(|| (func)(arg));
     r.map_err(|e| {
-        let (message, invalid_data) = panic_message(e);
+        let (message, invalid_data, determinism_failure) = panic_message(e);
         let (file, line, column) = SilentPanicGuard::take_location();
         PanicInfo {
             invalid_data,
+            determinism_failure,
             message,
             file,
             line,

@@ -84,6 +84,16 @@ The property rejected too many generated values. Common causes:
 Reduce rejection rates, generate constrained data structurally,
 or make invalid cases part of your model instead of discarding them.
 
+## Why did I get a "determinism self-replay diverged" warning?
+
+Your property produced a different execution trace when replayed with its own output.
+Common causes: thread-local state, global counters, system time, or other external
+dependencies that change between runs.
+
+Set `CHAOS_THEORY_CHECK_DETERMINISM=true` to turn the warning into a hard failure.
+Use [`Source::observe`][source_observe] to make internal system state visible to chaos_theory
+and help pinpoint determinism-related failures.
+
 ## How do I avoid log spam from all successful `check` iterations?
 
 Use [`vdbg!`][vdbg], [`vprintln!`][vprintln], or check
@@ -111,3 +121,4 @@ If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 [make_from_fn]: crate::make::from_fn
 [make_int_in_range]: crate::make::int_in_range
 [make_string_matching]: crate::make::string_matching
+[source_observe]: crate::Source::observe

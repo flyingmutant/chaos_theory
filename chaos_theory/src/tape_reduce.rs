@@ -130,7 +130,8 @@ impl TTree {
                 Event::Size { .. }
                 | Event::Index { .. }
                 | Event::Value { .. }
-                | Event::Token { .. } => {
+                | Event::Token { .. }
+                | Event::Observe { .. } => {
                     if fixup_repeat_size {
                         fixup_repeat_size = false;
                         let parent_id = self.node(cur_node_id).parent_id;
@@ -230,7 +231,7 @@ impl TreeNodeChild<usize> for TTreeChild {
                 (self, 0, 0, false)
             }
             Self::Choice(mut event) => {
-                if matches!(event, Event::Token { .. }) {
+                if matches!(event, Event::Token { .. } | Event::Observe { .. }) {
                     return (Self::Choice(event), 0, 0, false);
                 }
                 // Note: we minimize the choice value, not the event value.

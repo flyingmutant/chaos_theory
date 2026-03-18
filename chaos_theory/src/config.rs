@@ -17,6 +17,7 @@ const REPLAY_VERBOSE_DEFAULT: bool = false;
 const COVER_DEPTH_DEFAULT: usize = LOG_DEPTH_DEFAULT;
 const COVER_REQUIRE_DEFAULT: bool = false;
 pub(crate) const CHECK_ITERS_DEFAULT: usize = 256;
+const CHECK_DETERMINISM_DEFAULT: bool = false;
 const CHECK_TIME_DEFAULT: Duration = Duration::from_secs(30); // together with REDUCE_TIME_DEFAULT under default slow test warn timeout of 60s
 const REDUCE_TIME_DEFAULT: Duration = Duration::from_secs(25);
 const PRETTY_PRINT_DEFAULT: bool = false;
@@ -36,6 +37,9 @@ pub(crate) fn slow_test_enabled() -> bool {
 
 #[cfg(feature = "std")]
 pub(crate) use std_impl::reproduce_inform;
+
+#[cfg(feature = "std")]
+pub(crate) use std_impl::non_determinism_inform;
 
 fn replay_format(typ: &str, seed: u32, temperature: u8, budget: usize, tape: &Tape) -> String {
     let t = match typ {
@@ -83,6 +87,7 @@ pub struct Config {
     cover_depth: Option<usize>,
     cover_require: Option<bool>,
     check_iters: Option<usize>,
+    check_determinism: Option<bool>,
     check_time: Option<Duration>,
     reduce_time: Option<Duration>,
     pretty_print: Option<bool>,
@@ -135,6 +140,12 @@ impl Config {
     /// Override the number of [`Env::check`] iterations.
     pub fn with_check_iters(mut self, check_iters: usize) -> Self {
         self.check_iters = Some(check_iters);
+        self
+    }
+
+    /// Override whether [`Env::check`] enforces determinism by strict self-replay.
+    pub fn with_check_determinism(mut self, enabled: bool) -> Self {
+        self.check_determinism = Some(enabled);
         self
     }
 
@@ -213,6 +224,7 @@ impl Config {
     ///   - `CHAOS_THEORY_COVER_DEPTH`,
     ///   - `CHAOS_THEORY_COVER_REQUIRE`,
     ///   - `CHAOS_THEORY_CHECK_ITERS`,
+    ///   - `CHAOS_THEORY_CHECK_DETERMINISM`,
     ///   - `CHAOS_THEORY_CHECK_TIME`,
     ///   - `CHAOS_THEORY_REDUCE_TIME`,
     ///   - `CHAOS_THEORY_PRETTY_PRINT`,
@@ -267,6 +279,9 @@ impl Config {
             let check_iters = config
                 .check_iters
                 .unwrap_or_else(|| std_impl::check_iters_fallback(use_env_vars));
+            let check_determinism = config
+                .check_determinism
+                .unwrap_or_else(|| std_impl::check_determinism_fallback(use_env_vars));
             let check_time = config
                 .check_time
                 .unwrap_or_else(|| std_impl::check_time_fallback(use_env_vars));
@@ -297,6 +312,7 @@ impl Config {
                 cover_depth,
                 cover_require,
                 check_iters,
+                check_determinism,
                 check_time,
                 reduce_time,
                 pretty_print,
@@ -318,6 +334,7 @@ impl Config {
                 self.cover_depth.unwrap_or(COVER_DEPTH_DEFAULT),
                 self.cover_require.unwrap_or(COVER_REQUIRE_DEFAULT),
                 self.check_iters.unwrap_or(CHECK_ITERS_DEFAULT),
+                self.check_determinism.unwrap_or(CHECK_DETERMINISM_DEFAULT),
                 self.check_time.unwrap_or(CHECK_TIME_DEFAULT),
                 self.reduce_time.unwrap_or(REDUCE_TIME_DEFAULT),
                 self.pretty_print.unwrap_or(PRETTY_PRINT_DEFAULT),

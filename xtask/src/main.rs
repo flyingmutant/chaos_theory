@@ -267,6 +267,7 @@ fn run_test(sh: &Shell, all: bool, package: &str, filter: &str) -> Result<()> {
             sh,
             "cargo test {feat...} --quiet {package_args...} {filter_args...}"
         )
+        .env("CHAOS_THEORY_CHECK_DETERMINISM", "true")
         .run()?;
     }
     Ok(())

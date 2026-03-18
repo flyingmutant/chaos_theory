@@ -30,7 +30,7 @@ use crate::{
     unwind::PanicInfo,
 };
 
-use super::{Effect, Env};
+use super::{Effect, Env, ReplayMode};
 
 const INVALID_CHECKS_MULT: usize = 10;
 const INVALID_CHECKS_MIN: usize = 256;
@@ -224,12 +224,23 @@ impl Env {
                 self.temperature,
                 self.slow.budget,
                 &res.tape,
-                self.slow.replay_verbose,
+                self.slow.replay_verbose || err.determinism_failure,
+                err.determinism_failure,
                 false,
             );
-            let mut src = self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
             // Panic for real, unless the test is flaky.
-            Self::call_prop(prop, &mut src);
+            let _ = self.run_prop(
+                self.seed,
+                res.tape,
+                if err.determinism_failure {
+                    ReplayMode::Strict
+                } else {
+                    ReplayMode::Off
+                },
+                self.slow.log_depth_default,
+                false,
+                prop,
+            );
             panic!(
                 "{CHECK_UNEXPECTED_NO_PANIC}\nPanic we were trying to reproduce ({}:{}): {}",
                 err.file, err.line, err.message
@@ -303,11 +314,16 @@ impl Env {
                         "[chaos_theory/iters/{i}] starting check iteration (done: {valid} valid, {invalid} invalid)"
                     );
                 }
-                let r = {
-                    let seed = seed_gen.next() as u32;
-                    let mut src = self.start_from_seed(seed, self.slow.log_depth_silent);
-                    Self::call_prop_silent(&mut prop, &mut src)
-                };
+                let seed = seed_gen.next() as u32;
+                let replay_mode = self.shadow_replay_mode(false, Some(res.valid));
+                let r = self.run_prop(
+                    seed,
+                    Tape::default(),
+                    replay_mode,
+                    self.slow.log_depth_silent,
+                    true,
+                    &mut prop,
+                );
                 // TODO: replacing the `tape_out` with new one does not allow for allocation reuse
                 res.absorb(
                     replace(&mut self.tape_out, Tape::new(true)),
@@ -326,8 +342,15 @@ impl Env {
         } else {
             res.replay = true;
             let tape = take(&mut self.tape_replay);
-            let mut src = self.start_from_tape(self.seed, tape, self.slow.log_depth_silent);
-            let r = Self::call_prop_silent(&mut prop, &mut src);
+            let replay_mode = self.shadow_replay_mode(true, None);
+            let r = self.run_prop(
+                self.seed,
+                tape,
+                replay_mode,
+                self.slow.log_depth_silent,
+                true,
+                &mut prop,
+            );
             res.absorb(
                 replace(&mut self.tape_out, Tape::new(true)),
                 r,
@@ -345,9 +368,17 @@ impl Env {
                         );
                         trials += 1;
                     }
-                    let mut src =
-                        self.start_from_tape(self.seed, candidate_tape, self.slow.log_depth_silent);
-                    let info = Self::call_prop_silent(&mut prop, &mut src).err();
+                    let replay_mode = self.shadow_replay_mode(true, None);
+                    let info = self
+                        .run_prop(
+                            self.seed,
+                            candidate_tape,
+                            replay_mode,
+                            self.slow.log_depth_silent,
+                            true,
+                            &mut prop,
+                        )
+                        .err();
                     (replace(&mut self.tape_out, Tape::new(true)), info)
                 });
             res.tape = tape;
@@ -525,8 +556,19 @@ impl Env {
             return false;
         };
         self.tape_out = Self::fuzz_cache_take_tape_out();
-        let mut src = self.start_from_tape(fi.seed, fi.tape, self.slow.log_depth_silent);
-        let r = Self::call_prop_silent(&prop, &mut src);
+        let replay_mode = if self.slow.check_determinism {
+            ReplayMode::Strict
+        } else {
+            ReplayMode::Off
+        };
+        let r = self.run_prop(
+            fi.seed,
+            fi.tape,
+            replay_mode,
+            self.slow.log_depth_silent,
+            true,
+            &prop,
+        );
         if let Some((out, out_size)) = out {
             assert!(out.len() >= input.len());
             if let Ok(out_size_used) = FuzzInput::save_impl(out, fi.seed, &self.tape_out) {
@@ -551,11 +593,18 @@ impl Env {
                 self.slow.budget,
                 &tape,
                 true,
+                err.determinism_failure,
                 true,
             );
-            let mut s = self.start_from_tape(self.seed, tape, self.slow.log_depth_default);
             // Panic for real, unless the test is flaky.
-            prop(&mut s);
+            let _ = self.run_prop(
+                self.seed,
+                tape,
+                replay_mode,
+                self.slow.log_depth_default,
+                false,
+                prop,
+            );
         } else {
             Self::fuzz_cache_replace_tape_input(self.tape_replay);
             Self::fuzz_cache_replace_tape_out(self.tape_out);
@@ -626,5 +675,98 @@ impl Env {
                 .crossover(&other.tape, &mut rng, self.temperature, false, false, cache)
         });
         Self::fuzz_save_last_input_if_fits(out, fi)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Env;
+    use core::{cell::Cell, time::Duration};
+
+    #[test]
+    fn check_determinism_observe_mismatch_is_advisory_by_default() {
+        std::thread_local! {
+            static TOGGLE: Cell<bool> = const { Cell::new(false) };
+        }
+
+        Env::custom()
+            .with_check_iters(1)
+            .with_reduce_time(Duration::ZERO)
+            .env(false)
+            .check(|src| {
+                let value = TOGGLE.with(|toggle| {
+                    let value = u64::from(toggle.get());
+                    toggle.set(!toggle.get());
+                    value
+                });
+                src.observe("toggle", value);
+            });
+    }
+
+    #[test]
+    #[should_panic(expected = "determinism check failed: observation mismatch for `toggle`")]
+    fn check_determinism_observe_mismatch() {
+        std::thread_local! {
+            static TOGGLE: Cell<bool> = const { Cell::new(false) };
+        }
+
+        Env::custom()
+            .with_check_determinism(true)
+            .with_check_iters(1)
+            .with_reduce_time(Duration::ZERO)
+            .env(false)
+            .check(|src| {
+                let value = TOGGLE.with(|toggle| {
+                    let value = u64::from(toggle.get());
+                    toggle.set(!toggle.get());
+                    value
+                });
+                src.observe("toggle", value);
+            });
+    }
+
+    #[test]
+    #[should_panic(expected = "determinism check failed: observation mismatch for `counter`")]
+    fn check_determinism_failure_is_preserved_when_rerun_is_flaky() {
+        std::thread_local! {
+            static COUNTER: Cell<u32> = const { Cell::new(0) };
+        }
+
+        Env::custom()
+            .with_check_determinism(true)
+            .with_check_iters(1)
+            .with_reduce_time(Duration::ZERO)
+            .env(false)
+            .check(|src| {
+                let value = COUNTER.with(|counter| {
+                    let next = counter.get();
+                    counter.set(next + 1);
+                    u64::from(next != 0)
+                });
+                src.observe("counter", value);
+            });
+    }
+
+    #[test]
+    #[should_panic(expected = "self-replay failed after a successful first pass: boom")]
+    fn check_determinism_second_pass_failure() {
+        std::thread_local! {
+            static CALLS: Cell<u32> = const { Cell::new(0) };
+        }
+
+        CALLS.with(|calls| calls.set(0));
+        Env::custom()
+            .with_check_determinism(true)
+            .with_check_iters(1)
+            .with_reduce_time(Duration::ZERO)
+            .env(false)
+            .check(|_src| {
+                let call = CALLS.with(|calls| {
+                    let call = calls.get() + 1;
+                    calls.set(call);
+                    call
+                });
+                assert!(call != 2, "boom");
+            });
     }
 }

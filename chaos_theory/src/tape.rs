@@ -15,7 +15,6 @@ use core::{
 use crate::tape_reduce::TTree;
 use crate::{
     Effect, Map, base64,
-    hash::FxHasher,
     rand::DefaultRand,
     range::{Range, SizeRange},
     tape_event::{Event, InternId, MetaEvent, ScopeKind},
@@ -345,8 +344,11 @@ impl Tape {
         }
         // If we are not looking for a trailer element but see one, skip them all.
         for trailer_kind in [ScopeKind::RepeatElement, ScopeKind::SelectVariant] {
-            // ... and skip any meta events we might find before.
-            while matches!(events.get(ix), Some(Event::Meta(..))) {
+            // ... and skip any observe/meta events we might find before.
+            while matches!(
+                events.get(ix),
+                Some(Event::Observe { .. } | Event::Meta(..))
+            ) {
                 ix += 1;
             }
             while desired_kind != trailer_kind
@@ -362,6 +364,22 @@ impl Tape {
         match events.get(ix) {
             Some(Event::ScopeStart { kind, .. }) if *kind == desired_kind => (ix + 1, true),
             _ => (ix, false),
+        }
+    }
+
+    pub(crate) fn try_pop_scope_enter_exact(
+        &mut self,
+        desired_kind: ScopeKind,
+        desired_id: u64,
+    ) -> bool {
+        match self.events.get(self.event_reuse_ix as usize) {
+            Some(Event::ScopeStart { id, kind, .. })
+                if *kind == desired_kind && *id == desired_id =>
+            {
+                self.event_reuse_ix += 1;
+                true
+            }
+            _ => false,
         }
     }
 
@@ -381,6 +399,21 @@ impl Tape {
         }
     }
 
+    pub(crate) fn try_pop_scope_exit_exact(&mut self, effect: Effect) -> bool {
+        let ix = self.event_reuse_ix as usize;
+        if !matches!(self.events.get(ix), Some(Event::ScopeEnd)) || ix == 0 {
+            return false;
+        }
+        let start_ix = Self::find_prev_scope_start(&self.events, ix - 1);
+        match self.events.get(start_ix) {
+            Some(Event::ScopeStart { effect: got, .. }) if *got == effect => {
+                self.event_reuse_ix += 1;
+                true
+            }
+            _ => false,
+        }
+    }
+
     pub(crate) fn pop_scope_exit(&mut self) {
         if self.events.is_empty() {
             return;
@@ -393,7 +426,49 @@ impl Tape {
         self.event_reuse_ix = event_reuse_ix as u32;
     }
 
-    pub(crate) fn pop_choice(&mut self, budget_remaining: &mut usize) -> Option<u64> {
+    pub(crate) fn try_pop_choice_exact(&mut self, expected: &Event) -> Option<u64> {
+        let event = self.events.get(self.event_reuse_ix as usize)?;
+        let exact_match = match (event, expected) {
+            (
+                Event::Size { min, max, .. },
+                Event::Size {
+                    min: expected_min,
+                    max: expected_max,
+                    ..
+                },
+            )
+            | (
+                Event::Value { min, max, .. },
+                Event::Value {
+                    min: expected_min,
+                    max: expected_max,
+                    ..
+                },
+            ) => (*min, *max) == (*expected_min, *expected_max),
+            (
+                Event::Index { max, forced, .. },
+                Event::Index {
+                    max: expected_max,
+                    forced: expected_forced,
+                    ..
+                },
+            ) => (*max, *forced) == (*expected_max, *expected_forced),
+            (Event::Token { .. }, Event::Token { .. }) => true,
+            _ => false,
+        };
+        if !exact_match {
+            return None;
+        }
+        let value = event.unwrap_choice_value();
+        self.event_reuse_ix += 1;
+        Some(value)
+    }
+
+    pub(crate) fn pop_choice(
+        &mut self,
+        expected: &Event,
+        budget_remaining: &mut usize,
+    ) -> Option<u64> {
         if self.events.is_empty() {
             if self.choices.is_empty() {
                 return None;
@@ -409,17 +484,37 @@ impl Tape {
         if self.void_reuse_depth > 0 {
             return None;
         }
-        // Only consume and return an event if it is a choice one
-        // (for simplicity we don't care about exact event kind).
+        while matches!(
+            self.events.get(self.event_reuse_ix as usize),
+            Some(Event::Observe { .. } | Event::Meta(..))
+        ) {
+            self.event_reuse_ix += 1;
+        }
         match self.events.get(self.event_reuse_ix as usize) {
-            Some(
-                event @ (Event::Size { .. }
-                | Event::Index { .. }
-                | Event::Value { .. }
-                | Event::Token { .. }),
-            ) => {
+            Some(event @ Event::Size { .. }) if matches!(expected, Event::Size { .. }) => {
                 self.event_reuse_ix += 1;
                 Some(event.unwrap_choice_value())
+            }
+            Some(event @ Event::Index { .. }) if matches!(expected, Event::Index { .. }) => {
+                self.event_reuse_ix += 1;
+                Some(event.unwrap_choice_value())
+            }
+            Some(event @ Event::Value { .. }) if matches!(expected, Event::Value { .. }) => {
+                self.event_reuse_ix += 1;
+                Some(event.unwrap_choice_value())
+            }
+            Some(event @ Event::Token { .. }) if matches!(expected, Event::Token { .. }) => {
+                self.event_reuse_ix += 1;
+                Some(event.unwrap_choice_value())
+            }
+            Some(
+                Event::Size { .. }
+                | Event::Index { .. }
+                | Event::Value { .. }
+                | Event::Token { .. },
+            ) => {
+                self.event_reuse_ix += 1;
+                None
             }
             Some(_) => None,
             None => {
@@ -427,6 +522,20 @@ impl Tape {
                 None
             }
         }
+    }
+
+    pub(crate) fn try_pop_observe_exact(&mut self, expected: u64) -> bool {
+        match self.events.get(self.event_reuse_ix as usize) {
+            Some(Event::Observe { value: got }) if *got == expected => {
+                self.event_reuse_ix += 1;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub(crate) fn strict_replay_done(&self) -> bool {
+        self.event_reuse_ix as usize == self.events.len()
     }
 
     pub(crate) fn push_value(&mut self, v: u64, r: Range<u64>) {
@@ -443,6 +552,10 @@ impl Tape {
         let e = Event::Token { value: v };
         self.choices.push(e.unwrap_choice_value());
         self.events.push(e);
+    }
+
+    pub(crate) fn push_observe(&mut self, v: u64) {
+        self.events.push(Event::Observe { value: v });
     }
 
     pub(crate) fn push_size(&mut self, s: usize, r: SizeRange) {
@@ -468,6 +581,10 @@ impl Tape {
 
     pub(crate) fn mark_next_choice_forced(&mut self) {
         self.next_choice_forced = true;
+    }
+
+    pub(crate) fn next_choice_forced(&self) -> bool {
+        self.next_choice_forced
     }
 
     pub(crate) fn push_scope_enter(&mut self, scope_id: u64, kind: ScopeKind) -> usize {
@@ -605,7 +722,7 @@ impl Tape {
                         meta: None, // Clear meta.
                     });
                 }
-                Event::ScopeEnd => {
+                Event::ScopeEnd | Event::Observe { .. } => {
                     events.push(event);
                 }
                 Event::Size { .. }

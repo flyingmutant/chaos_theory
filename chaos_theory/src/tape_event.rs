@@ -72,6 +72,9 @@ pub(crate) enum Event {
     Token {
         value: u64,
     },
+    Observe {
+        value: u64,
+    },
     Meta(MetaEvent),
 }
 
@@ -170,7 +173,10 @@ impl Event {
                     Ok(())
                 }
             }
-            Self::ScopeEnd | Self::Meta(MetaEvent::Intern { .. }) | Self::Token { .. } => Ok(()),
+            Self::ScopeEnd
+            | Self::Meta(MetaEvent::Intern { .. })
+            | Self::Token { .. }
+            | Self::Observe { .. } => Ok(()),
             Self::Size { size, min, max } => {
                 if min > max {
                     Err("size min > size max")
@@ -215,7 +221,7 @@ impl Event {
             }
             Self::ScopeEnd => 1,
             Self::Size { .. } | Self::Index { .. } | Self::Value { .. } => 1 + varint::MAX_SIZE * 3,
-            Self::Token { .. } => 1 + varint::MAX_SIZE,
+            Self::Token { .. } | Self::Observe { .. } => 1 + varint::MAX_SIZE,
         }
     }
 
@@ -235,6 +241,7 @@ impl Event {
     const ENCODE_VALUE: u8 = b'v';
     const ENCODE_VALUE_UNBOUNDED: u8 = b'u';
     const ENCODE_TOKEN: u8 = b'T';
+    const ENCODE_OBSERVE: u8 = b'O';
     const ENCODE_META_INTERN: u8 = b'Z';
 
     #[expect(clippy::too_many_lines)]
@@ -322,6 +329,14 @@ impl Event {
                     return Err(BUFFER_TOO_SHORT);
                 }
                 buf[0] = Self::ENCODE_TOKEN;
+                buf = &mut buf[1..];
+                varint::encode(*value, buf)
+            }
+            Self::Observe { value } => {
+                if buf.is_empty() {
+                    return Err(BUFFER_TOO_SHORT);
+                }
+                buf[0] = Self::ENCODE_OBSERVE;
                 buf = &mut buf[1..];
                 varint::encode(*value, buf)
             }
@@ -434,6 +449,10 @@ impl Event {
             Self::ENCODE_TOKEN => {
                 let (value, buf) = varint::decode(buf)?;
                 Ok((Self::Token { value }, buf))
+            }
+            Self::ENCODE_OBSERVE => {
+                let (value, buf) = varint::decode(buf)?;
+                Ok((Self::Observe { value }, buf))
             }
             Self::ENCODE_META_INTERN => {
                 let (id, buf) = Self::load_u32(buf)?;
@@ -608,6 +627,9 @@ impl Event {
             Self::Token { value } => {
                 write!(f, "T({value})")
             }
+            Self::Observe { value } => {
+                write!(f, "O({value})")
+            }
             Self::Meta(MetaEvent::Intern { id, value }) => {
                 write!(f, "Z({id} -> {value:?})")
             }
@@ -637,7 +659,8 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
         Event::Index { .. } => 3,
         Event::Value { .. } => 4,
         Event::Token { .. } => 5,
-        Event::Meta(MetaEvent::Intern { .. }) => 6,
+        Event::Observe { .. } => 6,
+        Event::Meta(MetaEvent::Intern { .. }) => 7,
     });
     let variants = &[
         "start",
@@ -646,6 +669,7 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
         "index",
         "value",
         "token",
+        "observe",
         "meta_intern",
     ];
     let variants_num = NonZero::new(variants.len()).expect("internal error: no variants");
@@ -771,6 +795,14 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                 };
                 let value = src.any("value", example);
                 Event::Token { value }
+            }
+            "observe" => {
+                let example = match example {
+                    Some(Event::Observe { value }) => Some(value),
+                    _ => None,
+                };
+                let value = src.any("value", example);
+                Event::Observe { value }
             }
             "meta_intern" => {
                 let example = match example {

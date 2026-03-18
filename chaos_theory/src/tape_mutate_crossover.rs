@@ -438,7 +438,8 @@ fn crossover_overwrite_section(
             Event::Size { .. }
             | Event::Index { .. }
             | Event::Value { .. }
-            | Event::Token { .. } => {
+            | Event::Token { .. }
+            | Event::Observe { .. } => {
                 result.push(event);
                 i += 1;
                 // Advance j past the choice.
@@ -450,6 +451,7 @@ fn crossover_overwrite_section(
                                 | Event::Index { .. }
                                 | Event::Value { .. }
                                 | Event::Token { .. }
+                                | Event::Observe { .. }
                         )
                     )
                 {

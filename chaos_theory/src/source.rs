@@ -6,7 +6,12 @@
 
 #[cfg(test)]
 use core::time::Duration;
-use core::{fmt::Debug, num::NonZero, ops::RangeBounds};
+use core::{
+    fmt::Debug,
+    hash::{Hash, Hasher as _},
+    num::NonZero,
+    ops::RangeBounds,
+};
 
 #[cfg(test)]
 use crate::tape::Tape;
@@ -238,6 +243,17 @@ impl<'env> Source<'env> {
     #[must_use]
     pub fn should_log(&self) -> bool {
         self.as_ref().should_log()
+    }
+
+    /// Record a passive observation of system state.
+    ///
+    /// Currently, it is used as an additional factor to detect non-determinism in properties.
+    /// Use [`Config::with_check_determinism`](crate::Config::with_check_determinism)
+    /// to enable strict determinism enforcement.
+    pub fn observe(&mut self, label: &str, value: impl Hash) {
+        let mut hasher = crate::hash::hasher_fixed_seed_a();
+        (label, value).hash(&mut hasher);
+        self.as_mut().observe(label, hasher.finish());
     }
 
     /// Require that condition is true at least once, when running in coverage mode.

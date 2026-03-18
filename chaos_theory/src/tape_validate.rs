@@ -103,9 +103,9 @@ impl Validator {
                 }
                 _ => return Err("index choice in unexpected state"),
             },
-            Event::Value { .. } | Event::Token { .. } => match state {
+            Event::Value { .. } | Event::Token { .. } | Event::Observe { .. } => match state {
                 VS::Default => {}
-                _ => return Err("value choice in unexpected state"),
+                _ => return Err("value choice/observation in unexpected state"),
             },
             Event::Meta(meta) => {
                 // TODO(meta): check that meta events only occur at the right points relative to others; we use this property to skip them properly (e.g. we don't expect them between repeat elements)
