@@ -46,11 +46,9 @@ pub(crate) fn mutate_events(
                 n_ok += 1;
                 continue;
             }
-            Some(Event::ScopeEnd) => unreachable!("internal error: chosen scope end for mutation"),
             Some(Event::Value { value, min, max }) => {
                 mutate_value(rng, t, value, min, max, shrink_only)
             }
-            Some(Event::Token { .. } | Event::Observe { .. }) => None,
             Some(Event::Index { index, max, forced }) => {
                 debug_assert!(!forced);
                 mutate_value(rng, t, index, 0, max, shrink_only)
@@ -81,8 +79,13 @@ pub(crate) fn mutate_events(
                         .map(|s| s.min(min.saturating_add(MAX_SIZE as u64)))
                 }
             }
-            Some(Event::Meta(..)) => {
-                unreachable!("internal error: chosen meta event for mutation")
+            Some(
+                event @ (Event::ScopeEnd
+                | Event::Token { .. }
+                | Event::Observe { .. }
+                | Event::Meta(..)),
+            ) => {
+                unreachable!("internal error: chosen invalid event for mutation: {event:?}")
             }
         };
         if let Some(value) = value {
