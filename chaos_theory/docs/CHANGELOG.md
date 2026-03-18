@@ -1,11 +1,12 @@
 # Changelog
 
-## 0.3.1 (2026-03-03)
+## 0.3.1 (2026-03-18)
 
+- Add support for property determinism checking (advisory by default, enforce with `Config::with_check_determinism`)
 - Add feature-gated `std` support (`std` is default-on) and a `no_std` feature for `no_std + alloc` builds.
-- Support generation APIs and `#[derive(chaos_theory::Arbitrary)]` in `no_std + alloc`.
-- Keep checking, fuzzing, sync primitives, and `SystemTime` generators `std`-only; in `no_std`, `Config::env` ignores environment variables.
-- Add deterministic `no_std` default seeding with `jump_seed_sequence`, and add CI compile checks for `no_std` and `no_std + derive`.
+  - Support generation APIs and `#[derive(chaos_theory::Arbitrary)]` in `no_std + alloc`.
+  - Keep checking, fuzzing, sync primitives, and `SystemTime` generators `std`-only; in `no_std`, `Config::env` ignores environment variables.
+  - Add deterministic `no_std` default seeding with `jump_seed_sequence`, and add CI compile checks for `no_std` and `no_std + derive`.
 
 ## 0.3.0 (2026-02-28)
 
