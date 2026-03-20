@@ -62,6 +62,8 @@ you can use to reproduce the case.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), allow(dead_code))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#[cfg(all(feature = "std", feature = "no_std"))]
+compile_error!("`std` and `no_std` are mutually exclusive.");
 #[cfg(all(not(feature = "std"), not(feature = "no_std")))]
 compile_error!("Enable `feature = \"no_std\"` when building `chaos_theory` without `std`.");
 

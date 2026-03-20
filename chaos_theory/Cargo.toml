@@ -25,7 +25,7 @@ workspace = true
 [features]
 default = ["std"]
 all = ["std", "derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "tinyvec"]
-std = []
+std = ["ecow?/std", "indexmap?/std", "ordered-float?/std", "regex?/std", "regex-syntax?/std", "tinyvec?/std"]
 no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
 ecow = ["dep:ecow"]
@@ -44,11 +44,11 @@ ecow = { workspace = true, optional = true }
 hashbrown = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true }
 ordered-float = { workspace = true, optional = true }
-regex = { workspace = true, optional = true }
-regex-syntax = { workspace = true, optional = true }
+regex = { workspace = true, optional = true, features = ["perf", "unicode"] }
+regex-syntax = { workspace = true, optional = true, features = ["unicode"] }
 tinyvec = { workspace = true, optional = true, features = ["alloc"] }
 libm = { workspace = true, optional = true }
 
 [dev-dependencies]
-regex.workspace = true
+regex = { workspace = true, features = ["std", "perf", "unicode"] }
 libfuzzer-sys.workspace = true

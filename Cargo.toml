@@ -64,21 +64,21 @@ clippy.unreadable_literal = { level = "allow", priority = 2 }       # easier to 
 [workspace.dependencies]
 anyhow = "1.0.98"
 clap = "4.5.37"
-ecow = "0.2.6"
+ecow = { version = "0.2.6", default-features = false }
 env_logger = "0.11.8"
 hashbrown = "0.16.0"
-indexmap = "2.11.4"
+indexmap = { version = "2.11.4", default-features = false }
 libfuzzer-sys = "0.4.12"
 libm = "0.2.16"
 log = "0.4.27"
-ordered-float = "5.1.0"
+ordered-float = { version = "5.1.0", default-features = false }
 prettyplease = "0.2"
 proc-macro2 = "1.0"
 quote = "1.0"
-regex = "1.11.1"
-regex-syntax = "0.8.5"
+regex = { version = "1.11.1", default-features = false }
+regex-syntax = { version = "0.8.5", default-features = false }
 syn = { version = "2.0", default-features = false }
-tinyvec = "1.10.0"
+tinyvec = { version = "1.10.0", default-features = false }
 xshell = "0.2.6"
 
 chaos_theory_core = { path = "chaos_theory_core" }
