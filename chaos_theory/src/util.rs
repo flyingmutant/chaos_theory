@@ -114,7 +114,7 @@ impl<T> Deref for MaybeOwned<'_, T> {
     }
 }
 
-#[cfg(feature = "regex")]
+#[cfg(all(feature = "regex", feature = "std"))]
 pub(crate) fn read_lock_no_poison<T>(
     m: &std::sync::RwLock<T>,
 ) -> std::sync::RwLockReadGuard<'_, T> {
@@ -124,7 +124,7 @@ pub(crate) fn read_lock_no_poison<T>(
     }
 }
 
-#[cfg(feature = "regex")]
+#[cfg(all(feature = "regex", feature = "std"))]
 pub(crate) fn write_lock_no_poison<T>(
     m: &std::sync::RwLock<T>,
 ) -> std::sync::RwLockWriteGuard<'_, T> {

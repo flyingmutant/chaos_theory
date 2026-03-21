@@ -4,25 +4,34 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use core::{fmt::Debug, marker::PhantomData, num::NonZero, ops::Deref};
+use alloc::{borrow::ToOwned as _, string::String, sync::Arc, vec::Vec};
+use core::{
+    fmt::{self, Debug, Formatter},
+    marker::PhantomData,
+    num::NonZero,
+    ops::Deref,
+};
+#[cfg(feature = "std")]
 use std::sync::{LazyLock, RwLock};
 
 use crate::{
-    Effect, Generator, Map, OptionExt as _, Scope, SourceRaw,
+    Effect, Generator, OptionExt as _, Scope, SourceRaw,
     make::{self, CharBuf as _, next_string_impl, next_vec_impl},
     make_char::regex::{
         byte_any, byte_any_non_crlf, byte_any_non_lf, byte_class, char_class, char_non_crlf,
         char_non_lf,
     },
     range::SizeRange,
-    read_lock_no_poison, write_lock_no_poison,
 };
+#[cfg(feature = "std")]
+use crate::{Map, read_lock_no_poison, write_lock_no_poison};
 
 use regex_syntax::hir::{Class, ClassBytes, ClassUnicode, Hir, HirKind, Look};
 
 const UNABLE_GENERATE_REGEX: &str = "unable to generate value matching the regular expression";
 
-static PARSED_RE: LazyLock<RwLock<Map<String, HirInfo>>> =
+#[cfg(feature = "std")]
+static PARSED_RE: LazyLock<RwLock<Map<String, Arc<HirInfo>>>> =
     LazyLock::new(|| RwLock::new(Map::default()));
 
 struct HirInfo {
@@ -32,34 +41,41 @@ struct HirInfo {
     suffix: PrefixSuffix,
 }
 
-fn parse(expr: &str) -> Result<bool, Box<dyn core::error::Error>> {
-    let parsed = read_lock_no_poison(&PARSED_RE);
-    if let Some(hi) = parsed.get(expr) {
-        return Ok(hi.hir.properties().is_utf8());
-    }
-    drop(parsed);
-    let mut parsed = write_lock_no_poison(&PARSED_RE);
-    if let Some(hi) = parsed.get(expr) {
-        return Ok(hi.hir.properties().is_utf8());
-    }
+fn compile_hir_info(expr: &str) -> Result<Arc<HirInfo>, Box<regex_syntax::Error>> {
     let hir = regex_syntax::ParserBuilder::new()
         .utf8(false)
         .build()
         .parse(expr)?;
     let re = regex::bytes::Regex::new(expr)
         .expect("internal error: failed to compile regex after successful parse");
-    let is_utf8 = hir.properties().is_utf8();
     let (prefix, suffix) = hir_classify_prefix_suffix(&hir);
-    parsed.insert(
-        expr.to_owned(),
-        HirInfo {
-            hir,
-            re,
-            prefix,
-            suffix,
-        },
-    );
-    Ok(is_utf8)
+    Ok(Arc::new(HirInfo {
+        hir,
+        re,
+        prefix,
+        suffix,
+    }))
+}
+
+#[cfg(feature = "std")]
+fn compiled_regex(expr: &str) -> Result<Arc<HirInfo>, Box<regex_syntax::Error>> {
+    let parsed = read_lock_no_poison(&PARSED_RE);
+    if let Some(hi) = parsed.get(expr) {
+        return Ok(Arc::clone(hi));
+    }
+    drop(parsed);
+    let mut parsed = write_lock_no_poison(&PARSED_RE);
+    if let Some(hi) = parsed.get(expr) {
+        return Ok(Arc::clone(hi));
+    }
+    let hi = compile_hir_info(expr)?;
+    parsed.insert(expr.to_owned(), Arc::clone(&hi));
+    Ok(hi)
+}
+
+#[cfg(not(feature = "std"))]
+fn compiled_regex(expr: &str) -> Result<Arc<HirInfo>, regex_syntax::Error> {
+    compile_hir_info(expr)
 }
 
 #[derive(Clone, Copy)]
@@ -308,11 +324,20 @@ fn is_match(full: bool, re: &regex::bytes::Regex, b: &[u8]) -> bool {
     }
 }
 
-#[derive(Debug)]
 struct RegexString<T> {
     expr: String,
+    compiled: Arc<HirInfo>,
     fullmatch: bool,
     _marker: PhantomData<T>,
+}
+
+impl<T> Debug for RegexString<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RegexString")
+            .field("expr", &self.expr)
+            .field("fullmatch", &self.fullmatch)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<T> Generator for RegexString<T>
@@ -322,10 +347,7 @@ where
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let parsed = read_lock_no_poison(&PARSED_RE);
-        let hi = parsed
-            .get(&self.expr)
-            .expect("internal error: regular expression not found");
+        let hi = self.compiled.as_ref();
         let v = src.find("<regex>", example, |src, example| {
             let example = example.filter(|e| is_match(self.fullmatch, &hi.re, e.as_bytes()));
             let buf = next_regex_impl(src, example.map(|e| e.as_bytes()), hi, true, self.fullmatch);
@@ -372,21 +394,33 @@ pub fn string_slice_matching<T>(expr: &str, fullmatch: bool) -> impl Generator<I
 where
     T: From<String> + Deref<Target = str> + Debug,
 {
-    let is_utf8 = parse(expr).expect("invalid regular expression");
+    let compiled = compiled_regex(expr).expect("invalid regular expression");
+    let is_utf8 = compiled.hir.properties().is_utf8();
     assert!(is_utf8, "regular expression matches non-UTF-8 sequences");
     RegexString {
         expr: expr.to_owned(),
+        compiled,
         fullmatch,
         _marker: PhantomData,
     }
 }
 
-#[derive(Debug)]
 struct RegexBytes<T> {
     expr: String,
+    compiled: Arc<HirInfo>,
     utf8: bool,
     fullmatch: bool,
     _marker: PhantomData<T>,
+}
+
+impl<T> Debug for RegexBytes<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RegexBytes")
+            .field("expr", &self.expr)
+            .field("utf8", &self.utf8)
+            .field("fullmatch", &self.fullmatch)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<T> Generator for RegexBytes<T>
@@ -396,10 +430,7 @@ where
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let parsed = read_lock_no_poison(&PARSED_RE);
-        let hi = parsed
-            .get(&self.expr)
-            .expect("internal error: regular expression not found");
+        let hi = self.compiled.as_ref();
         let v = src.find("<regex>", example, |src, example| {
             let example = example.filter(|e| is_match(self.fullmatch, &hi.re, e));
             let buf = next_regex_impl(
@@ -448,9 +479,11 @@ pub fn byte_slice_matching<T>(expr: &str, fullmatch: bool) -> impl Generator<Ite
 where
     T: From<Vec<u8>> + Deref<Target = [u8]> + Debug,
 {
-    let utf8 = parse(expr).expect("invalid regular expression");
+    let compiled = compiled_regex(expr).expect("invalid regular expression");
+    let utf8 = compiled.hir.properties().is_utf8();
     RegexBytes {
         expr: expr.to_owned(),
+        compiled,
         utf8,
         fullmatch,
         _marker: PhantomData,
