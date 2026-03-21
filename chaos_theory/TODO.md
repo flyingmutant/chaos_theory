@@ -31,5 +31,4 @@
 
 ## features
 
-- `no_std` subset (at least the derive macro)
 - consider saving failures, at least temporarily
