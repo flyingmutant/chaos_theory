@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2026-03-21)
+
+- Add support for `#[chaos_theory(generator = EXPR)]` attribute for fields in derive macro
+- Better `no_std` mode
+
 ## 0.3.1 (2026-03-18)
 
 - Add support for property determinism checking (advisory by default, enforce with `Config::with_check_determinism`)
