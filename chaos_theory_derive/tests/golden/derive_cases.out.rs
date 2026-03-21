@@ -71,6 +71,21 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Wrapper<T> {
     }
 }
 
+// === CustomPoint ===
+impl ::chaos_theory::Arbitrary for CustomPoint {
+    fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
+        ::chaos_theory::make::from_fn(|
+            src: &mut ::chaos_theory::SourceRaw,
+            example: Option<&Self>|
+        {
+            Self {
+                x: src.any_of("x", odd_u8(), example.map(|e| &e.x)),
+                y: src.any("y", example.map(|e| &e.y)),
+            }
+        })
+    }
+}
+
 // === Action ===
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
@@ -121,6 +136,93 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
                     _ => unreachable!(),
                 },
             )
+        })
+    }
+}
+
+// === CustomAction ===
+impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for CustomAction<T> {
+    fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
+        ::chaos_theory::make::from_fn(|
+            src: &mut ::chaos_theory::SourceRaw,
+            example: Option<&Self>|
+        {
+            let example_index = example
+                .map(|e| match e {
+                    Self::Reset => 0usize,
+                    Self::Set(..) => 1usize,
+                    Self::Shift { .. } => 2usize,
+                });
+            let variants = ["Reset", "Set", "Shift"];
+            let variants_num = ::core::num::NonZero::new(variants.len())
+                .expect("internal error: no variants");
+            src.select(
+                "<CustomAction>",
+                example_index,
+                variants_num,
+                |ix| variants[ix],
+                |src, _variant, ix| match ix {
+                    0usize => Self::Reset,
+                    1usize => {
+                        Self::Set(
+                            src
+                                .any_of(
+                                    "0",
+                                    odd_u8(),
+                                    match example {
+                                        Some(Self::Set(__example_0, __example_1)) => {
+                                            Some(__example_0)
+                                        }
+                                        _ => None,
+                                    },
+                                ),
+                            src
+                                .any(
+                                    "1",
+                                    match example {
+                                        Some(Self::Set(__example_0, __example_1)) => {
+                                            Some(__example_1)
+                                        }
+                                        _ => None,
+                                    },
+                                ),
+                        )
+                    }
+                    2usize => {
+                        Self::Shift {
+                            by: src
+                                .any_of(
+                                    "by",
+                                    even_i16(),
+                                    match example {
+                                        Some(Self::Shift { by, .. }) => Some(by),
+                                        _ => None,
+                                    },
+                                ),
+                        }
+                    }
+                    _ => unreachable!(),
+                },
+            )
+        })
+    }
+}
+
+// === CustomWrapper ===
+impl<T: core::fmt::Debug> ::chaos_theory::Arbitrary for CustomWrapper<T> {
+    fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
+        ::chaos_theory::make::from_fn(|
+            src: &mut ::chaos_theory::SourceRaw,
+            example: Option<&Self>|
+        {
+            Self {
+                value: src
+                    .any_of(
+                        "value",
+                        chaos_theory::make::from_fn(|_src, _example| None),
+                        example.map(|e| &e.value),
+                    ),
+            }
         })
     }
 }

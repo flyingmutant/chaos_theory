@@ -273,6 +273,29 @@ struct Point {
 Derive-generated implementations follow the same rules as hand-written ones:
 variant choices are structural (`select`) and `example` is threaded through fields.
 
+For field-level customization, use `#[chaos_theory(generator = ...)]` on a struct field
+or on the payload field of an enum variant. The expression must evaluate to a
+[`Generator`][generator] for that field type:
+
+```rust
+# #[cfg(feature = "derive")]
+use chaos_theory::{Generator, make};
+
+fn odd_u8() -> impl Generator<Item = u8> {
+    make::from_fn(|src, example| src.any::<u8>("base", example) | 1)
+}
+
+#[derive(Debug, chaos_theory::Arbitrary)]
+enum Op {
+    Reset,
+    Set(#[chaos_theory(generator = odd_u8())] u8),
+    Shift {
+        #[chaos_theory(generator = make::just(0))]
+        by: i16,
+    },
+}
+```
+
 ### Writing Custom Generators
 
 There are two main approaches:

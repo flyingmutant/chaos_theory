@@ -6,13 +6,15 @@
 
 //! Proc-macro implementation for `#[derive(chaos_theory::Arbitrary)]`.
 
+extern crate alloc;
 extern crate proc_macro;
 
+use alloc::collections::BTreeSet;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
     Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed, FieldsUnnamed,
-    GenericParam, Generics, Variant, parse_macro_input, spanned::Spanned as _,
+    GenericParam, Generics, Variant, parse_macro_input, spanned::Spanned as _, visit::Visit as _,
 };
 
 const ATTR_NAMESPACE: &str = "chaos_theory";
@@ -29,12 +31,17 @@ pub fn derive_arbitrary(input: proc_macro::TokenStream) -> proc_macro::TokenStre
 fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
     ensure_no_unsupported_attributes(&input)?;
 
-    let name = input.ident;
-    let generics = add_arbitrary_bounds(input.generics);
+    let DeriveInput {
+        ident: name,
+        generics,
+        data,
+        ..
+    } = input;
+    let generics = add_arbitrary_bounds(generics, &data)?;
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let body = match &input.data {
-        Data::Struct(data) => derive_struct_body(data),
+    let body = match &data {
+        Data::Struct(data) => derive_struct_body(data)?,
         Data::Enum(data) => derive_enum_body(&name, data)?,
         Data::Union(data) => {
             return Err(Error::new(
@@ -59,26 +66,22 @@ fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
 
 fn ensure_no_unsupported_attributes(input: &DeriveInput) -> syn::Result<()> {
     for attr in &input.attrs {
-        ensure_supported_attribute(attr)?;
+        ensure_supported_container_attribute(attr)?;
     }
 
     match &input.data {
         Data::Struct(DataStruct { fields, .. }) => {
             for field in fields {
-                for attr in &field.attrs {
-                    ensure_supported_attribute(attr)?;
-                }
+                parse_field_config(field)?;
             }
         }
         Data::Enum(DataEnum { variants, .. }) => {
             for variant in variants {
                 for attr in &variant.attrs {
-                    ensure_supported_attribute(attr)?;
+                    ensure_supported_container_attribute(attr)?;
                 }
                 for field in &variant.fields {
-                    for attr in &field.attrs {
-                        ensure_supported_attribute(attr)?;
-                    }
+                    parse_field_config(field)?;
                 }
             }
         }
@@ -88,66 +91,217 @@ fn ensure_no_unsupported_attributes(input: &DeriveInput) -> syn::Result<()> {
     Ok(())
 }
 
-fn ensure_supported_attribute(attr: &syn::Attribute) -> syn::Result<()> {
+fn ensure_supported_container_attribute(attr: &syn::Attribute) -> syn::Result<()> {
     if attr.path().is_ident(ATTR_NAMESPACE) {
         return Err(Error::new_spanned(
             attr,
-            "`#[chaos_theory(...)]` attributes are not supported yet by this derive",
+            "`#[chaos_theory(...)]` attributes are only supported on fields",
         ));
     }
     Ok(())
 }
 
-fn add_arbitrary_bounds(mut generics: Generics) -> Generics {
+#[derive(Default)]
+struct FieldConfig {
+    generator: Option<TokenStream>,
+}
+
+struct RawFieldModifier {
+    name: syn::Ident,
+    value: TokenStream,
+}
+
+impl syn::parse::Parse for RawFieldModifier {
+    fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
+        let name = input.parse()?;
+        input.parse::<syn::Token![=]>()?;
+        let value = input.parse()?;
+        Ok(Self { name, value })
+    }
+}
+
+fn parse_field_config(field: &syn::Field) -> syn::Result<FieldConfig> {
+    let mut config = FieldConfig::default();
+
+    for attr in &field.attrs {
+        if !attr.path().is_ident(ATTR_NAMESPACE) {
+            continue;
+        }
+
+        let syn::Meta::List(list) = &attr.meta else {
+            return Err(Error::new_spanned(
+                attr,
+                "expected `#[chaos_theory(generator = EXPR)]`",
+            ));
+        };
+
+        let modifier = syn::parse2::<RawFieldModifier>(list.tokens.clone()).map_err(|_| {
+            Error::new_spanned(attr, "expected `#[chaos_theory(generator = EXPR)]`")
+        })?;
+        if modifier.value.is_empty() {
+            return Err(Error::new_spanned(
+                attr,
+                "expected `#[chaos_theory(generator = EXPR)]`",
+            ));
+        }
+
+        if modifier.name != "generator" {
+            return Err(Error::new_spanned(
+                attr,
+                "unsupported `chaos_theory` modifier; expected `generator = EXPR`",
+            ));
+        }
+        if config.generator.is_some() {
+            return Err(Error::new_spanned(attr, "duplicate `generator` modifier"));
+        }
+        config.generator = Some(modifier.value);
+    }
+
+    Ok(config)
+}
+
+fn add_arbitrary_bounds(mut generics: Generics, data: &Data) -> syn::Result<Generics> {
+    let type_params = generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            GenericParam::Type(type_param) => Some(type_param.ident.to_string()),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let used_params = used_type_params(data, &type_params)?;
+
     for param in &mut generics.params {
-        if let GenericParam::Type(type_param) = param {
+        if let GenericParam::Type(type_param) = param
+            && used_params.contains(&type_param.ident.to_string())
+        {
             let bound = syn::parse_str("::chaos_theory::Arbitrary")
                 .expect("internal error: invalid Arbitrary bound path");
             type_param.bounds.push(bound);
         }
     }
-    generics
+
+    Ok(generics)
 }
 
-fn derive_struct_body(data: &DataStruct) -> TokenStream {
+fn used_type_params(data: &Data, type_params: &BTreeSet<String>) -> syn::Result<BTreeSet<String>> {
+    let mut visitor = UsedTypeParams {
+        type_params,
+        used: BTreeSet::new(),
+    };
+
+    match data {
+        Data::Struct(data) => {
+            for field in &data.fields {
+                if parse_field_config(field)?.generator.is_none() {
+                    visitor.visit_type(&field.ty);
+                }
+            }
+        }
+        Data::Enum(data) => {
+            for variant in &data.variants {
+                for field in &variant.fields {
+                    if parse_field_config(field)?.generator.is_none() {
+                        visitor.visit_type(&field.ty);
+                    }
+                }
+            }
+        }
+        Data::Union(_) => {}
+    }
+
+    Ok(visitor.used)
+}
+
+struct UsedTypeParams<'a> {
+    type_params: &'a BTreeSet<String>,
+    used: BTreeSet<String>,
+}
+
+impl<'ast> syn::visit::Visit<'ast> for UsedTypeParams<'_> {
+    fn visit_type_path(&mut self, type_path: &'ast syn::TypePath) {
+        if type_path.qself.is_none() && is_phantom_data_path(&type_path.path) {
+            return;
+        }
+
+        if type_path.qself.is_none()
+            && type_path.path.leading_colon.is_none()
+            && type_path.path.segments.len() == 1
+        {
+            let ident = type_path.path.segments[0].ident.to_string();
+            if self.type_params.contains(&ident) {
+                self.used.insert(ident);
+                return;
+            }
+        }
+
+        syn::visit::visit_type_path(self, type_path);
+    }
+}
+
+fn is_phantom_data_path(path: &syn::Path) -> bool {
+    path.segments
+        .last()
+        .is_some_and(|segment| segment.ident == "PhantomData")
+}
+
+fn derive_struct_body(data: &DataStruct) -> syn::Result<TokenStream> {
     match &data.fields {
         Fields::Named(fields) => derive_named_struct_ctor(fields),
         Fields::Unnamed(fields) => derive_unnamed_struct_ctor(fields),
-        Fields::Unit => quote!(Self),
+        Fields::Unit => Ok(quote!(Self)),
     }
 }
 
-fn derive_named_struct_ctor(fields: &FieldsNamed) -> TokenStream {
-    let field_exprs = fields.named.iter().map(|field| {
-        let Some(field_ident) = field.ident.as_ref() else {
-            unreachable!("internal error: named field without ident");
-        };
-        let label = field_ident.to_string();
-        quote! {
-            #field_ident: src.any(#label, example.map(|e| &e.#field_ident))
-        }
-    });
+fn derive_named_struct_ctor(fields: &FieldsNamed) -> syn::Result<TokenStream> {
+    let field_exprs = fields
+        .named
+        .iter()
+        .map(|field| {
+            let config = parse_field_config(field)?;
+            let Some(field_ident) = field.ident.as_ref() else {
+                unreachable!("internal error: named field without ident");
+            };
+            let label = field_ident.to_string();
+            let example = quote!(example.map(|e| &e.#field_ident));
+            let field_value = field_generator_expr(&config, &label, &example);
+            Ok(quote! { #field_ident: #field_value })
+        })
+        .collect::<syn::Result<Vec<_>>>()?;
 
-    quote! {
+    Ok(quote! {
         Self {
             #(#field_exprs,)*
         }
-    }
+    })
 }
 
-fn derive_unnamed_struct_ctor(fields: &FieldsUnnamed) -> TokenStream {
-    let field_exprs = fields.unnamed.iter().enumerate().map(|(ix, _field)| {
-        let field_ix = syn::Index::from(ix);
-        let label = ix.to_string();
-        quote! {
-            src.any(#label, example.map(|e| &e.#field_ix))
-        }
-    });
+fn derive_unnamed_struct_ctor(fields: &FieldsUnnamed) -> syn::Result<TokenStream> {
+    let field_exprs = fields
+        .unnamed
+        .iter()
+        .enumerate()
+        .map(|(ix, field)| {
+            let config = parse_field_config(field)?;
+            let field_ix = syn::Index::from(ix);
+            let label = ix.to_string();
+            let example = quote!(example.map(|e| &e.#field_ix));
+            Ok(field_generator_expr(&config, &label, &example))
+        })
+        .collect::<syn::Result<Vec<_>>>()?;
 
-    quote! {
+    Ok(quote! {
         Self(
             #(#field_exprs,)*
         )
+    })
+}
+
+fn field_generator_expr(config: &FieldConfig, label: &str, example: &TokenStream) -> TokenStream {
+    if let Some(generator) = &config.generator {
+        quote! { src.any_of(#label, #generator, #example) }
+    } else {
+        quote! { src.any(#label, #example) }
     }
 }
 
@@ -182,10 +336,10 @@ fn derive_enum_body(type_ident: &syn::Ident, data: &DataEnum) -> syn::Result<Tok
         .iter()
         .enumerate()
         .map(|(ix, variant)| {
-            let body = derive_enum_variant_ctor(variant);
-            quote! { #ix => #body, }
+            let body = derive_enum_variant_ctor(variant)?;
+            Ok(quote! { #ix => #body, })
         })
-        .collect::<Vec<_>>();
+        .collect::<syn::Result<Vec<_>>>()?;
 
     Ok(quote! {
         let example_index = example.map(|e| match e {
@@ -218,57 +372,67 @@ fn enum_variant_pattern_for_example_index(variant: &Variant) -> TokenStream {
     }
 }
 
-fn derive_enum_variant_ctor(variant: &Variant) -> TokenStream {
+fn derive_enum_variant_ctor(variant: &Variant) -> syn::Result<TokenStream> {
     let variant_ident = &variant.ident;
     match &variant.fields {
         Fields::Named(fields) => {
-            let field_exprs = fields.named.iter().map(|field| {
-                let Some(field_ident) = field.ident.as_ref() else {
-                    unreachable!("internal error: named field without ident");
-                };
-                let label = field_ident.to_string();
-                quote! {
-                    #field_ident: src.any(
-                        #label,
+            let field_exprs = fields
+                .named
+                .iter()
+                .map(|field| {
+                    let config = parse_field_config(field)?;
+                    let Some(field_ident) = field.ident.as_ref() else {
+                        unreachable!("internal error: named field without ident");
+                    };
+                    let label = field_ident.to_string();
+                    let example = quote! {
                         match example {
                             Some(Self::#variant_ident { #field_ident, .. }) => Some(#field_ident),
                             _ => None,
-                        },
-                    )
-                }
-            });
+                        }
+                    };
+                    let value = field_generator_expr(&config, &label, &example);
+                    Ok(quote! {
+                        #field_ident: #value
+                    })
+                })
+                .collect::<syn::Result<Vec<_>>>()?;
 
-            quote! {
+            Ok(quote! {
                 Self::#variant_ident {
                     #(#field_exprs,)*
                 }
-            }
+            })
         }
         Fields::Unnamed(fields) => {
-            let field_exprs = fields.unnamed.iter().enumerate().map(|(ix, _field)| {
-                let label = ix.to_string();
-                let bindings = (0..fields.unnamed.len())
-                    .map(|bind_ix| format_ident!("__example_{bind_ix}"))
-                    .collect::<Vec<_>>();
-                let selected = &bindings[ix];
-                quote! {
-                    src.any(
-                        #label,
+            let field_exprs = fields
+                .unnamed
+                .iter()
+                .enumerate()
+                .map(|(ix, field)| {
+                    let config = parse_field_config(field)?;
+                    let label = ix.to_string();
+                    let bindings = (0..fields.unnamed.len())
+                        .map(|bind_ix| format_ident!("__example_{bind_ix}"))
+                        .collect::<Vec<_>>();
+                    let selected = &bindings[ix];
+                    let example = quote! {
                         match example {
                             Some(Self::#variant_ident(#(#bindings),*)) => Some(#selected),
                             _ => None,
-                        },
-                    )
-                }
-            });
+                        }
+                    };
+                    Ok(field_generator_expr(&config, &label, &example))
+                })
+                .collect::<syn::Result<Vec<_>>>()?;
 
-            quote! {
+            Ok(quote! {
                 Self::#variant_ident(
                     #(#field_exprs,)*
                 )
-            }
+            })
         }
-        Fields::Unit => quote!(Self::#variant_ident),
+        Fields::Unit => Ok(quote!(Self::#variant_ident)),
     }
 }
 

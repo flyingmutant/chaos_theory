@@ -12,6 +12,9 @@ use chaos_theory::{Arbitrary, Source, check};
 
 include!("../../testdata/derive_cases.rs");
 
+#[derive(Debug)]
+struct NotArbitrary;
+
 fn assert_reconstruct<T>(src: &mut Source, example_label: &str, value_label: &str)
 where
     T: chaos_theory::Arbitrary + core::fmt::Debug + PartialEq,
@@ -29,6 +32,26 @@ fn derive_reconstructs_examples() {
         assert_reconstruct::<Marker>(src, "marker_example", "marker_value");
         assert_reconstruct::<Imported>(src, "imported_example", "imported_value");
         assert_reconstruct::<Wrapper<u16>>(src, "wrapper_example", "wrapper_value");
+        assert_reconstruct::<CustomPoint>(src, "custom_point_example", "custom_point_value");
         assert_reconstruct::<Action<u8>>(src, "action_example", "action_value");
+        assert_reconstruct::<CustomAction<u8>>(src, "custom_action_example", "custom_action_value");
+    });
+}
+
+#[test]
+fn derive_uses_custom_field_generators() {
+    check(|src| {
+        let point: CustomPoint = src.any("custom_point");
+        assert_eq!(point.x % 2, 1);
+
+        let action: CustomAction<bool> = src.any("custom_action");
+        match action {
+            CustomAction::Reset => {}
+            CustomAction::Set(value, _) => assert_eq!(value % 2, 1),
+            CustomAction::Shift { by } => assert_eq!(by % 2, 0),
+        }
+
+        let wrapper: CustomWrapper<NotArbitrary> = src.any("custom_wrapper");
+        assert!(wrapper.value.is_none());
     });
 }

@@ -79,6 +79,7 @@
     "println",
     "PRNG",
     "proptest",
+    "qself",
     "quickcheck",
     "reentrancy",
     "reldata",
