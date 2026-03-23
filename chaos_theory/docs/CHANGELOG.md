@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Make `std` and `no_std` compose: enabling both now builds the `std` variant instead of hard-failing,
+  which lets `no_std` libraries keep `chaos_theory` arbitrary support in normal dependencies while
+  tests or downstream crates enable `std`.
+
 ## 0.3.2 (2026-03-21)
 
 - Add support for `#[chaos_theory(generator = EXPR)]` attribute for fields in derive macro

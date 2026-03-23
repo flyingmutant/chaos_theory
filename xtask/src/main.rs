@@ -170,6 +170,12 @@ fn run_ci(sh: &Shell, all: bool, full: bool, package: &str) -> Result<()> {
 fn run_no_std(sh: &Shell) -> Result<()> {
     cmd!(
         sh,
+        "cargo check -p chaos_theory --features no_std,derive --quiet"
+    )
+    .env("RUSTFLAGS", "-D warnings")
+    .run()?;
+    cmd!(
+        sh,
         "cargo check -p chaos_theory --no-default-features --features no_std --target wasm32-unknown-unknown --quiet"
     )
     .env("RUSTFLAGS", "-D warnings")

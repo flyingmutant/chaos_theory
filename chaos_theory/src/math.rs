@@ -34,6 +34,46 @@ pub(crate) fn bitmask<U: Unsigned>(bits: usize) -> U {
     }
 }
 
+#[cfg(feature = "std")]
+pub(crate) fn exp(x: f64) -> f64 {
+    x.exp()
+}
+
+#[cfg(all(not(feature = "std"), feature = "no_std"))]
+pub(crate) fn exp(x: f64) -> f64 {
+    libm::exp(x)
+}
+
+#[cfg(all(not(feature = "std"), not(feature = "no_std")))]
+pub(crate) fn exp(_x: f64) -> f64 {
+    unreachable!("`no_std` feature gate missing");
+}
+
+#[cfg(feature = "std")]
+pub(crate) fn log(x: f64) -> f64 {
+    x.ln()
+}
+
+#[cfg(all(not(feature = "std"), feature = "no_std"))]
+pub(crate) fn log(x: f64) -> f64 {
+    libm::log(x)
+}
+
+#[cfg(all(not(feature = "std"), not(feature = "no_std")))]
+pub(crate) fn log(_x: f64) -> f64 {
+    unreachable!("`no_std` feature gate missing");
+}
+
+#[cfg(feature = "std")]
+pub(crate) fn mul_add(a: f64, b: f64, c: f64) -> f64 {
+    a.mul_add(b, c)
+}
+
+#[cfg(not(feature = "std"))]
+pub(crate) fn mul_add(a: f64, b: f64, c: f64) -> f64 {
+    a * b + c
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{check, make};

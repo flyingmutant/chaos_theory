@@ -6,6 +6,7 @@
 
 use crate::{
     TEMPERATURE_BOUND_EXCLUSIVE, TEMPERATURE_DEFAULT,
+    math::{exp, log, mul_add},
     rand::{Rand, RandCore},
 };
 
@@ -52,10 +53,7 @@ impl Biased {
             1 => 0,
             2 => {
                 // Fast-path with linear approximation for bool/Option.
-                #[cfg(feature = "std")]
-                let p = self.v.mul_add(-0.065, 0.85).max(0.5);
-                #[cfg(not(feature = "std"))]
-                let p = (self.v * -0.065 + 0.85).max(0.5);
+                let p = mul_add(self.v, -0.065, 0.85).max(0.5);
                 usize::from(rng.next_float() > p)
             }
             _ => {
@@ -175,56 +173,26 @@ impl Zipf {
     }
 
     fn h(&self, x: f64) -> f64 {
-        #[cfg(feature = "std")]
         if self.one_minus_q == DEFAULT_ONE_MINUS_Q {
             -1.0 / (self.v + x) // -exp(-log(v + x))
         } else {
-            ((self.v + x).ln() * self.one_minus_q).exp() * self.one_minus_q_inv
-        }
-
-        #[cfg(not(feature = "std"))]
-        {
-            if self.one_minus_q == DEFAULT_ONE_MINUS_Q {
-                -1.0 / (self.v + x)
-            } else {
-                libm::exp(libm::log(self.v + x) * self.one_minus_q) * self.one_minus_q_inv
-            }
+            exp(log(self.v + x) * self.one_minus_q) * self.one_minus_q_inv
         }
     }
 
     fn hinv(&self, x: f64) -> f64 {
-        #[cfg(feature = "std")]
         if self.one_minus_q == DEFAULT_ONE_MINUS_Q {
             -self.v - 1.0 / x // -v + exp(-log(-x))
         } else {
-            -self.v + ((self.one_minus_q * x).ln() * self.one_minus_q_inv).exp()
-        }
-
-        #[cfg(not(feature = "std"))]
-        {
-            if self.one_minus_q == DEFAULT_ONE_MINUS_Q {
-                -self.v - 1.0 / x
-            } else {
-                -self.v + libm::exp(libm::log(self.one_minus_q * x) * self.one_minus_q_inv)
-            }
+            -self.v + exp(log(self.one_minus_q * x) * self.one_minus_q_inv)
         }
     }
 
     fn pow_negative_q(&self, x: f64) -> f64 {
-        #[cfg(feature = "std")]
         if self.q == DEFAULT_Q {
             1.0 / (x * x)
         } else {
-            (x.ln() * -self.q).exp()
-        }
-
-        #[cfg(not(feature = "std"))]
-        {
-            if self.q == DEFAULT_Q {
-                1.0 / (x * x)
-            } else {
-                libm::exp(libm::log(x) * -self.q)
-            }
+            exp(log(x) * -self.q)
         }
     }
 
@@ -251,10 +219,7 @@ impl Zipf {
     }
 
     fn sample_oneshot(&self, v: f64) -> u64 {
-        #[cfg(feature = "std")]
-        let u = self.hx0_minus_hxm.mul_add(v, self.hxm);
-        #[cfg(not(feature = "std"))]
-        let u = self.hx0_minus_hxm * v + self.hxm;
+        let u = mul_add(self.hx0_minus_hxm, v, self.hxm);
         let x = self.hinv(u);
         let k = (x + 0.5) as u64;
         debug_assert!(k as f64 <= self.k);

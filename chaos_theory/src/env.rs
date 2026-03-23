@@ -20,7 +20,7 @@ use crate::{
     distrib::Biased,
     hash::hash_str,
     make::from_fn,
-    math::{bitmask, fast_reduce, percent},
+    math::{bitmask, fast_reduce, mul_add, percent},
     panic_determinism,
     permute::permute,
     rand::{DefaultRand, Rand, Wyrand},
@@ -702,10 +702,7 @@ impl Env {
         // This is a hacky way to work around recursive data generation for cases
         // where recursion is expressed in terms of size (and not e.g. tree-as-enum).
         let t = self.temperature >> (depth / 2);
-        #[cfg(not(feature = "std"))]
-        let q = depth as f64 * 0.25 + 2.0;
-        #[cfg(feature = "std")]
-        let q = (depth as f64).mul_add(0.25, 2.0);
+        let q = mul_add(depth as f64, 0.25, 2.0);
         let d = Biased::new_temperature(t, Some(q));
         d.sample(&mut self.rng, n)
     }
