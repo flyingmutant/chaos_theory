@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.3 (2026-03-23)
 
 - Make `std` and `no_std` compose: enabling both now builds the `std` variant instead of hard-failing,
   which lets `no_std` libraries keep `chaos_theory` arbitrary support in normal dependencies while

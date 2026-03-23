@@ -105,7 +105,7 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "chaos_theory"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "chaos_theory_derive",
  "ecow",
@@ -121,11 +121,11 @@ dependencies = [
 
 [[package]]
 name = "chaos_theory_core"
-version = "0.3.2"
+version = "0.3.3"
 
 [[package]]
 name = "chaos_theory_derive"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "prettyplease",
  "proc-macro2",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "chaos_theory_v2"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "chaos_theory_core",
 ]
