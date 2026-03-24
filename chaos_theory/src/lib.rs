@@ -112,6 +112,8 @@ mod varint;
 #[cfg(doc)]
 pub mod _docs;
 
+#[cfg(feature = "bstr")]
+mod make_bstr;
 #[cfg(feature = "bytes")]
 mod make_bytes;
 mod make_cell;
@@ -176,6 +178,12 @@ pub mod make {
     /// This is equivalent to `<T as Arbitrary>::arbitrary()`, but can sometimes be a bit more concise.
     pub fn arbitrary<T: Arbitrary>() -> impl Generator<Item = T> {
         T::arbitrary()
+    }
+
+    #[cfg(feature = "bstr")]
+    /// [`bstr`](https://docs.rs/bstr) generators.
+    pub mod bstr {
+        pub use crate::make_bstr::*;
     }
 
     #[cfg(feature = "bytes")]

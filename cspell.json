@@ -19,6 +19,8 @@
     "bitflips",
     "bitlen",
     "bitmask",
+    "bstr",
+    "bstring",
     "btreemap",
     "btreeset",
     "bytecount",

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add feature-gated `bstr` support with `make::bstr::{bstring, bstring_with_size}` and `Arbitrary` impl.
 - Add feature-gated `bytes` support with `make::bytes::{bytes, bytes_mut}` and `Arbitrary` impls.
 - Add feature-gated `uuid` support with `make::uuid::uuid_v4()` and `Arbitrary for uuid::Uuid` (v4 only).
 

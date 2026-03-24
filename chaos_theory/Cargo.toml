@@ -24,10 +24,11 @@ workspace = true
 
 [features]
 default = ["std"]
-all = ["std", "derive", "bytes", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
+all = ["std", "derive", "bstr", "bytes", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
 std = ["indexmap?/std", "regex?/std"]
 no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
+bstr = ["dep:bstr"]
 bytes = ["dep:bytes"]
 ecow = ["dep:ecow"]
 hashbrown = ["dep:hashbrown"]
@@ -44,6 +45,7 @@ _bench = []
 
 [dependencies]
 chaos_theory_derive = { workspace = true, optional = true }
+bstr = { workspace = true, optional = true, features = ["alloc"] }
 bytes = { workspace = true, optional = true }
 ecow = { workspace = true, optional = true }
 hashbrown = { workspace = true, optional = true }
