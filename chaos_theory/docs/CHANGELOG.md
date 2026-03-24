@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add feature-gated `uuid` support with `make::uuid::uuid_v4()` and `Arbitrary for uuid::Uuid` (v4 only).
+
 ## 0.3.3 (2026-03-23)
 
 - Make `std` and `no_std` compose: enabling both now builds the `std` variant instead of hard-failing,

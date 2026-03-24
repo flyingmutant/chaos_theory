@@ -24,7 +24,7 @@ workspace = true
 
 [features]
 default = ["std"]
-all = ["std", "derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec"]
+all = ["std", "derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
 std = ["ecow?/std", "indexmap?/std", "ordered-float?/std", "regex?/std", "regex-syntax?/std", "serde_json?/std", "tinyvec?/std"]
 no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
@@ -36,6 +36,7 @@ regex = ["dep:regex", "dep:regex-syntax"]
 serde_json = ["dep:serde_json", "serde_json/alloc"]
 serde_json_preserve_order = ["std", "serde_json", "serde_json/preserve_order"]
 tinyvec = ["dep:tinyvec"]
+uuid = ["dep:uuid"]
 
 nightly = ["_bench"]
 _bench = []
@@ -50,6 +51,7 @@ regex = { workspace = true, optional = true, features = ["perf", "unicode"] }
 regex-syntax = { workspace = true, optional = true, features = ["unicode"] }
 serde_json = { workspace = true, optional = true }
 tinyvec = { workspace = true, optional = true, features = ["alloc"] }
+uuid = { workspace = true, optional = true }
 libm = { workspace = true, optional = true }
 
 [dev-dependencies]

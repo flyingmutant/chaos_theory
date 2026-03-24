@@ -81,6 +81,7 @@ serde_json = { version = "1.0.149", default-features = false }
 syn = { version = "2.0", default-features = false }
 tinyvec = { version = "1.10.0", default-features = false }
 xshell = "0.2.6"
+uuid = { version = "1.22.0", default-features = false }
 
 chaos_theory_core = { path = "chaos_theory_core" }
 chaos_theory_derive = { version = "0.3.0", path = "chaos_theory_derive" }

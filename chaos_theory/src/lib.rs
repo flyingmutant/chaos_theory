@@ -139,6 +139,8 @@ mod make_time;
 #[cfg(feature = "tinyvec")]
 mod make_tinyvec;
 mod make_tuple;
+#[cfg(feature = "uuid")]
+mod make_uuid;
 
 pub use config::*;
 pub use env::*;
@@ -208,6 +210,12 @@ pub mod make {
     /// [`tinyvec`](https://docs.rs/tinyvec) generators.
     pub mod tinyvec {
         pub use crate::make_tinyvec::*;
+    }
+
+    #[cfg(feature = "uuid")]
+    /// [`uuid`](https://docs.rs/uuid) generators.
+    pub mod uuid {
+        pub use crate::make_uuid::*;
     }
 }
 

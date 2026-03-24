@@ -16,7 +16,6 @@
 ## generators
 
 - external
-  - uuid
   - bytes
 - u128
 - CString

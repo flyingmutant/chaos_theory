@@ -210,8 +210,9 @@ Common categories:
   [`once_lock`][make_once_lock], [`cell`][make_cell], [`ref_cell`][make_ref_cell]
 - Regex (feature-gated): [`string_matching`][make_string_matching],
   [`bytes_matching`][make_bytes_matching]
-- Extra crates (feature-gated): [`hashbrown`][make_hashbrown], [`indexmap`][make_indexmap],
-  [`ordered_float`][make_ordered_float], [`tinyvec`][make_tinyvec], [`ecow`][make_ecow]
+- Extra crates (feature-gated):  [`hashbrown`][make_hashbrown],
+  [`indexmap`][make_indexmap], [`uuid`][make_uuid], [`ordered_float`][make_ordered_float],
+  [`tinyvec`][make_tinyvec], [`ecow`][make_ecow][`serde_json`], [make_serde_json]
 
 If a generator exists, prefer using it instead of re-implementing the logic.
 
@@ -490,5 +491,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 [make_hashbrown]: crate::make::hashbrown
 [make_indexmap]: crate::make::indexmap
 [make_ordered_float]: crate::make::ordered_float
+[make_serde_json]: crate::make::serde_json
 [make_tinyvec]: crate::make::tinyvec
 [make_ecow]: crate::make::ecow
+[make_uuid]: crate::make::uuid
