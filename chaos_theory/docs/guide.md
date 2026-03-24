@@ -212,8 +212,8 @@ Common categories:
   [`bytes_matching`][make_bytes_matching]
 - Extra crates (feature-gated): [`bstr`][make_bstr], [`bytes`][make_bytes],
   [`ecow`][make_ecow], [`hashbrown`][make_hashbrown], [`indexmap`][make_indexmap],
-  [`ordered_float`][make_ordered_float], [`serde_json`][make_serde_json],
-  [`tinyvec`][make_tinyvec], [`uuid`][make_uuid]
+  [`ordermap`][make_ordermap], [`ordered_float`][make_ordered_float],
+  [`serde_json`][make_serde_json], [`tinyvec`][make_tinyvec], [`uuid`][make_uuid]
 
 If a generator exists, prefer using it instead of re-implementing the logic.
 
@@ -493,6 +493,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 [make_bytes]: crate::make::bytes
 [make_hashbrown]: crate::make::hashbrown
 [make_indexmap]: crate::make::indexmap
+[make_ordermap]: crate::make::ordermap
 [make_ordered_float]: crate::make::ordered_float
 [make_serde_json]: crate::make::serde_json
 [make_tinyvec]: crate::make::tinyvec

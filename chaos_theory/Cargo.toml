@@ -24,8 +24,8 @@ workspace = true
 
 [features]
 default = ["std"]
-all = ["std", "derive", "bstr", "bytes", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
-std = ["indexmap?/std", "regex?/std"]
+all = ["std", "derive", "bstr", "bytes", "ecow", "hashbrown", "indexmap", "ordermap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
+std = ["indexmap?/std", "ordermap?/std", "regex?/std"]
 no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
 bstr = ["dep:bstr"]
@@ -33,6 +33,7 @@ bytes = ["dep:bytes"]
 ecow = ["dep:ecow"]
 hashbrown = ["dep:hashbrown"]
 indexmap = ["dep:indexmap"]
+ordermap = ["dep:ordermap"]
 ordered_float = ["dep:ordered-float"]
 regex = ["dep:regex", "dep:regex-syntax"]
 serde_json = ["dep:serde_json", "serde_json/alloc"]
@@ -50,6 +51,7 @@ bytes = { workspace = true, optional = true }
 ecow = { workspace = true, optional = true }
 hashbrown = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true }
+ordermap = { workspace = true, optional = true }
 ordered-float = { workspace = true, optional = true }
 regex = { workspace = true, optional = true, features = ["perf", "unicode"] }
 regex-syntax = { workspace = true, optional = true, features = ["unicode"] }

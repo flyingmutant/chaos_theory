@@ -74,6 +74,7 @@ libfuzzer-sys = "0.4.12"
 libm = "0.2.16"
 log = "0.4.27"
 ordered-float = { version = "5.1.0", default-features = false }
+ordermap = { version = "1.1.0", default-features = false }
 prettyplease = "0.2"
 proc-macro2 = "1.0"
 quote = "1.0"
