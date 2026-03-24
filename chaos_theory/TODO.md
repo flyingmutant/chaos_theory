@@ -15,8 +15,6 @@
 
 ## generators
 
-- external
-  - bytes
 - u128
 - CString
 - OSString

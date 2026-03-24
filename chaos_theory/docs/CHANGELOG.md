@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add feature-gated `bytes` support with `make::bytes::{bytes, bytes_mut}` and `Arbitrary` impls.
 - Add feature-gated `uuid` support with `make::uuid::uuid_v4()` and `Arbitrary for uuid::Uuid` (v4 only).
 
 ## 0.3.3 (2026-03-23)

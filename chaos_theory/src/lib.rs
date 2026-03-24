@@ -112,6 +112,8 @@ mod varint;
 #[cfg(doc)]
 pub mod _docs;
 
+#[cfg(feature = "bytes")]
+mod make_bytes;
 mod make_cell;
 mod make_char;
 mod make_collection;
@@ -174,6 +176,12 @@ pub mod make {
     /// This is equivalent to `<T as Arbitrary>::arbitrary()`, but can sometimes be a bit more concise.
     pub fn arbitrary<T: Arbitrary>() -> impl Generator<Item = T> {
         T::arbitrary()
+    }
+
+    #[cfg(feature = "bytes")]
+    /// [`bytes`](https://docs.rs/bytes) generators.
+    pub mod bytes {
+        pub use crate::make_bytes::*;
     }
 
     #[cfg(feature = "hashbrown")]
