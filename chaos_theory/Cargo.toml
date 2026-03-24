@@ -25,7 +25,7 @@ workspace = true
 [features]
 default = ["std"]
 all = ["std", "derive", "ecow", "hashbrown", "indexmap", "ordered_float", "regex", "serde_json", "serde_json_preserve_order", "tinyvec", "uuid"]
-std = ["ecow?/std", "indexmap?/std", "ordered-float?/std", "regex?/std", "regex-syntax?/std", "serde_json?/std", "tinyvec?/std"]
+std = ["indexmap?/std", "regex?/std"]
 no_std = ["dep:libm"]
 derive = ["dep:chaos_theory_derive"]
 ecow = ["dep:ecow"]
