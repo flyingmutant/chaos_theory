@@ -645,7 +645,7 @@ impl Debug for Event {
 
 impl Arbitrary for Event {
     fn arbitrary() -> impl Generator<Item = Self> {
-        make::from_fn(make_event)
+        make::from_next(make_event)
     }
 }
 

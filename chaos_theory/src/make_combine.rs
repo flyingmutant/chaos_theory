@@ -7,28 +7,28 @@
 use alloc::vec::Vec;
 use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
-use crate::{Generator, OptionExt as _, SourceRaw, Tweak};
+use crate::{Generator, OptionExt as _, Source, SourceRaw, Tweak};
 
-const FROM_FN_ASSUME_TOO_MUCH: &str = "from_fn_assume function produced too many None values";
+const FROM_NEXT_ASSUME_TOO_MUCH: &str = "from_next_assume function produced too many None values";
 
-struct FromFn<F, T> {
-    func: F,
+struct FromNext<F, T> {
+    next: F,
     _marker: PhantomData<T>,
 }
 
-impl<F, T> Debug for FromFn<F, T>
+impl<F, T> Debug for FromNext<F, T>
 where
     F: Fn(&mut SourceRaw, Option<&T>) -> T,
     T: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("FromFn")
+        f.debug_tuple("FromNext")
             .field(&core::any::type_name::<T>())
             .finish()
     }
 }
 
-impl<F, T> Generator for FromFn<F, T>
+impl<F, T> Generator for FromNext<F, T>
 where
     F: Fn(&mut SourceRaw, Option<&T>) -> T,
     T: Debug,
@@ -36,28 +36,28 @@ where
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        (self.func)(src, example)
+        (self.next)(src, example)
     }
 }
 
-struct FromFnAssume<F, T> {
-    func: F,
+struct FromNextAssume<F, T> {
+    next: F,
     _marker: PhantomData<T>,
 }
 
-impl<F, T> Debug for FromFnAssume<F, T>
+impl<F, T> Debug for FromNextAssume<F, T>
 where
     F: Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
     T: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("FromFnAssume")
+        f.debug_tuple("FromNextAssume")
             .field(&core::any::type_name::<T>())
             .finish()
     }
 }
 
-impl<F, T> Generator for FromFnAssume<F, T>
+impl<F, T> Generator for FromNextAssume<F, T>
 where
     F: Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
     T: Debug,
@@ -65,8 +65,8 @@ where
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let v = src.find("<from-fn-assume>", example, &self.func);
-        v.assume_some_msg(FROM_FN_ASSUME_TOO_MUCH)
+        let v = src.find("<from-next-assume>", example, &self.next);
+        v.assume_some_msg(FROM_NEXT_ASSUME_TOO_MUCH)
     }
 }
 
@@ -160,23 +160,50 @@ impl<G: Generator> Generator for MixOf<'_, G> {
 // TODO: recursive
 
 /// Create a generator that uses the provided closure to construct items.
-pub fn from_fn<T: Debug>(
-    func: impl Fn(&mut SourceRaw, Option<&T>) -> T,
-) -> impl Generator<Item = T> {
-    FromFn {
-        func,
-        _marker: PhantomData,
-    }
+///
+/// Consider [`from_next`] if you want to support example-guided generation.
+pub fn from_fn<T: Debug>(func: impl Fn(&mut Source) -> T) -> impl Generator<Item = T> {
+    from_next(move |src, _example| {
+        let mut src = Source::new(src.as_mut());
+        func(&mut src)
+    })
 }
 
 /// Create a filtering generator that yields `Some` items constructed by the provided closure.
 ///
-/// Don't forget to filter the examples according to the same predicate you use to construct `Some`.
+/// Consider [`from_next_assume`] if you want to support example-guided generation.
 pub fn from_fn_assume<T: Debug>(
-    func: impl Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
+    func: impl Fn(&mut Source) -> Option<T>,
 ) -> impl Generator<Item = T> {
-    FromFnAssume {
-        func,
+    from_next_assume(move |src, _example| {
+        let mut src = Source::new(src.as_mut());
+        func(&mut src)
+    })
+}
+
+/// Create a generator that uses the provided closure to construct items, taking examples into account.
+///
+/// Prefer [`from_fn`] if you don't need to support example-guided generation.
+pub fn from_next<T: Debug>(
+    next: impl Fn(&mut SourceRaw, Option<&T>) -> T,
+) -> impl Generator<Item = T> {
+    FromNext {
+        next,
+        _marker: PhantomData,
+    }
+}
+
+/// Create a filtering generator that yields `Some` items constructed by the provided closure, taking examples into account.
+///
+/// Don't forget to filter the examples according to the same predicate you use to construct `Some`.
+///
+/// Prefer [`from_fn_assume`] if you don't need to support example-guided generation.
+// TODO: do we really want/need to filter examples?
+pub fn from_next_assume<T: Debug>(
+    next: impl Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
+) -> impl Generator<Item = T> {
+    FromNextAssume {
+        next,
         _marker: PhantomData,
     }
 }

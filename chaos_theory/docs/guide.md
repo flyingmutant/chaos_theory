@@ -284,7 +284,7 @@ or on the payload field of an enum variant. The expression must evaluate to a
 use chaos_theory::{Generator, make};
 
 fn odd_u8() -> impl Generator<Item = u8> {
-    make::from_fn(|src, example| src.any::<u8>("base", example) | 1)
+    make::from_next(|src, example| src.any::<u8>("base", example) | 1)
 }
 
 #[derive(Debug, chaos_theory::Arbitrary)]
@@ -302,7 +302,7 @@ enum Op {
 
 There are two main approaches:
 
-- Use [`make::from_fn`][make_from_fn] for small generators
+- Use [`make::from_fn`][make_from_fn]/[`make::from_next`][make_from_next] for small generators
 - Implement [`Generator`][generator] directly for full control
 
 With derive support for [`Arbitrary`][arbitrary], most of this is unnecessary for plain data
@@ -463,6 +463,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 
 [make]: crate::make
 [make_from_fn]: crate::make::from_fn
+[make_from_next]: crate::make::from_next
 [make_mix_of]: crate::make::mix_of
 [make_just]: crate::make::just
 [make_one_of]: crate::make::one_of

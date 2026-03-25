@@ -236,7 +236,7 @@ pub(crate) mod regex {
     use super::Char;
     use crate::{
         Generator, Tweak,
-        make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB, from_fn_assume},
+        make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB, from_next_assume},
     };
     use core::cmp::Ordering;
     use regex_syntax::hir::{ClassBytes, ClassBytesRange, ClassUnicode, ClassUnicodeRange};
@@ -292,7 +292,7 @@ pub(crate) mod regex {
 
     pub(crate) fn char_class(class: &ClassUnicode) -> impl Generator<Item = char> {
         // This is kind of slow. In theory, we could pre-process Hir to eliminate surrogate ranges instead.
-        from_fn_assume(|src, example| next_char_unicode(src, example, class))
+        from_next_assume(|src, example| next_char_unicode(src, example, class))
     }
 
     #[derive(Debug)]

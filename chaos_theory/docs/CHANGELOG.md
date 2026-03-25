@@ -6,6 +6,7 @@
 - Add feature-gated `bytes` support with `make::bytes::{bytes, bytes_mut}` and `Arbitrary` impls.
 - Add feature-gated `ordermap` support with `make::ordermap::{order_map, order_set}` and `Arbitrary` impls.
 - Add feature-gated `uuid` support with `make::uuid::uuid_v4()` and `Arbitrary for uuid::Uuid` (v4 only).
+- Rename `from_fn` to `from_next` and add simpler `from_fn` that ignores examples
 
 ## 0.3.3 (2026-03-23)
 

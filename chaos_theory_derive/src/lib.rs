@@ -54,7 +54,7 @@ fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
     Ok(quote! {
         impl #impl_generics ::chaos_theory::Arbitrary for #name #ty_generics #where_clause {
             fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-                ::chaos_theory::make::from_fn(
+                ::chaos_theory::make::from_next(
                     |src: &mut ::chaos_theory::SourceRaw, example: Option<&Self>| {
                         #body
                     },

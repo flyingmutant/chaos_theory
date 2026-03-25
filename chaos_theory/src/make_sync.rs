@@ -21,7 +21,7 @@ impl<T: Arbitrary> Arbitrary for OnceLock<T> {
 
 impl Arbitrary for Once {
     fn arbitrary() -> impl Generator<Item = Self> {
-        from_fn(|_src, _example| Self::new())
+        from_fn(|_src| Self::new())
     }
 }
 
@@ -33,7 +33,7 @@ impl Arbitrary for Barrier {
 
 impl Arbitrary for Condvar {
     fn arbitrary() -> impl Generator<Item = Self> {
-        from_fn(|_src, _example| Self::new())
+        from_fn(|_src| Self::new())
     }
 }
 
@@ -51,7 +51,7 @@ impl<T: Arbitrary> Arbitrary for RwLock<T> {
 
 impl<T> Arbitrary for (mpsc::Sender<T>, mpsc::Receiver<T>) {
     fn arbitrary() -> impl Generator<Item = Self> {
-        from_fn(|_src, _example| mpsc::channel())
+        from_fn(|_src| mpsc::channel())
     }
 }
 

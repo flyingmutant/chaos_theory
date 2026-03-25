@@ -5,7 +5,7 @@
 // === Point ===
 impl ::chaos_theory::Arbitrary for Point {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -20,7 +20,7 @@ impl ::chaos_theory::Arbitrary for Point {
 // === Triple ===
 impl ::chaos_theory::Arbitrary for Triple {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -36,7 +36,7 @@ impl ::chaos_theory::Arbitrary for Triple {
 // === Marker ===
 impl ::chaos_theory::Arbitrary for Marker {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         { Self })
@@ -46,7 +46,7 @@ impl ::chaos_theory::Arbitrary for Marker {
 // === Imported ===
 impl ::chaos_theory::Arbitrary for Imported {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -60,7 +60,7 @@ impl ::chaos_theory::Arbitrary for Imported {
 // === Wrapper ===
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Wrapper<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -74,7 +74,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Wrapper<T> {
 // === CustomPoint ===
 impl ::chaos_theory::Arbitrary for CustomPoint {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -89,7 +89,7 @@ impl ::chaos_theory::Arbitrary for CustomPoint {
 // === Action ===
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -143,7 +143,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
 // === CustomAction ===
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for CustomAction<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -211,7 +211,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for CustomAction<T>
 // === CustomWrapper ===
 impl<T: core::fmt::Debug> ::chaos_theory::Arbitrary for CustomWrapper<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-        ::chaos_theory::make::from_fn(|
+        ::chaos_theory::make::from_next(|
             src: &mut ::chaos_theory::SourceRaw,
             example: Option<&Self>|
         {
@@ -219,7 +219,7 @@ impl<T: core::fmt::Debug> ::chaos_theory::Arbitrary for CustomWrapper<T> {
                 value: src
                     .any_of(
                         "value",
-                        chaos_theory::make::from_fn(|_src, _example| None),
+                        chaos_theory::make::from_fn(|_src| None),
                         example.map(|e| &e.value),
                     ),
             }

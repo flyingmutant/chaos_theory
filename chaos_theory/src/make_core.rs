@@ -42,7 +42,7 @@ impl Arbitrary for Ordering {
             variants[variant_ix]
         }
 
-        make::from_fn(make_ordering)
+        make::from_next(make_ordering)
     }
 }
 

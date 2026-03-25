@@ -1,11 +1,11 @@
 // Shared derive cases used by runtime and expansion tests.
 
 fn odd_u8() -> impl chaos_theory::Generator<Item = u8> {
-    chaos_theory::make::from_fn(|src, example| src.any::<u8>("base", example) | 1)
+    chaos_theory::make::from_next(|src, example| src.any::<u8>("base", example) | 1)
 }
 
 fn even_i16() -> impl chaos_theory::Generator<Item = i16> {
-    chaos_theory::make::from_fn(|src, example| src.any::<i16>("base", example) & !1)
+    chaos_theory::make::from_next(|src, example| src.any::<i16>("base", example) & !1)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, chaos_theory::Arbitrary)]
@@ -56,6 +56,6 @@ enum CustomAction<T> {
 
 #[derive(Debug, chaos_theory::Arbitrary)]
 struct CustomWrapper<T: core::fmt::Debug> {
-    #[chaos_theory(generator = chaos_theory::make::from_fn(|_src, _example| None))]
+    #[chaos_theory(generator = chaos_theory::make::from_fn(|_src| None))]
     value: Option<T>,
 }

@@ -19,7 +19,7 @@ use crate::{
     cover::Cover,
     distrib::Biased,
     hash::hash_str,
-    make::from_fn,
+    make::from_next,
     math::{bitmask, fast_reduce, mul_add, percent},
     panic_determinism,
     permute::permute,
@@ -657,7 +657,7 @@ pub enum Effect {
 
 impl Arbitrary for Effect {
     fn arbitrary() -> impl Generator<Item = Self> {
-        from_fn(|src, example| {
+        from_next(|src, example| {
             let example_index = example.map(|e| match *e {
                 Self::Noop => 0,
                 Self::Change => 1,
