@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.4. (2026-03-25)
 
 - Add feature-gated `bstr` support with `make::bstr::{bstring, bstring_with_size}` and `Arbitrary` impl.
 - Add feature-gated `bytes` support with `make::bytes::{bytes, bytes_mut}` and `Arbitrary` impls.
