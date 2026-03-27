@@ -26,7 +26,7 @@
   - consistency
   - fullness
   - blameability/traceability
-  - report-friendlyness
+  - report-friendliness
   - type-checks / does not throw errors when executing
   - isolated/no side effects
   - how good is the test (example/prop/fuzz/model-check/...)
