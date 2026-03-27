@@ -1,0 +1,73 @@
+# Ideas
+
+- safety vs liveness properties
+- runtime monitor of events
+  - check on logs from production
+- communicating state machines
+- composability from atoms up
+  - records/variants
+  - contextual generation
+  - generation vs parsing
+  - invariants, design by contract
+  - tracing
+  - scheduling non-determinism as well as data non-determinism
+  - first class "unspecified yet" concept
+  - properties
+    - `describe` + `it`
+    - stuff that allure might find useful
+      - tags, links, owners, links to features
+      - link to code (SHA/location)
+      - steps
+      - run output & interpretation
+      - parametrization by domain/environment
+- random vs fuzzing vs solving vs provided examples
+- "audit" like fuzzy checks
+- meta-properties
+  - consistency
+  - fullness
+  - blameability/traceability
+  - report-friendlyness
+  - type-checks / does not throw errors when executing
+  - isolated/no side effects
+  - how good is the test (example/prop/fuzz/model-check/...)
+  - non-interference
+    - purity / side-effect control
+  - determinism
+  - availability
+  - information preservation
+  - liveness
+    - hot states (P)
+  - safety
+- spec-as-not-only-text
+  - GUI
+- spec-as-a-fuzzy-thing (don't require exact match)
+  - GUI? what else?
+- assume-guarantee, compositional testing
+- trace-generating automata = model OR real system
+- generic things
+  - cover
+  - diffbehavior
+- immutable everything in the spec
+  - solving works nicely
+  - reldata for data models
+- A does not depend on B as a generic property
+- X does not have lasting effects on a system as a generic property
+- `@deal.has`
+- `deal.chain`
+- scheduling/temporal stuff is just a sequence of operations, `op + timestamp`
+  - we can write assertions about it, including time
+- attach meta-information to stuff
+  - reset/error action
+  - increases the state space
+  - likely/common
+- generic way to know when we can skip the tests?
+  - need build system integration
+- steering/suggestion
+- scoring to select the best out of several
+- other
+  - fizzbee
+  - alloy
+  - p
+  - tla+
+  - copilot
+  - spec#
