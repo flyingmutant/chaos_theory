@@ -8,7 +8,6 @@
 - "what is happening" for obs
   - trace-first
     - create/enter/exit span with a label
-    - wha
   - cmplog-friendly
   - allow to query where we are in the trace (including globally, across many runs)
     - the coordinates should allow to encode stateful generation
