@@ -198,6 +198,9 @@ impl_arbitrary_int!(i32, AtomicI32);
 impl_arbitrary_int!(i64, AtomicI64);
 
 /// Create a generator of integers in range.
+///
+/// If you are generating a size or an index value, prefer
+/// [`make::size`](crate::make::size) or [`make::index`](crate::make::index) instead.
 pub fn int_in_range<I: Int>(r: impl RangeBounds<I>) -> impl Generator<Item = I> {
     let range = Range::<I>::new(r);
     let (neg_range, pos_range) = range.zero_split();
