@@ -79,6 +79,7 @@ impl RandCore for Wyrand {
     }
 }
 
+#[cfg(any(test, feature = "_bench"))]
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Sfc64 {
     a: u64,
@@ -87,6 +88,7 @@ pub(crate) struct Sfc64 {
     w: u64,
 }
 
+#[cfg(any(test, feature = "_bench"))]
 impl RandCore for Sfc64 {
     fn new(seed: u64) -> Self {
         let mut s = Self {

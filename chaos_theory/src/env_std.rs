@@ -17,17 +17,9 @@ use std::{
 };
 
 use crate::{
-    Source,
-    cover::Cover,
-    hash::hash_bytes,
-    hash_identity::NoHashSet,
-    rand::{DefaultRand, Rand, Sfc64},
-    reduce::reduce_tape,
-    reproduce_inform,
-    tape::Tape,
-    tape_mutate::MutationCache,
-    tape_mutate_crossover::CrossoverCache,
-    unwind::PanicInfo,
+    Source, cover::Cover, hash::hash_bytes, hash_identity::NoHashSet, rand::DefaultRand,
+    reduce::reduce_tape, reproduce_inform, tape::Tape, tape_mutate::MutationCache,
+    tape_mutate_crossover::CrossoverCache, unwind::PanicInfo,
 };
 
 use super::{Effect, Env, ReplayMode};
@@ -293,8 +285,8 @@ impl Env {
             let invalid_checks = checks
                 .saturating_mul(INVALID_CHECKS_MULT)
                 .max(INVALID_CHECKS_MIN);
-            // Use a different PRNG for the seed sequence to avoid seed sequence cycles.
-            let mut seed_gen = Rand::<Sfc64>::new(u64::from(self.seed));
+            // Importantly, CHAOS_THEORY_RNG_SEED can directly specify the seed for the first iteration.
+            let base_seed = self.seed;
             while res.valid < checks
                 || (self.cover.as_ref().is_some_and(Cover::require) && !res.cover_done)
             {
@@ -307,14 +299,14 @@ impl Env {
                     res.time_exit = true;
                     break;
                 }
+                let seed = base_seed.wrapping_add(i as u32);
                 if self.slow.log_depth_silent > 0 {
                     let valid = res.valid;
                     let invalid = res.invalid;
                     eprintln!(
-                        "[chaos_theory/iters/{i}] starting check iteration (done: {valid} valid, {invalid} invalid)"
+                        "[chaos_theory/iters/{i}] starting check iteration (seed: {seed:08x}, done: {valid} valid, {invalid} invalid)"
                     );
                 }
-                let seed = seed_gen.next() as u32;
                 let replay_mode = self.shadow_replay_mode(false, Some(res.valid));
                 let r = self.run_prop(
                     seed,
