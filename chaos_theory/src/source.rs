@@ -250,6 +250,8 @@ impl<'env> Source<'env> {
     /// Currently, it is used as an additional factor to detect non-determinism in properties.
     /// Use [`Config::with_check_determinism`](crate::Config::with_check_determinism)
     /// to enable strict determinism enforcement.
+    // TODO: slight problem that for determinism we want to observe as much as possible,
+    // while for novelty/coverage we want to observe only non-really-input-dependent parts.
     pub fn observe(&mut self, label: &str, value: impl Hash) {
         let mut hasher = crate::hash::hasher_fixed_seed_a();
         (label, value).hash(&mut hasher);
