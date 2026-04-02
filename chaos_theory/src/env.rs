@@ -93,10 +93,11 @@ pub(crate) const USE_SEED_AS_IS_PROB: f64 = percent(15);
 pub(crate) enum Tweak {
     None = 0,
     SeedChoice = 1,
-    FloatSign = 2,
-    CharCategory = 3,
-    CharRange = 4,
-    CharIndex = 5,
+    IntSign = 2,
+    FloatSign = 3,
+    CharCategory = 4,
+    CharRange = 5,
+    CharIndex = 6,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -115,7 +115,7 @@ impl<I: Int> Generator for Integer<I> {
         }
         let ix = src
             .as_mut()
-            .choose_index(2, example_neg.map(usize::from), Tweak::None);
+            .choose_index(2, example_neg.map(usize::from), Tweak::IntSign);
         let r = if ix == 0 { &self.pos } else { &self.neg };
         let u = I::Unsigned::from_bits(src.as_mut().choose_value(
             r.expect("internal error: range not set"),
