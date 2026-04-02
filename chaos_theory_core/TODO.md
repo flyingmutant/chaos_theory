@@ -5,12 +5,7 @@
 - `--no-capture` + override stdin/stdout by default
   - defend against people/agents using `println` inside a test
   - note about logging in tests
-- derive macro
 - more generators
-  - external
-    - uuid
-    - serde_json
-    - bytes
   - u128
   - CString/Cstr
   - OSString/OSstr
@@ -21,12 +16,6 @@
   - permutation/shuffle/subsequence/random chunking
   - recursive
     - `nothing` generator that calls `reject` (e.g. to specify desired tree structure?)
-
-## docs
-
-- usage examples
-- FAQ
-- guide on how to write a generator impl for struct and for enum
 
 ## functionality
 
