@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // Constant-time stateless permutation of [0, n).
-pub(crate) fn permute(mut ix: usize, n: usize, seed: u64) -> usize {
+pub(crate) fn permute(mut ix: u64, n: u64, seed: u64) -> u64 {
     debug_assert!(ix < n);
     match n {
         0 => unreachable!(),
@@ -14,9 +14,9 @@ pub(crate) fn permute(mut ix: usize, n: usize, seed: u64) -> usize {
             // From "Correlated Multi-Jittered Sampling" by Andrew Kensler:
             // https://graphics.pixar.com/library/MultiJitteredSampling/paper.pdf.
             // Simplified explanation: https://andrew-helmer.github.io/permute/.
-            let mask = usize::MAX >> (n - 1).leading_zeros();
+            let mask = u64::MAX >> (n - 1).leading_zeros();
             loop {
-                ix = hash(ix as u64, mask as u64, seed) as usize;
+                ix = hash(ix, mask, seed);
                 if ix < n {
                     return ix;
                 }
@@ -50,8 +50,8 @@ mod tests {
                 let seed = random_seed();
                 permuted.clear();
                 for ix in 0..n {
-                    let p = permute(ix, n, seed);
-                    assert!(p < n);
+                    let p = permute(ix as u64, n as u64, seed);
+                    assert!(p < n as u64);
                     permuted.push(p);
                 }
                 permuted.sort_unstable();
@@ -74,7 +74,7 @@ mod benches {
         let mut rng = DefaultRand::new(seed);
         b.iter(|| {
             let n = 100_500;
-            let ix = rng.next_below(n);
+            let ix = rng.next_below_u64(n);
             permute(black_box(ix), black_box(n), black_box(seed))
         });
     }

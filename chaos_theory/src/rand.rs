@@ -9,7 +9,7 @@ use core::sync::atomic::AtomicU32;
 #[cfg(all(not(feature = "std"), target_has_atomic = "32"))]
 use core::sync::atomic::Ordering;
 
-use crate::math::{fast_reduce_u64, wide_mul};
+use crate::math::{fast_reduce, wide_mul};
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Rand<R: RandCore> {
@@ -36,7 +36,7 @@ impl<R: RandCore> Rand<R> {
     }
 
     pub(crate) fn next_below_u64(&mut self, n: u64) -> u64 {
-        fast_reduce_u64(self.next(), n)
+        fast_reduce(self.next(), n)
     }
 
     pub(crate) fn coinflip_fair(&mut self) -> bool {

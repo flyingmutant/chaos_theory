@@ -16,11 +16,7 @@ pub(crate) fn wide_mul(a: u64, b: u64) -> (u64, u64) {
     (m as u64, (m >> 64) as u64)
 }
 
-pub(crate) fn fast_reduce(r: u64, n: usize) -> usize {
-    fast_reduce_u64(r, n as u64) as usize
-}
-
-pub(crate) fn fast_reduce_u64(r: u64, n: u64) -> u64 {
+pub(crate) fn fast_reduce(r: u64, n: u64) -> u64 {
     debug_assert_ne!(n, 0);
     let (_, hi) = wide_mul(n, r);
     hi
@@ -66,11 +62,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fast_reduce() {
+    fn fast_reduce_works() {
         check(|src| {
             let r = src.any("r");
             let n = src.any_of("n", make::int_in_range(1..));
-            let v = fast_reduce_u64(r, n);
+            let v = fast_reduce(r, n);
             assert!(v < n);
         });
     }

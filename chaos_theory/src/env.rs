@@ -88,7 +88,7 @@ pub(crate) const TEMPERATURE_BOUND_EXCLUSIVE: u16 = 256;
 pub(crate) const USE_SEED_PROB: f64 = percent(30);
 pub(crate) const USE_SEED_AS_IS_PROB: f64 = percent(15);
 
-// Tweak allows to have several independent index choices inside one scope.
+// Tweak allows to have several independent swarm choices inside one scope.
 #[repr(u64)]
 pub(crate) enum Tweak {
     None = 0,
@@ -732,13 +732,13 @@ impl Env {
         size
     }
 
-    fn choice_new_index(&mut self, n: usize, tweak: Tweak) -> usize {
+    fn choice_new_swarm(&mut self, n: u64, tweak: Tweak) -> u64 {
         let tweaked_scope_id = self.scope_id.0.wrapping_add(tweak as u64);
         if self.scope_enum_mode {
             // Get deterministic random value that depends on seed and scope.
             let r = Wyrand::mix(u64::from(self.seed), tweaked_scope_id);
-            // Enumerate all possible choices (when the version is incremented).
-            let ix = (self.scope_version as usize) % n;
+            // Enumerate 2^32 possible choices (when the version is incremented).
+            let ix = u64::from(self.scope_version) % n;
             permute(ix, n, r)
         } else {
             // Get deterministic random value that depends on seed, scope and version.
@@ -747,14 +747,14 @@ impl Env {
                 tweaked_scope_id,
             );
             // Use deterministic random value to transform the bound.
-            // By using a bound of 2*n instead of n, we only use swarm testing 50% of the time.
+            // By using a bound of 2*n instead of n, we only use swarm testing 50% of the time (for small n).
             let m = fast_reduce(r, n.saturating_mul(2));
             if m < n {
                 // Do the swarm testing magic.
-                permute(self.rng.next_below(m + 1), n, r)
+                permute(self.rng.next_below_u64(m + 1), n, r)
             } else {
                 // Just a random choice.
-                self.rng.next_below(n)
+                self.rng.next_below_u64(n)
             }
         }
     }
@@ -773,7 +773,7 @@ impl Env {
         let example = example.filter(|u| *u < n_lim);
         let index = example
             .or_else(|| reuse.filter(|u| *u < n_lim))
-            .unwrap_or_else(|| self.choice_new_index(n_lim, tweak));
+            .unwrap_or_else(|| self.choice_new_swarm(n_lim as u64, tweak) as usize);
         debug_assert!(index < n_lim);
         self.budget_remaining = self.budget_remaining.saturating_sub(n.bit_len().max(1));
         self.tape_out.push_index(index, n);
@@ -886,8 +886,8 @@ impl Env {
         if !use_seed {
             return None;
         }
-        let seed_ix = self.choice_new_index(seeds, Tweak::SeedChoice);
-        Some(seed_ix)
+        let seed_ix = self.choice_new_swarm(seeds as u64, Tweak::SeedChoice);
+        Some(seed_ix as usize)
     }
 
     pub(crate) fn choose_seed<'seeds, T>(
@@ -1313,9 +1313,9 @@ mod benches {
     }
 
     #[bench]
-    fn choice_new_index(b: &mut test::Bencher) {
+    fn choice_new_swarm(b: &mut test::Bencher) {
         let mut env = Env::custom().env(false);
-        b.iter(|| env.choice_new_index(black_box(10), black_box(Tweak::None)));
+        b.iter(|| env.choice_new_swarm(black_box(10), black_box(Tweak::None)));
     }
 
     #[bench]
