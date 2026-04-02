@@ -787,14 +787,10 @@ impl Env {
         self.tape_out.mark_next_choice_forced();
     }
 
-    fn choice_new_bin_size(&mut self, n: usize) -> usize {
-        self.size_dist.sample(&mut self.rng, n)
-    }
-
     fn choice_new_value(&mut self, max: u64, bias: bool) -> u64 {
         if bias {
             let total_bits = max.bit_len();
-            let use_bits = self.choice_new_bin_size(total_bits + 1);
+            let use_bits = self.size_dist.sample(&mut self.rng, total_bits + 1);
             let mut w = self.rng.next();
             w &= bitmask::<u64>(use_bits);
             w = w.min(max);
