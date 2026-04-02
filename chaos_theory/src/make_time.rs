@@ -134,9 +134,9 @@ impl Generator for SystemTime_ {
         if forced {
             src.mark_next_choice_forced();
         }
-        let ix =
-            src.as_mut()
-                .choose_index(2, example_before.map(usize::from), Tweak::SystemTimeEpoch);
+        let ix = src
+            .as_mut()
+            .choose_index(2, example_before.map(usize::from), Tweak::None);
         let r = if ix == 0 { &self.after } else { &self.before };
         let r = r.expect("internal error: range not set");
         let d = duration_in_range(r).next(src, example.as_ref());

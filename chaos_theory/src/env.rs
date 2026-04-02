@@ -97,7 +97,6 @@ pub(crate) enum Tweak {
     CharCategory = 3,
     CharRange = 4,
     CharIndex = 5,
-    SystemTimeEpoch = 6,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
