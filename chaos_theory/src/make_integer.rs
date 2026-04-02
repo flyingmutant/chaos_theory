@@ -103,38 +103,29 @@ impl<I: Int> Generator for Integer<I> {
                 example = src.as_mut().choose_seed(INTEGER_BOUND_PROB, seeds).copied();
             }
         }
-        if I::UNSIGNED {
-            let u = I::Unsigned::from_bits(src.as_mut().choose_value(
-                self.pos.expect("internal error: pos range not set"),
-                example.map(|i| i.unsigned_abs().to_bits()),
-                true,
-            ));
+        let example_neg = example.map(Int::is_negative);
+        let (example_neg, forced) = match (self.neg, self.pos) {
+            (Some(_), Some(_)) => (example_neg, false),
+            (Some(_), None) => (Some(true), true),
+            (None, Some(_)) => (Some(false), true),
+            (None, None) => unreachable!(),
+        };
+        if forced {
+            src.mark_next_choice_forced();
+        }
+        let ix = src
+            .as_mut()
+            .choose_index(2, example_neg.map(usize::from), Tweak::None);
+        let r = if ix == 0 { &self.pos } else { &self.neg };
+        let u = I::Unsigned::from_bits(src.as_mut().choose_value(
+            r.expect("internal error: range not set"),
+            example.map(|i| i.unsigned_abs().to_bits()),
+            true,
+        ));
+        if ix == 0 {
             I::from_unsigned(u)
         } else {
-            let example_neg = example.map(Int::is_negative);
-            let (example_neg, forced) = match (self.neg, self.pos) {
-                (Some(_), Some(_)) => (example_neg, false),
-                (Some(_), None) => (Some(true), true),
-                (None, Some(_)) => (Some(false), true),
-                (None, None) => unreachable!(),
-            };
-            if forced {
-                src.mark_next_choice_forced();
-            }
-            let ix = src
-                .as_mut()
-                .choose_index(2, example_neg.map(usize::from), Tweak::None);
-            let r = if ix == 0 { &self.pos } else { &self.neg };
-            let u = I::Unsigned::from_bits(src.as_mut().choose_value(
-                r.expect("internal error: range not set"),
-                example.map(|i| i.unsigned_abs().to_bits()),
-                true,
-            ));
-            if ix == 0 {
-                I::from_unsigned(u)
-            } else {
-                I::from_unsigned(u.wrapping_neg())
-            }
+            I::from_unsigned(u.wrapping_neg())
         }
     }
 }

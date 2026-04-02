@@ -38,7 +38,6 @@ pub trait Int:
     + Shr<usize, Output = Self>
     + Ranged
 {
-    const UNSIGNED: bool;
     type Unsigned: Unsigned;
 
     #[must_use]
@@ -84,7 +83,6 @@ macro_rules! impl_int_unsigned {
         }
 
         impl Int for $num {
-            const UNSIGNED: bool = true;
             type Unsigned = Self;
 
             fn is_negative(self) -> bool {
@@ -135,7 +133,6 @@ macro_rules! impl_int_signed {
         }
 
         impl Int for $num {
-            const UNSIGNED: bool = false;
             type Unsigned = $unsigned;
 
             fn is_negative(self) -> bool {
