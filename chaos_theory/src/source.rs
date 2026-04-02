@@ -500,6 +500,7 @@ impl SourceRaw<'_> {
     ) -> Option<T> {
         let go = {
             let mut src = Scope::new(src, label, "<maybe>", true, ScopeKind::RepeatSize, false);
+            // TODO: right now this is a shorthand for `repeat_n(0..=1)` and inconsistent with `bool::arbitrary()`
             let size = src
                 .as_mut()
                 .choose_size(SizeRange::new_raw(0, 1), example.map(usize::from));

@@ -52,7 +52,7 @@ impl Biased {
             0 => unreachable!(),
             1 => 0,
             2 => {
-                // Fast-path with linear approximation for bool/Option.
+                // Fast-path with linear approximation.
                 let p = mul_add(self.v, -0.065, 0.85).max(0.5);
                 usize::from(rng.next_float() > p)
             }

@@ -16,9 +16,8 @@ use core::{
 };
 
 use crate::{
-    Arbitrary, Generator, Int, MaybeOwned, SourceRaw, Tweak, Unsigned as _,
-    math::percent,
-    range::{Range, SizeRange},
+    Arbitrary, Generator, Int, MaybeOwned, SourceRaw, Tweak, Unsigned as _, math::percent,
+    range::Range,
 };
 
 const INTEGER_BOUND_PROB: f64 = percent(5);
@@ -26,24 +25,10 @@ const INTEGER_BOUND_PROB: f64 = percent(5);
 pub(crate) const BYTE_SPECIAL_PROB: f64 = percent(75); // high percentage because BYTE_SPECIAL is 40% of all possible bytes
 pub(crate) const BYTE_SPECIAL: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*-_=+.,;:? \t\r\n/\\|()[]{}<>'\"`\x00\x0B\x1B\x7F";
 
-#[derive(Debug)]
-struct Bool {}
-
-impl Generator for Bool {
-    type Item = bool;
-
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        // `maybe` without extra scope creation.
-        let size = src
-            .as_mut()
-            .choose_size(SizeRange::new_raw(0, 1), example.copied().map(usize::from));
-        size != 0
-    }
-}
-
 impl Arbitrary for bool {
     fn arbitrary() -> impl Generator<Item = Self> {
-        Bool {}
+        int_in_range::<u8>(0..=1)
+            .map_reversible(|i| i != 0, |b| Some(MaybeOwned::Owned(u8::from(*b))))
     }
 }
 
@@ -75,9 +60,10 @@ impl<I: Int> Generator for Integer<I> {
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut example = example.copied();
         if example.is_none() {
-            // Without custom seeds for bytes, we focus too heave on the ASCII-unprintable range (0-31).
+            // Without custom seeds for bytes, we focus too heavy on the ASCII-unprintable range (0-31).
             // We special-case I::MAX below because it will make us generate all-ones pattern.
-            let is_byte = TypeId::of::<I>() == TypeId::of::<u8>();
+            let is_bool = self.neg.is_none() && self.pos == Some(Range { min: 0, max: 1 });
+            let is_byte = TypeId::of::<I>() == TypeId::of::<u8>() && !is_bool;
             if is_byte {
                 let base = BYTE_SPECIAL.len();
                 let additional = 2 + usize::from(self.range.max != I::MAX); // don't check if min/max are present
