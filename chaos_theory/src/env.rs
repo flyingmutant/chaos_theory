@@ -686,14 +686,11 @@ impl Env {
         if self.replay_exact() {
             let Some(reuse) = self.tape_replay.try_pop_choice_exact(expected) else {
                 self.signal_replay_mismatch("structural mismatch (choice)");
-                return self
-                    .tape_replay
-                    .pop_choice(expected, &mut self.budget_remaining);
+                return self.tape_replay.pop_choice(&mut self.budget_remaining);
             };
             Some(reuse)
         } else {
-            self.tape_replay
-                .pop_choice(expected, &mut self.budget_remaining)
+            self.tape_replay.pop_choice(&mut self.budget_remaining)
         }
     }
 
@@ -833,7 +830,7 @@ impl Env {
         let example_extra = fit_to_extra(example, r, max);
         let value_extra = example_extra
             .or_else(|| {
-                let reuse = reuse_extra.map(|u| r.min + u);
+                let reuse = reuse_extra.map(|u| r.min.saturating_add(u));
                 fit_to_extra(reuse, r, max)
             })
             .unwrap_or_else(|| self.choice_new_value(max, bias));

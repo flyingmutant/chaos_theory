@@ -464,11 +464,7 @@ impl Tape {
         Some(value)
     }
 
-    pub(crate) fn pop_choice(
-        &mut self,
-        expected: &Event,
-        budget_remaining: &mut usize,
-    ) -> Option<u64> {
+    pub(crate) fn pop_choice(&mut self, budget_remaining: &mut usize) -> Option<u64> {
         if self.events.is_empty() {
             if self.choices.is_empty() {
                 return None;
@@ -490,31 +486,17 @@ impl Tape {
         ) {
             self.event_reuse_ix += 1;
         }
+        // Only consume and return an event if it is a choice one
+        // (for simplicity we don't care about exact event kind).
         match self.events.get(self.event_reuse_ix as usize) {
-            Some(event @ Event::Size { .. }) if matches!(expected, Event::Size { .. }) => {
-                self.event_reuse_ix += 1;
-                Some(event.unwrap_choice_value())
-            }
-            Some(event @ Event::Index { .. }) if matches!(expected, Event::Index { .. }) => {
-                self.event_reuse_ix += 1;
-                Some(event.unwrap_choice_value())
-            }
-            Some(event @ Event::Value { .. }) if matches!(expected, Event::Value { .. }) => {
-                self.event_reuse_ix += 1;
-                Some(event.unwrap_choice_value())
-            }
-            Some(event @ Event::Token { .. }) if matches!(expected, Event::Token { .. }) => {
-                self.event_reuse_ix += 1;
-                Some(event.unwrap_choice_value())
-            }
             Some(
-                Event::Size { .. }
+                event @ (Event::Size { .. }
                 | Event::Index { .. }
                 | Event::Value { .. }
-                | Event::Token { .. },
+                | Event::Token { .. }),
             ) => {
                 self.event_reuse_ix += 1;
-                None
+                Some(event.unwrap_choice_value())
             }
             Some(_) => None,
             None => {
