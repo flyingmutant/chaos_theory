@@ -6,11 +6,7 @@
 
 use core::cmp::Ordering;
 
-use crate::{
-    Arbitrary, Generator, SourceRaw, Tweak,
-    make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB},
-    math::percent,
-};
+use crate::{Arbitrary, Generator, SourceRaw, Tweak, make::int_in_range, math::percent};
 
 impl Arbitrary for char {
     fn arbitrary() -> impl Generator<Item = Self> {
@@ -195,32 +191,6 @@ struct Char {
     cr_to_space: bool,
 }
 
-#[derive(Debug)]
-// We could have used int_in_range::<u8>(..=0x7f),
-// but that is based on `choose_value`, and we prefer `choose_index` here.
-struct Ascii {}
-
-impl Generator for Ascii {
-    type Item = u8;
-
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        const ASCII_MASK: u8 = 0x7f;
-        let mut example = example.copied();
-        if example.is_none() {
-            example = src
-                .as_mut()
-                .choose_seed(BYTE_SPECIAL_PROB, BYTE_SPECIAL)
-                .copied();
-        }
-        let example = example.map(|e| usize::from(e & ASCII_MASK));
-        let b = src
-            .as_mut()
-            .choose_index(usize::from(ASCII_MASK + 1), example, Tweak::None) as u8;
-        debug_assert!(char::from(b).is_ascii());
-        b
-    }
-}
-
 /// Create a generator of ASCII [`char`] values.
 pub fn char_ascii() -> impl Generator<Item = char> {
     byte_ascii().map_into_try_from()
@@ -228,7 +198,7 @@ pub fn char_ascii() -> impl Generator<Item = char> {
 
 /// Create a generator of ASCII [`u8`] values.
 pub fn byte_ascii() -> impl Generator<Item = u8> {
-    Ascii {}
+    int_in_range(..=0x7f)
 }
 
 #[cfg(feature = "regex")]
@@ -412,6 +382,11 @@ mod tests {
             let c = src.as_raw().any("c", Some(&example));
             assert_eq!(c, example);
         });
+    }
+
+    #[test]
+    fn char_ascii_examples() {
+        print_debug_examples(&char_ascii(), None, Ord::cmp);
     }
 
     #[test]

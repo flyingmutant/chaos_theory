@@ -94,10 +94,14 @@ pub(crate) enum Tweak {
     None = 0,
     SeedChoice = 1,
     IntSign = 2,
-    FloatSign = 3,
-    CharCategory = 4,
-    CharRange = 5,
-    CharIndex = 6,
+    IntValue = 3,
+    FloatSign = 4,
+    FloatSigInt = 5,
+    FloatSigFrac = 6,
+    FloatSigFracBits = 7,
+    CharCategory = 8,
+    CharRange = 9,
+    CharIndex = 10,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -784,20 +788,28 @@ impl Env {
         self.tape_out.mark_next_choice_forced();
     }
 
-    fn choice_new_value(&mut self, max: u64, bias: bool) -> u64 {
-        if bias {
+    fn choice_new_value(&mut self, max: u64, bias_to_small: bool, tweak: Tweak) -> u64 {
+        // Use the same bound for higher permutation stability.
+        // TODO: teach `choice_new_swarm` to do this internally
+        let mut w = self.choice_new_swarm(u64::MAX, tweak);
+        if bias_to_small {
             let total_bits = max.bit_len();
             let use_bits = self.size_dist.sample(&mut self.rng, total_bits + 1);
-            let mut w = self.rng.next();
             w &= bitmask::<u64>(use_bits);
             w = w.min(max);
             w
         } else {
-            self.rng.next_below_u64(max.saturating_add(1))
+            fast_reduce(w, max.saturating_add(1))
         }
     }
 
-    pub(crate) fn choose_value(&mut self, r: Range<u64>, example: Option<u64>, bias: bool) -> u64 {
+    pub(crate) fn choose_value(
+        &mut self,
+        r: Range<u64>,
+        example: Option<u64>,
+        bias_to_small: bool,
+        tweak: Tweak,
+    ) -> u64 {
         // Try to preserve the value bit pattern while ensuring that we fit into required range.
         // This is consistent with our "number-is-a-bit-string" idea.
         fn fit_to_extra(u: Option<u64>, r: Range<u64>, max: u64) -> Option<u64> {
@@ -833,7 +845,7 @@ impl Env {
                 let reuse = reuse_extra.map(|u| r.min.saturating_add(u));
                 fit_to_extra(reuse, r, max)
             })
-            .unwrap_or_else(|| self.choice_new_value(max, bias));
+            .unwrap_or_else(|| self.choice_new_value(max, bias_to_small, tweak));
         debug_assert!(value_extra <= max);
         let value = r.min + value_extra;
         debug_assert!(r.contains(&value));

@@ -107,6 +107,7 @@ impl<I: Int> Generator for Integer<I> {
             r.expect("internal error: range not set"),
             example.map(|i| i.unsigned_abs().to_bits()),
             true,
+            Tweak::IntValue,
         ));
         if ix == 0 {
             I::from_unsigned(u)
