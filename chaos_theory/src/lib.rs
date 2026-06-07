@@ -85,6 +85,7 @@ mod env;
 mod generator;
 mod hash;
 mod hash_identity;
+mod jumphash;
 mod libfuzzer;
 mod math;
 mod num;
