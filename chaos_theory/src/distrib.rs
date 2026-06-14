@@ -65,7 +65,7 @@ impl Biased {
     }
 }
 
-// P(x) = (v + x) ^ -q
+// P(x) ∝ (v + x) ^ -q
 //
 // W.Hormann, G.Derflinger: "Rejection-Inversion to Generate Variates from Monotone Discrete Distributions".
 // See:
