@@ -65,43 +65,6 @@ impl Biased {
     }
 }
 
-#[cfg(test)]
-struct Geometric {
-    log1m_p: f64,
-}
-
-#[cfg(test)]
-impl Geometric {
-    fn new_with_mean(m: f64) -> Self {
-        debug_assert!(m >= 0.0);
-        let p = 1.0 / (m + 1.0);
-        Self::new(p)
-    }
-
-    fn new(p: f64) -> Self {
-        debug_assert!(p > 0.0 && p <= 1.0);
-        Self {
-            log1m_p: (-p).ln_1p(),
-        }
-    }
-
-    fn sample(&self, rng: &mut Rand<impl RandCore>) -> u64 {
-        let f = rng.next_float();
-        let n = (-f).ln_1p() / self.log1m_p;
-        n as u64
-    }
-}
-
-#[cfg(test)]
-fn bound_wrap(v: u64, max: u64) -> u64 {
-    if v <= max {
-        v
-    } else {
-        let e = v - max - 1;
-        max.saturating_sub(e)
-    }
-}
-
 // P(x) = (v + x) ^ -q
 //
 // W.Hormann, G.Derflinger: "Rejection-Inversion to Generate Variates from Monotone Discrete Distributions".
@@ -224,6 +187,43 @@ impl Zipf {
         let k = (x + 0.5) as u64;
         debug_assert!(k as f64 <= self.k);
         k
+    }
+}
+
+#[cfg(test)]
+struct Geometric {
+    log1m_p: f64,
+}
+
+#[cfg(test)]
+impl Geometric {
+    fn new_with_mean(m: f64) -> Self {
+        debug_assert!(m >= 0.0);
+        let p = 1.0 / (m + 1.0);
+        Self::new(p)
+    }
+
+    fn new(p: f64) -> Self {
+        debug_assert!(p > 0.0 && p <= 1.0);
+        Self {
+            log1m_p: (-p).ln_1p(),
+        }
+    }
+
+    fn sample(&self, rng: &mut Rand<impl RandCore>) -> u64 {
+        let f = rng.next_float();
+        let n = (-f).ln_1p() / self.log1m_p;
+        n as u64
+    }
+}
+
+#[cfg(test)]
+fn bound_wrap(v: u64, max: u64) -> u64 {
+    if v <= max {
+        v
+    } else {
+        let e = v - max - 1;
+        max.saturating_sub(e)
     }
 }
 
