@@ -16,6 +16,7 @@ pub(crate) fn wide_mul(a: u64, b: u64) -> (u64, u64) {
     (m as u64, (m >> 64) as u64)
 }
 
+/// Reduce pseudo-random `r` to [0, n).
 pub(crate) fn fast_reduce(r: u64, n: u64) -> u64 {
     debug_assert_ne!(n, 0);
     let (_, hi) = wide_mul(n, r);

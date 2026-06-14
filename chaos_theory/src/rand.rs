@@ -27,14 +27,17 @@ impl<R: RandCore> Rand<R> {
         self.rng.next()
     }
 
+    // [0, 1)
     pub(crate) fn next_float(&mut self) -> f64 {
         low_53_to_float(self.next())
     }
 
+    // [0, n)
     pub(crate) fn next_below(&mut self, n: usize) -> usize {
         self.next_below_u64(n as u64) as usize
     }
 
+    // [0, n)
     pub(crate) fn next_below_u64(&mut self, n: u64) -> u64 {
         fast_reduce(self.next(), n)
     }
