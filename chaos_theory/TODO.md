@@ -36,5 +36,5 @@
 
 ## internals
 
-- consider using `core::range::Range`
-- consider using `assert_matches!`
+- consider using `core::range::Range` (requires 1.96)
+- consider using `assert_matches!` (requires 1.96)
