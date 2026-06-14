@@ -21,6 +21,7 @@ pub(crate) fn jumphash(seed: u64, buckets: u64) -> u64 {
             j = ((u128::from(b + 1) << 31) / u128::from((r >> 33) + 1)).min(u64::MAX.into()) as u64;
         }
     }
+    debug_assert!(b < buckets);
     b
 }
 
