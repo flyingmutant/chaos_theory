@@ -12,8 +12,6 @@ use core::{
     ops::{Deref, RangeBounds},
     str::{Chars, Utf8Chunks},
 };
-#[cfg(feature = "std")]
-use std::ffi::{OsStr, OsString};
 #[cfg(all(feature = "std", target_os = "hermit"))]
 use std::os::hermit::ffi::{OsStrExt as _, OsStringExt as _};
 #[cfg(all(feature = "std", target_os = "solid_asp3"))]
@@ -26,6 +24,12 @@ use std::os::wasi::ffi::{OsStrExt as _, OsStringExt as _};
 use std::os::windows::ffi::{OsStrExt as _, OsStringExt as _};
 #[cfg(all(feature = "std", target_os = "xous"))]
 use std::os::xous::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(feature = "std")]
+use std::{
+    ffi::{OsStr, OsString},
+    path::{Path, PathBuf},
+    sync::LazyLock,
+};
 
 use crate::{
     Arbitrary, Effect, Generator, MaybeOwned, SourceRaw, make_collection::next_vec_impl,
@@ -97,6 +101,41 @@ impl Arbitrary for Arc<OsStr> {
 impl Arbitrary for Cow<'_, OsStr> {
     fn arbitrary() -> impl Generator<Item = Self> {
         os_string_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for PathBuf {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        path_buf_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Box<Path> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        path_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Rc<Path> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        path_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Arc<Path> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        path_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Cow<'_, Path> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        path_arbitrary()
     }
 }
 
@@ -173,13 +212,42 @@ const STRING_SPECIAL: &[&str] = &[
     "{0}",
     "%*.*s",
     "%@",
-    // Strings which are reserved characters in MS-DOS/Windows (subset)
+    // Path shapes which make lexical operations useful
+    "a/b.tar.gz",
+    "a/.b.toml",
+    "./a",
+    "../a",
+    "a/b/",
+    "a\0b",
+    // Rooted paths
+    "/a/b.tar.gz",
+    "//a/b/c.tar.gz",
+    // Windows path prefixes and special names
+    r"\a\b.txt",
+    r"C:a\b.txt",
+    r"C:\a\b.txt",
+    r"\\a\b\c.txt",
+    r"\\?\a\b.txt",
+    r"\\?\C:\a\b.txt",
+    r"\\?\UNC\a\b\c.txt",
+    r"\\.\a\b.txt",
+    r"a\b.txt:stream",
+    r"a\b. ",
     "CON",
     "PRN",
     "AUX",
     "CLOCK$",
     "NUL",
+    "NUL.txt",
 ];
+
+// Index of the first path-specific entry (`"a/b.tar.gz"`).
+const PATH_SPECIAL_START: usize = 38;
+const PATH_SPECIAL: &[&str] = STRING_SPECIAL.split_at(PATH_SPECIAL_START).1;
+
+#[cfg(feature = "std")]
+static PATH_SPECIAL_VALUES: LazyLock<Vec<PathBuf>> =
+    LazyLock::new(|| PATH_SPECIAL.iter().map(PathBuf::from).collect());
 
 #[derive(Debug)]
 struct CString_<G, T> {
@@ -240,13 +308,13 @@ struct OsStringBytes_<G, T> {
 impl<G, T> Generator for OsStringBytes_<G, T>
 where
     G: Generator<Item = u8>,
-    T: From<OsString> + Deref<Target = OsStr> + Debug,
+    T: From<OsString> + AsRef<OsStr> + Debug,
 {
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut bytes = Vec::new();
-        let example = example.map(|s| s.as_bytes()).or_else(|| {
+        let example = example.map(|s| s.as_ref().as_bytes()).or_else(|| {
             src.as_mut()
                 .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
                 .copied()
@@ -269,7 +337,7 @@ where
 ))]
 fn os_string_arbitrary<T>() -> impl Generator<Item = T>
 where
-    T: From<OsString> + Deref<Target = OsStr> + Debug,
+    T: From<OsString> + AsRef<OsStr> + Debug,
 {
     OsStringBytes_ {
         elem: u8::arbitrary(),
@@ -290,14 +358,14 @@ struct OsStringWide_<G, T> {
 impl<G, T> Generator for OsStringWide_<G, T>
 where
     G: Generator<Item = u16>,
-    T: From<OsString> + Deref<Target = OsStr> + Debug,
+    T: From<OsString> + AsRef<OsStr> + Debug,
 {
     type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut wide = Vec::new();
         let example = example
-            .map(|s| s.encode_wide().collect::<Vec<_>>())
+            .map(|s| s.as_ref().encode_wide().collect::<Vec<_>>())
             .or_else(|| {
                 src.as_mut()
                     .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
@@ -312,7 +380,7 @@ where
 #[cfg(all(feature = "std", windows))]
 fn os_string_arbitrary<T>() -> impl Generator<Item = T>
 where
-    T: From<OsString> + Deref<Target = OsStr> + Debug,
+    T: From<OsString> + AsRef<OsStr> + Debug,
 {
     OsStringWide_ {
         elem: u16::arbitrary(),
@@ -334,12 +402,30 @@ where
 ))]
 fn os_string_arbitrary<T>() -> impl Generator<Item = T>
 where
-    T: From<OsString> + Deref<Target = OsStr> + Debug,
+    T: From<OsString> + AsRef<OsStr> + Debug,
 {
     String::arbitrary().map_reversible(
         |s| OsString::from(s).into(),
-        |s: &T| s.to_str().map(|s| MaybeOwned::Owned(String::from(s))),
+        |s: &T| {
+            s.as_ref()
+                .to_str()
+                .map(|s| MaybeOwned::Owned(String::from(s)))
+        },
     )
+}
+
+#[cfg(feature = "std")]
+fn path_buf_arbitrary() -> impl Generator<Item = PathBuf> {
+    os_string_arbitrary().seeded(PATH_SPECIAL_VALUES.as_slice(), true)
+}
+
+#[cfg(feature = "std")]
+fn path_arbitrary<T>() -> impl Generator<Item = T>
+where
+    T: From<PathBuf> + Deref<Target = Path> + Debug,
+{
+    path_buf_arbitrary()
+        .map_reversible(Into::into, |p: &T| Some(MaybeOwned::Owned(p.to_path_buf())))
 }
 
 impl<G, T> Generator for String_<G, T>
@@ -618,7 +704,10 @@ mod tests {
 
     use super::{CStr, CString, CharIterator};
     #[cfg(feature = "std")]
-    use std::ffi::{OsStr, OsString};
+    use std::{
+        ffi::{OsStr, OsString},
+        path::{Path, PathBuf},
+    };
 
     #[test]
     fn char_iterator() {
@@ -653,6 +742,26 @@ mod tests {
             prop_smoke(src, "Rc<OsStr>", Rc::<OsStr>::arbitrary());
             prop_smoke(src, "Arc<OsStr>", Arc::<OsStr>::arbitrary());
             prop_smoke(src, "Cow<OsStr>", Cow::<OsStr>::arbitrary());
+        });
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn path_smoke() {
+        check(|src| {
+            prop_smoke(src, "PathBuf", PathBuf::arbitrary());
+            prop_smoke(src, "Box<Path>", Box::<Path>::arbitrary());
+            prop_smoke(src, "Rc<Path>", Rc::<Path>::arbitrary());
+            prop_smoke(src, "Arc<Path>", Arc::<Path>::arbitrary());
+            prop_smoke(src, "Cow<Path>", Cow::<Path>::arbitrary());
+        });
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn path_examples() {
+        print_debug_examples(&make::arbitrary::<PathBuf>(), None, |a, b| {
+            (a.as_os_str().len(), a).cmp(&(b.as_os_str().len(), b))
         });
     }
 

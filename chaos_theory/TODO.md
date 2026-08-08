@@ -17,7 +17,6 @@
 ## generators
 
 - u128
-- PathBuf
 - IpAddr/SocketAddr
 - permutation/shuffle/subsequence/random chunking
 - recursive

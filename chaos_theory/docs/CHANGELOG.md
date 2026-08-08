@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `Arbitrary` impls for `PathBuf` and owned `Path` types.
 - Add target-specific `Arbitrary` impl for `OSString`.
 - Add `CString` generators.
 - Add trivial `Arbitrary` impl for `MaybeUninit`.
