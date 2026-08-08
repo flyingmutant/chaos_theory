@@ -11,6 +11,20 @@ use core::{
     ops::{Deref, RangeBounds},
     str::{Chars, Utf8Chunks},
 };
+#[cfg(feature = "std")]
+use std::ffi::OsString;
+#[cfg(all(feature = "std", target_os = "hermit"))]
+use std::os::hermit::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(all(feature = "std", target_os = "solid_asp3"))]
+use std::os::solid::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(all(feature = "std", unix))]
+use std::os::unix::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(all(feature = "std", target_os = "wasi"))]
+use std::os::wasi::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(all(feature = "std", windows))]
+use std::os::windows::ffi::{OsStrExt as _, OsStringExt as _};
+#[cfg(all(feature = "std", target_os = "xous"))]
+use std::os::xous::ffi::{OsStrExt as _, OsStringExt as _};
 
 use crate::{
     Arbitrary, Effect, Generator, MaybeOwned, SourceRaw, make_collection::next_vec_impl,
@@ -23,6 +37,13 @@ const REPLACEMENT_CHAR: char = '\u{FFFD}';
 impl Arbitrary for CString {
     fn arbitrary() -> impl Generator<Item = Self> {
         cstring(u8::arbitrary())
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for OsString {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        os_string_arbitrary()
     }
 }
 
@@ -127,6 +148,116 @@ impl<G: Generator<Item = u8>> Generator for CString_<G> {
         next_vec_impl(src, example, &mut bytes, &self.elem, self.size);
         CString::new(bytes).expect("internal error: generated NUL byte")
     }
+}
+
+#[cfg(all(
+    feature = "std",
+    any(
+        unix,
+        target_os = "hermit",
+        target_os = "solid_asp3",
+        target_os = "wasi",
+        target_os = "xous"
+    )
+))]
+#[derive(Debug)]
+struct OsStringBytes_<G> {
+    elem: G,
+    size: SizeRange,
+}
+
+#[cfg(all(
+    feature = "std",
+    any(
+        unix,
+        target_os = "hermit",
+        target_os = "solid_asp3",
+        target_os = "wasi",
+        target_os = "xous"
+    )
+))]
+impl<G: Generator<Item = u8>> Generator for OsStringBytes_<G> {
+    type Item = OsString;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let mut bytes = Vec::new();
+        let example = example.map(|s| s.as_os_str().as_bytes()).or_else(|| {
+            src.as_mut()
+                .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                .copied()
+                .map(str::as_bytes)
+        });
+        next_vec_impl(src, example, &mut bytes, &self.elem, self.size);
+        OsString::from_vec(bytes)
+    }
+}
+
+#[cfg(all(
+    feature = "std",
+    any(
+        unix,
+        target_os = "hermit",
+        target_os = "solid_asp3",
+        target_os = "wasi",
+        target_os = "xous"
+    )
+))]
+fn os_string_arbitrary() -> impl Generator<Item = OsString> {
+    OsStringBytes_ {
+        elem: u8::arbitrary(),
+        size: SizeRange::new(..),
+    }
+}
+
+#[cfg(all(feature = "std", windows))]
+#[derive(Debug)]
+struct OsStringWide_<G> {
+    elem: G,
+    size: SizeRange,
+}
+
+#[cfg(all(feature = "std", windows))]
+impl<G: Generator<Item = u16>> Generator for OsStringWide_<G> {
+    type Item = OsString;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let mut wide = Vec::new();
+        let example = example
+            .map(|s| s.as_os_str().encode_wide().collect::<Vec<_>>())
+            .or_else(|| {
+                src.as_mut()
+                    .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                    .copied()
+                    .map(|s| s.encode_utf16().collect())
+            });
+        next_vec_impl(src, example.as_deref(), &mut wide, &self.elem, self.size);
+        OsString::from_wide(&wide)
+    }
+}
+
+#[cfg(all(feature = "std", windows))]
+fn os_string_arbitrary() -> impl Generator<Item = OsString> {
+    OsStringWide_ {
+        elem: u16::arbitrary(),
+        size: SizeRange::new(..),
+    }
+}
+
+#[cfg(all(
+    feature = "std",
+    not(any(
+        unix,
+        windows,
+        target_os = "hermit",
+        target_os = "solid_asp3",
+        target_os = "wasi",
+        target_os = "xous"
+    ))
+))]
+fn os_string_arbitrary() -> impl Generator<Item = OsString> {
+    String::arbitrary().map_reversible(OsString::from, |s| {
+        s.to_str().map(|s| MaybeOwned::Owned(String::from(s)))
+    })
 }
 
 impl<G, T> Generator for String_<G, T>
@@ -363,6 +494,8 @@ mod tests {
     };
 
     use super::{CString, CharIterator};
+    #[cfg(feature = "std")]
+    use std::ffi::OsString;
 
     #[test]
     fn char_iterator() {
@@ -381,6 +514,14 @@ mod tests {
     fn c_string_smoke() {
         check(|src| {
             prop_smoke(src, "c_string", CString::arbitrary());
+        });
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn os_string_smoke() {
+        check(|src| {
+            prop_smoke(src, "os_string", OsString::arbitrary());
         });
     }
 

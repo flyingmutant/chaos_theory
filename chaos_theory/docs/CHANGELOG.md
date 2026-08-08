@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add target-specific `Arbitrary` impl for `OSString`.
 - Add `CString` generators.
 - Add trivial `Arbitrary` impl for `MaybeUninit`.
 - Add `Arbitrary` impls for `Range` and `Bound` types.

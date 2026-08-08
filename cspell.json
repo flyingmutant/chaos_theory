@@ -46,6 +46,7 @@
     "docsrs",
     "docstrings",
     "doctest",
+    "eabi",
     "ecovec",
     "ecow",
     "elems",
@@ -67,6 +68,7 @@
     "impls",
     "indexmap",
     "indexset",
+    "ints",
     "Kensler",
     "libfuzzer",
     "libm",
@@ -122,12 +124,12 @@
     "Veach",
     "veprintln",
     "vprintln",
+    "wasi",
     "wyhash",
     "Wyrand",
+    "xous",
     "xshell",
     "xtask",
-    "Zipf",
-    "eabi",
-    "ints"
+    "Zipf"
   ]
 }
