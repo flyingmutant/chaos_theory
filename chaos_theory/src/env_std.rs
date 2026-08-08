@@ -109,7 +109,7 @@ pub(super) fn log_effect_impl(env: &Env, label: &str, counter: usize, effect: Ef
 }
 
 pub(super) fn print_input(env: &Env) {
-    println!("{}", &env.tape_replay);
+    println!("{}", env.tape_replay);
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
