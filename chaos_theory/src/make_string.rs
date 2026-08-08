@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::{borrow::Cow, boxed::Box, rc::Rc, string::String, sync::Arc, vec::Vec};
+use alloc::{borrow::Cow, boxed::Box, ffi::CString, rc::Rc, string::String, sync::Arc, vec::Vec};
 use core::{
     fmt::Debug,
     marker::PhantomData,
@@ -12,10 +12,19 @@ use core::{
     str::{Chars, Utf8Chunks},
 };
 
-use crate::{Arbitrary, Effect, Generator, SourceRaw, math::percent, range::SizeRange};
+use crate::{
+    Arbitrary, Effect, Generator, MaybeOwned, SourceRaw, make_collection::next_vec_impl,
+    math::percent, range::SizeRange,
+};
 
 const STRING_SPECIAL_PROB: f64 = percent(10);
 const REPLACEMENT_CHAR: char = '\u{FFFD}';
+
+impl Arbitrary for CString {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        cstring(u8::arbitrary())
+    }
+}
 
 impl Arbitrary for String {
     fn arbitrary() -> impl Generator<Item = Self> {
@@ -97,6 +106,28 @@ const STRING_SPECIAL: &[&str] = &[
     "CLOCK$",
     "NUL",
 ];
+
+#[derive(Debug)]
+struct CString_<G> {
+    elem: G,
+    size: SizeRange,
+}
+
+impl<G: Generator<Item = u8>> Generator for CString_<G> {
+    type Item = CString;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let mut bytes = Vec::new();
+        let example = example.map(CString::as_bytes).or_else(|| {
+            src.as_mut()
+                .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                .copied()
+                .map(str::as_bytes)
+        });
+        next_vec_impl(src, example, &mut bytes, &self.elem, self.size);
+        CString::new(bytes).expect("internal error: generated NUL byte")
+    }
+}
 
 impl<G, T> Generator for String_<G, T>
 where
@@ -247,6 +278,30 @@ struct String_<G, T> {
     _marker: PhantomData<T>,
 }
 
+/// Create a [`CString`] generator.
+///
+/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+pub fn cstring(elem: impl Generator<Item = u8>) -> impl Generator<Item = CString> {
+    cstring_with_size(elem, ..)
+}
+
+/// Create a [`CString`] generator with the specified content size in bytes, excluding the terminating NUL.
+///
+/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+pub fn cstring_with_size(
+    elem: impl Generator<Item = u8>,
+    size: impl RangeBounds<usize>,
+) -> impl Generator<Item = CString> {
+    let elem = elem.map_reversible(
+        |b| if b == b'\0' { b' ' } else { b },
+        |b| Some(MaybeOwned::Borrowed(b)),
+    );
+    CString_ {
+        elem,
+        size: SizeRange::new(size),
+    }
+}
+
 /// Create a [`String`] generator.
 pub fn string(elem: impl Generator<Item = char>) -> impl Generator<Item = String> {
     string_with_size(elem, ..)
@@ -307,7 +362,7 @@ mod tests {
         tests::{print_debug_examples, prop_smoke},
     };
 
-    use super::CharIterator;
+    use super::{CString, CharIterator};
 
     #[test]
     fn char_iterator() {
@@ -319,6 +374,13 @@ mod tests {
             let s2: Vec<char> = String::from_utf8_lossy(&bytes).chars().collect();
             assert_eq!(s1.len(), char_len);
             assert_eq!(s1, s2);
+        });
+    }
+
+    #[test]
+    fn c_string_smoke() {
+        check(|src| {
+            prop_smoke(src, "c_string", CString::arbitrary());
         });
     }
 

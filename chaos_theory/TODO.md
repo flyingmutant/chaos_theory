@@ -17,7 +17,6 @@
 ## generators
 
 - u128
-- CString
 - OSString
 - PathBuf
 - IpAddr/SocketAddr
