@@ -21,7 +21,6 @@
 - OSString
 - PathBuf
 - IpAddr/SocketAddr
-- MaybeUninit
 - permutation/shuffle/subsequence/random chunking
 - recursive
 

@@ -8,6 +8,7 @@ use core::{
     cmp::Ordering,
     fmt::Debug,
     marker::{PhantomData, PhantomPinned},
+    mem::MaybeUninit,
     num::NonZero,
     ops::{Bound, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
     result::Result,
@@ -24,6 +25,13 @@ impl<T: ?Sized> Arbitrary for PhantomData<T> {
 impl Arbitrary for PhantomPinned {
     fn arbitrary() -> impl Generator<Item = Self> {
         make::just(Self)
+    }
+}
+
+// Always generate uninitialized storage because its initialization state cannot be inspected safely.
+impl<T> Arbitrary for MaybeUninit<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        make::from_fn(|_| Self::uninit())
     }
 }
 

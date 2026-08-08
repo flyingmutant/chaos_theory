@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add trivial `Arbitrary` impl for `MaybeUninit`.
 - Add `Arbitrary` impls for `Range` and `Bound` types.
 - Add `should_log()`, remove `Source::should_log`, make `vdbg!`, `vprintln!`, and `veprintln!` usable everywhere.
 
