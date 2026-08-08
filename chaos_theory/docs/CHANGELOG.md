@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `Arbitrary` impls for `Range` and `Bound` types.
 - Add `should_log()`, remove `Source::should_log`, make `vdbg!`, `vprintln!`, and `veprintln!` usable everywhere.
 
 ## 0.3.5 (2026-03-25)

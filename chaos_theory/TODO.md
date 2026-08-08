@@ -21,7 +21,6 @@
 - OSString
 - PathBuf
 - IpAddr/SocketAddr
-- range types, Bound
 - MaybeUninit
 - permutation/shuffle/subsequence/random chunking
 - recursive

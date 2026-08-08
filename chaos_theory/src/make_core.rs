@@ -9,6 +9,7 @@ use core::{
     fmt::Debug,
     marker::{PhantomData, PhantomPinned},
     num::NonZero,
+    ops::{Bound, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
     result::Result,
 };
 
@@ -43,6 +44,135 @@ impl Arbitrary for Ordering {
         }
 
         make::from_next(make_ordering)
+    }
+}
+
+#[derive(Debug)]
+struct Range_<GS, GE> {
+    start: GS,
+    end: GE,
+}
+
+impl<GS: Generator, GE: Generator<Item = GS::Item>> Generator for Range_<GS, GE> {
+    type Item = Range<GS::Item>;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let start = src.any_of("start", &self.start, example.map(|r| &r.start));
+        let end = src.any_of("end", &self.end, example.map(|r| &r.end));
+        Range { start, end }
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for Range<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        Range_ {
+            start: T::arbitrary(),
+            end: T::arbitrary(),
+        }
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for RangeFrom<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        T::arbitrary().map_reversible(
+            |start| Self { start },
+            |r| Some(MaybeOwned::Borrowed(&r.start)),
+        )
+    }
+}
+
+impl Arbitrary for RangeFull {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        make::just(Self)
+    }
+}
+
+#[derive(Debug)]
+struct RangeInclusive_<GS, GE> {
+    start: GS,
+    end: GE,
+}
+
+impl<GS: Generator, GE: Generator<Item = GS::Item>> Generator for RangeInclusive_<GS, GE> {
+    type Item = RangeInclusive<GS::Item>;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let start = src.any_of("start", &self.start, example.map(RangeInclusive::start));
+        let end = src.any_of("end", &self.end, example.map(RangeInclusive::end));
+        RangeInclusive::new(start, end)
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for RangeInclusive<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        RangeInclusive_ {
+            start: T::arbitrary(),
+            end: T::arbitrary(),
+        }
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for RangeTo<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        T::arbitrary().map_reversible(|end| Self { end }, |r| Some(MaybeOwned::Borrowed(&r.end)))
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for RangeToInclusive<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        T::arbitrary().map_reversible(|end| Self { end }, |r| Some(MaybeOwned::Borrowed(&r.end)))
+    }
+}
+
+#[derive(Debug)]
+struct Bound_<G> {
+    elem: G,
+}
+
+impl<G: Generator> Generator for Bound_<G> {
+    type Item = Bound<G::Item>;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let example_index = example.map(|e| match e {
+            Bound::Included(_) => 0,
+            Bound::Excluded(_) => 1,
+            Bound::Unbounded => 2,
+        });
+
+        let variants = &["Included", "Excluded", "Unbounded"];
+        let variants_num = NonZero::new(variants.len()).expect("internal error: no variants");
+        src.select(
+            "<bound>",
+            example_index,
+            variants_num,
+            |ix| variants[ix],
+            |src, variant, _ix| match variant {
+                "Included" => {
+                    let example_elem = match example {
+                        Some(Bound::Included(elem)) => Some(elem),
+                        _ => None,
+                    };
+                    Bound::Included(self.elem.next(src, example_elem))
+                }
+                "Excluded" => {
+                    let example_elem = match example {
+                        Some(Bound::Excluded(elem)) => Some(elem),
+                        _ => None,
+                    };
+                    Bound::Excluded(self.elem.next(src, example_elem))
+                }
+                "Unbounded" => Bound::Unbounded,
+                _ => unreachable!(),
+            },
+        )
+    }
+}
+
+impl<T: Arbitrary> Arbitrary for Bound<T> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        Bound_ {
+            elem: T::arbitrary(),
+        }
     }
 }
 
@@ -161,6 +291,33 @@ mod tests {
     fn ordering_smoke() {
         check(|src| {
             prop_smoke(src, "ordering", make::arbitrary::<Ordering>());
+        });
+    }
+
+    #[test]
+    fn range_smoke() {
+        check(|src| {
+            prop_smoke(src, "range", make::arbitrary::<Range<i8>>());
+            prop_smoke(src, "range_from", make::arbitrary::<RangeFrom<i8>>());
+            prop_smoke(src, "range_full", make::arbitrary::<RangeFull>());
+            prop_smoke(
+                src,
+                "range_inclusive",
+                make::arbitrary::<RangeInclusive<i8>>(),
+            );
+            prop_smoke(src, "range_to", make::arbitrary::<RangeTo<i8>>());
+            prop_smoke(
+                src,
+                "range_to_inclusive",
+                make::arbitrary::<RangeToInclusive<i8>>(),
+            );
+        });
+    }
+
+    #[test]
+    fn bound_smoke() {
+        check(|src| {
+            prop_smoke(src, "bound", make::arbitrary::<Bound<i8>>());
         });
     }
 
