@@ -6,13 +6,14 @@
 
 use alloc::{borrow::Cow, boxed::Box, ffi::CString, rc::Rc, string::String, sync::Arc, vec::Vec};
 use core::{
+    ffi::CStr,
     fmt::Debug,
     marker::PhantomData,
     ops::{Deref, RangeBounds},
     str::{Chars, Utf8Chunks},
 };
 #[cfg(feature = "std")]
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 #[cfg(all(feature = "std", target_os = "hermit"))]
 use std::os::hermit::ffi::{OsStrExt as _, OsStringExt as _};
 #[cfg(all(feature = "std", target_os = "solid_asp3"))]
@@ -40,8 +41,60 @@ impl Arbitrary for CString {
     }
 }
 
+impl Arbitrary for Box<CStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        cstring_slice(u8::arbitrary())
+    }
+}
+
+impl Arbitrary for Rc<CStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        cstring_slice(u8::arbitrary())
+    }
+}
+
+impl Arbitrary for Arc<CStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        cstring_slice(u8::arbitrary())
+    }
+}
+
+impl Arbitrary for Cow<'_, CStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        cstring_slice(u8::arbitrary())
+    }
+}
+
 #[cfg(feature = "std")]
 impl Arbitrary for OsString {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        os_string_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Box<OsStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        os_string_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Rc<OsStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        os_string_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Arc<OsStr> {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        os_string_arbitrary()
+    }
+}
+
+#[cfg(feature = "std")]
+impl Arbitrary for Cow<'_, OsStr> {
     fn arbitrary() -> impl Generator<Item = Self> {
         os_string_arbitrary()
     }
@@ -129,24 +182,31 @@ const STRING_SPECIAL: &[&str] = &[
 ];
 
 #[derive(Debug)]
-struct CString_<G> {
+struct CString_<G, T> {
     elem: G,
     size: SizeRange,
+    _marker: PhantomData<T>,
 }
 
-impl<G: Generator<Item = u8>> Generator for CString_<G> {
-    type Item = CString;
+impl<G, T> Generator for CString_<G, T>
+where
+    G: Generator<Item = u8>,
+    T: From<CString> + Deref<Target = CStr> + Debug,
+{
+    type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut bytes = Vec::new();
-        let example = example.map(CString::as_bytes).or_else(|| {
+        let example = example.map(|s| s.to_bytes()).or_else(|| {
             src.as_mut()
                 .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
                 .copied()
                 .map(str::as_bytes)
         });
         next_vec_impl(src, example, &mut bytes, &self.elem, self.size);
-        CString::new(bytes).expect("internal error: generated NUL byte")
+        CString::new(bytes)
+            .expect("internal error: generated NUL byte")
+            .into()
     }
 }
 
@@ -161,9 +221,10 @@ impl<G: Generator<Item = u8>> Generator for CString_<G> {
     )
 ))]
 #[derive(Debug)]
-struct OsStringBytes_<G> {
+struct OsStringBytes_<G, T> {
     elem: G,
     size: SizeRange,
+    _marker: PhantomData<T>,
 }
 
 #[cfg(all(
@@ -176,19 +237,23 @@ struct OsStringBytes_<G> {
         target_os = "xous"
     )
 ))]
-impl<G: Generator<Item = u8>> Generator for OsStringBytes_<G> {
-    type Item = OsString;
+impl<G, T> Generator for OsStringBytes_<G, T>
+where
+    G: Generator<Item = u8>,
+    T: From<OsString> + Deref<Target = OsStr> + Debug,
+{
+    type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut bytes = Vec::new();
-        let example = example.map(|s| s.as_os_str().as_bytes()).or_else(|| {
+        let example = example.map(|s| s.as_bytes()).or_else(|| {
             src.as_mut()
                 .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
                 .copied()
                 .map(str::as_bytes)
         });
         next_vec_impl(src, example, &mut bytes, &self.elem, self.size);
-        OsString::from_vec(bytes)
+        OsString::from_vec(bytes).into()
     }
 }
 
@@ -202,28 +267,37 @@ impl<G: Generator<Item = u8>> Generator for OsStringBytes_<G> {
         target_os = "xous"
     )
 ))]
-fn os_string_arbitrary() -> impl Generator<Item = OsString> {
+fn os_string_arbitrary<T>() -> impl Generator<Item = T>
+where
+    T: From<OsString> + Deref<Target = OsStr> + Debug,
+{
     OsStringBytes_ {
         elem: u8::arbitrary(),
         size: SizeRange::new(..),
+        _marker: PhantomData,
     }
 }
 
 #[cfg(all(feature = "std", windows))]
 #[derive(Debug)]
-struct OsStringWide_<G> {
+struct OsStringWide_<G, T> {
     elem: G,
     size: SizeRange,
+    _marker: PhantomData<T>,
 }
 
 #[cfg(all(feature = "std", windows))]
-impl<G: Generator<Item = u16>> Generator for OsStringWide_<G> {
-    type Item = OsString;
+impl<G, T> Generator for OsStringWide_<G, T>
+where
+    G: Generator<Item = u16>,
+    T: From<OsString> + Deref<Target = OsStr> + Debug,
+{
+    type Item = T;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let mut wide = Vec::new();
         let example = example
-            .map(|s| s.as_os_str().encode_wide().collect::<Vec<_>>())
+            .map(|s| s.encode_wide().collect::<Vec<_>>())
             .or_else(|| {
                 src.as_mut()
                     .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
@@ -231,15 +305,19 @@ impl<G: Generator<Item = u16>> Generator for OsStringWide_<G> {
                     .map(|s| s.encode_utf16().collect())
             });
         next_vec_impl(src, example.as_deref(), &mut wide, &self.elem, self.size);
-        OsString::from_wide(&wide)
+        OsString::from_wide(&wide).into()
     }
 }
 
 #[cfg(all(feature = "std", windows))]
-fn os_string_arbitrary() -> impl Generator<Item = OsString> {
+fn os_string_arbitrary<T>() -> impl Generator<Item = T>
+where
+    T: From<OsString> + Deref<Target = OsStr> + Debug,
+{
     OsStringWide_ {
         elem: u16::arbitrary(),
         size: SizeRange::new(..),
+        _marker: PhantomData,
     }
 }
 
@@ -254,10 +332,14 @@ fn os_string_arbitrary() -> impl Generator<Item = OsString> {
         target_os = "xous"
     ))
 ))]
-fn os_string_arbitrary() -> impl Generator<Item = OsString> {
-    String::arbitrary().map_reversible(OsString::from, |s| {
-        s.to_str().map(|s| MaybeOwned::Owned(String::from(s)))
-    })
+fn os_string_arbitrary<T>() -> impl Generator<Item = T>
+where
+    T: From<OsString> + Deref<Target = OsStr> + Debug,
+{
+    String::arbitrary().map_reversible(
+        |s| OsString::from(s).into(),
+        |s: &T| s.to_str().map(|s| MaybeOwned::Owned(String::from(s))),
+    )
 }
 
 impl<G, T> Generator for String_<G, T>
@@ -413,7 +495,7 @@ struct String_<G, T> {
 ///
 /// NUL bytes produced by `elem` are mapped to ASCII spaces.
 pub fn cstring(elem: impl Generator<Item = u8>) -> impl Generator<Item = CString> {
-    cstring_with_size(elem, ..)
+    cstring_slice(elem)
 }
 
 /// Create a [`CString`] generator with the specified content size in bytes, excluding the terminating NUL.
@@ -423,6 +505,44 @@ pub fn cstring_with_size(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = CString> {
+    cstring_slice_with_size(elem, size)
+}
+
+/// Create an owned C string slice generator.
+///
+/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+///
+/// Examples of standard owned C string slices:
+///
+/// - [`Box<CStr>`]
+/// - [`Rc<CStr>`]
+/// - [`Arc<CStr>`]
+/// - [`Cow<'_, CStr>`](alloc::borrow::Cow)
+pub fn cstring_slice<T>(elem: impl Generator<Item = u8>) -> impl Generator<Item = T>
+where
+    T: From<CString> + Deref<Target = CStr> + Debug,
+{
+    cstring_slice_with_size(elem, ..)
+}
+
+/// Create an owned C string slice generator with the specified content size in bytes,
+/// excluding the terminating NUL.
+///
+/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+///
+/// Examples of standard owned C string slices:
+///
+/// - [`Box<CStr>`]
+/// - [`Rc<CStr>`]
+/// - [`Arc<CStr>`]
+/// - [`Cow<'_, CStr>`](alloc::borrow::Cow)
+pub fn cstring_slice_with_size<T>(
+    elem: impl Generator<Item = u8>,
+    size: impl RangeBounds<usize>,
+) -> impl Generator<Item = T>
+where
+    T: From<CString> + Deref<Target = CStr> + Debug,
+{
     let elem = elem.map_reversible(
         |b| if b == b'\0' { b' ' } else { b },
         |b| Some(MaybeOwned::Borrowed(b)),
@@ -430,6 +550,7 @@ pub fn cstring_with_size(
     CString_ {
         elem,
         size: SizeRange::new(size),
+        _marker: PhantomData,
     }
 }
 
@@ -488,14 +609,16 @@ where
 
 #[cfg(test)]
 mod tests {
+    use alloc::{borrow::Cow, boxed::Box, rc::Rc, sync::Arc};
+
     use crate::{
         Arbitrary as _, Generator as _, check, make,
         tests::{print_debug_examples, prop_smoke},
     };
 
-    use super::{CString, CharIterator};
+    use super::{CStr, CString, CharIterator};
     #[cfg(feature = "std")]
-    use std::ffi::OsString;
+    use std::ffi::{OsStr, OsString};
 
     #[test]
     fn char_iterator() {
@@ -513,7 +636,11 @@ mod tests {
     #[test]
     fn c_string_smoke() {
         check(|src| {
-            prop_smoke(src, "c_string", CString::arbitrary());
+            prop_smoke(src, "CString", CString::arbitrary());
+            prop_smoke(src, "Box<CStr>", Box::<CStr>::arbitrary());
+            prop_smoke(src, "Rc<CStr>", Rc::<CStr>::arbitrary());
+            prop_smoke(src, "Arc<CStr>", Arc::<CStr>::arbitrary());
+            prop_smoke(src, "Cow<CStr>", Cow::<CStr>::arbitrary());
         });
     }
 
@@ -521,7 +648,11 @@ mod tests {
     #[test]
     fn os_string_smoke() {
         check(|src| {
-            prop_smoke(src, "os_string", OsString::arbitrary());
+            prop_smoke(src, "OSString", OsString::arbitrary());
+            prop_smoke(src, "Box<OsStr>", Box::<OsStr>::arbitrary());
+            prop_smoke(src, "Rc<OsStr>", Rc::<OsStr>::arbitrary());
+            prop_smoke(src, "Arc<OsStr>", Arc::<OsStr>::arbitrary());
+            prop_smoke(src, "Cow<OsStr>", Cow::<OsStr>::arbitrary());
         });
     }
 
