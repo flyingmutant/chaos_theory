@@ -165,7 +165,7 @@ mod tests {
             let mut buf = vec![0; encoded_len(data.len())];
             let rem1 = encode(&data, &mut buf).unwrap();
             assert!(rem1.is_empty());
-            vdbg!(src, &buf);
+            vdbg!(&buf);
             let mut out = vec![0; decoded_len(buf.len())];
             let rem2 = decode(&buf, &mut out).unwrap();
             assert!(rem2.is_empty());

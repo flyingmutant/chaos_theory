@@ -6,6 +6,11 @@
 
 use core::{borrow::Borrow, ops::Deref};
 
+#[cfg(feature = "std")]
+use core::cell::Cell;
+#[cfg(feature = "std")]
+use std::thread_local;
+
 use crate::__panic_assume;
 
 const ASSUME_SOME_FAILED_MSG: &str = "OptionExt::assume_some failed";
@@ -50,42 +55,95 @@ macro_rules! assume {
     };
 }
 
-/// [`dbg`] wrapper that checks [`Source::should_log`](crate::Source::should_log).
-///
-/// First argument should be a [`Source`](crate::Source) reference, the rest are forwarded to `dbg`.
+/// [`dbg`] wrapper that only outputs values for visible test case runs.
 #[macro_export]
 macro_rules! vdbg {
-    ($src:expr, $($arg:tt)*) => {
-        if $src.should_log() {
-            ::std::dbg!($($arg)*)
+    () => {
+        if $crate::should_log() {
+            ::std::dbg!()
         } else {
-            $($arg)*
+            ()
+        }
+    };
+    ($val:expr $(,)?) => {
+        if $crate::should_log() {
+            ::std::dbg!($val)
+        } else {
+            $val
         }
     };
 }
 
-/// [`println`] wrapper that checks [`Source::should_log`](crate::Source::should_log).
-///
-/// First argument should be a [`Source`](crate::Source) reference, the rest are forwarded to `println`.
+/// [`println`] wrapper that only outputs values for visible test case runs.
 #[macro_export]
 macro_rules! vprintln {
-    ($src:expr, $($arg:tt)*) => {
-        if $src.should_log() {
+    ($($arg:tt)*) => {
+        if $crate::should_log() {
             ::std::println!($($arg)*);
         }
     };
 }
 
-/// [`eprintln`] wrapper that checks [`Source::should_log`](crate::Source::should_log).
-///
-/// First argument should be a [`Source`](crate::Source) reference, the rest are forwarded to `eprintln`.
+/// [`eprintln`] wrapper that only outputs values for visible test case runs.
 #[macro_export]
 macro_rules! veprintln {
-    ($src:expr, $($arg:tt)*) => {
-        if $src.should_log() {
+    ($($arg:tt)*) => {
+        if $crate::should_log() {
             ::std::eprintln!($($arg)*);
         }
     };
+}
+
+#[cfg(feature = "std")]
+thread_local! {
+    // `None` means no Source is active, in which case debug output behaves normally.
+    static DEBUG_OUTPUT_SHOULD_LOG: Cell<Option<bool>> = const { Cell::new(None) };
+}
+
+#[derive(Debug)]
+pub(crate) struct DebugOutputGuard {
+    #[cfg(feature = "std")]
+    previous: Option<bool>,
+}
+
+impl DebugOutputGuard {
+    pub(crate) fn new(should_log: bool) -> Self {
+        #[cfg(feature = "std")]
+        {
+            let previous = DEBUG_OUTPUT_SHOULD_LOG.replace(Some(should_log));
+            Self { previous }
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            let _ = should_log;
+            Self {}
+        }
+    }
+}
+
+impl Drop for DebugOutputGuard {
+    fn drop(&mut self) {
+        #[cfg(feature = "std")]
+        let _ = DEBUG_OUTPUT_SHOULD_LOG.try_with(|value| value.set(self.previous));
+    }
+}
+
+/// Determine whether debug output should be emitted for the current test-case run.
+///
+/// By default, this is true only for the final failing run. The state is thread-local and defaults
+/// to true outside property execution. In `no_std`, this always returns true.
+#[must_use]
+pub fn should_log() -> bool {
+    #[cfg(feature = "std")]
+    {
+        DEBUG_OUTPUT_SHOULD_LOG
+            .try_with(|value| value.get().unwrap_or(true))
+            .unwrap_or(true)
+    }
+    #[cfg(not(feature = "std"))]
+    {
+        true
+    }
 }
 
 /// Type that represents either owned or borrowed values.

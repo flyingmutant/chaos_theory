@@ -497,7 +497,7 @@ mod tests {
     fn check_regex_consistent(pattern: &'static str) {
         let re = regex::Regex::new(pattern).unwrap();
         check(|src| {
-            vdbg!(src, pattern);
+            vdbg!(pattern);
             let fullmatch = src.any("fullmatch");
             let g = make::string_matching(pattern, fullmatch);
             let s = any_assert_valid_tape(src, "s", g);
@@ -509,7 +509,7 @@ mod tests {
 
         let re = regex::bytes::Regex::new(pattern).unwrap();
         check(|src| {
-            vdbg!(src, pattern);
+            vdbg!(pattern);
             let fullmatch = src.any("fullmatch");
             let g = make::bytes_matching(pattern, fullmatch);
             let s = any_assert_valid_tape(src, "s", g);

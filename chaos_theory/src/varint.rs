@@ -108,7 +108,7 @@ mod tests {
             let mut buf = [0; MAX_SIZE];
             let v: u64 = src.any("v");
             let v_rem = encode(v, &mut buf).unwrap().len();
-            vdbg!(src, buf);
+            vdbg!(buf);
             let (u, rem) = decode(&buf).unwrap();
             assert_eq!(v, u);
             assert_eq!(v_rem, rem.len());

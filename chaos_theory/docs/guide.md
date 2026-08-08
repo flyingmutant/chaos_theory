@@ -168,8 +168,9 @@ valid tests.
 
 ## Debugging Output
 
-Use [`should_log`][source_should_log], [`vdbg!`][vdbg], and [`vprintln!`][vprintln] so output
-appears only for the failing case. It keeps tests fast and logs focused.
+Use [`should_log`][should_log], [`vdbg!`][vdbg], [`vprintln!`][vprintln], and
+[`veprintln!`][veprintln] to keep debug output focused. The macros wrap Rust's regular `dbg!`,
+`println!`, and `eprintln!` macros and, by default, only emit output for the final failing case.
 
 ## Generators
 
@@ -434,7 +435,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 [source_repeat]: crate::Source::repeat
 [source_maybe]: crate::Source::maybe
 [source_find]: crate::Source::find
-[source_should_log]: crate::Source::should_log
+[should_log]: crate::should_log
 [sourceraw_select]: crate::SourceRaw::select
 [sourceraw_repeat]: crate::SourceRaw::repeat
 
@@ -460,6 +461,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 [assume]: crate::assume
 [vdbg]: crate::vdbg
 [vprintln]: crate::vprintln
+[veprintln]: crate::veprintln
 
 [make]: crate::make
 [make_from_fn]: crate::make::from_fn

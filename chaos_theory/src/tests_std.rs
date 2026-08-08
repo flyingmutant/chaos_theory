@@ -332,7 +332,7 @@ fn generate_same() {
                 if obj.len() > 3 && obj.iter().any(|v| *v != 0) {
                     let unique = objs.insert(obj.clone());
                     if !unique {
-                        vprintln!(src, "duplicate: {obj:?}");
+                        vprintln!("duplicate: {obj:?}");
                     }
                     assert!(unique);
                 }

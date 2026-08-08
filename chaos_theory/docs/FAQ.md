@@ -94,18 +94,18 @@ Set `CHAOS_THEORY_CHECK_DETERMINISM=true` to turn the warning into a hard failur
 Use [`Source::observe`][source_observe] to make internal system state visible to chaos_theory
 and help pinpoint determinism-related failures.
 
-## How do I avoid log spam from all successful `check` iterations?
+## How do I avoid log spam while running and minimizing test cases?
 
-Use [`vdbg!`][vdbg], [`vprintln!`][vprintln], or check
-[`Source::should_log`][source_should_log]. chaos_theory logs are scoped and only emitted
-for the failing case by default.
+Use [`vdbg!`][vdbg], [`vprintln!`][vprintln], [`veprintln!`][veprintln], or call
+[`should_log`][should_log]. The macros wrap Rust's regular `dbg!`, `println!`, and
+`eprintln!` macros and, by default, only emit output for the final failing case.
 
 If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 
 [source]: crate::Source
 [source_repeat]: crate::Source::repeat
 [source_select]: crate::Source::select
-[source_should_log]: crate::Source::should_log
+[should_log]: crate::should_log
 
 [effect_noop]: crate::Effect::Noop
 
@@ -117,6 +117,7 @@ If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 [assume]: crate::assume
 [vdbg]: crate::vdbg
 [vprintln]: crate::vprintln
+[veprintln]: crate::veprintln
 
 [make_from_fn]: crate::make::from_fn
 [make_int_in_range]: crate::make::int_in_range

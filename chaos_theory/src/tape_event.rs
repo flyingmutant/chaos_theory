@@ -880,10 +880,10 @@ mod tests {
     fn event_save_load_roundtrip() {
         check(|src| {
             let event: Event = src.any("event");
-            vdbg!(src, &event);
+            vdbg!(&event);
             let mut buf = vec![0; event.max_size()];
             let rem_len = event.save(&mut buf, false).unwrap().len();
-            vdbg!(src, &buf);
+            vdbg!(&buf);
             let (event_, _) = Event::load(&buf[..buf.len() - rem_len], true).unwrap();
             assert_eq!(event, event_);
         });

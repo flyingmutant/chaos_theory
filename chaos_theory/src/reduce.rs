@@ -529,7 +529,7 @@ mod tests {
             let sum_after = sum(&t);
             assert!(accept(&t));
             assert!(sum_after <= sum_before);
-            vdbg!(src, (sum_before, sum_after));
+            vdbg!((sum_before, sum_after));
         });
     }
 
@@ -585,7 +585,7 @@ mod tests {
                 assert!(removed <= total - masked);
             }
             let sum_after = sum(&s);
-            vdbg!(src, (&s.0, sum_before, sum_after));
+            vdbg!((&s.0, sum_before, sum_after));
             assert!(accept(&s));
             assert!(sum_after <= sum_before);
             if can_remove {
@@ -607,7 +607,7 @@ mod tests {
             while changed {
                 (n, changed, _) = reduce_num(n, |u| Some(accept(u)));
             }
-            vdbg!(src, (before, n));
+            vdbg!((before, n));
             assert!(accept(n));
             assert!(n <= before);
         });

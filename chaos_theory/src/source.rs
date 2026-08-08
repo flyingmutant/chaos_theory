@@ -231,20 +231,6 @@ impl<'env> Source<'env> {
         self.as_ref().log_value(label, v);
     }
 
-    /// Determine whether debug output should be used for a test case.
-    ///
-    /// Wrapping calls to [`println`], [`eprintln`], or [`dbg`]
-    /// with a `should_log` check ensures that test debug output only contains information relevant
-    /// to the failing test case. Additionally, omitting unnecessary debug output can significantly
-    /// speed up the test.
-    ///
-    /// Alternatively, you can use helper macros [`vprintln`](crate::vprintln),
-    /// [`veprintln`](crate::veprintln) or [`vdbg`](crate::vdbg) that encapsulate the `should_log` check.
-    #[must_use]
-    pub fn should_log(&self) -> bool {
-        self.as_ref().should_log()
-    }
-
     /// Record a passive observation of system state.
     ///
     /// Currently, it is used as an additional factor to detect non-determinism in properties.
@@ -707,20 +693,6 @@ impl SourceRaw<'_> {
     /// Output properly indented debug formatting of value.
     pub fn log_value(&self, label: &str, v: &impl Debug) {
         self.env.log_value(label, v);
-    }
-
-    /// Determine whether debug output should be used for a test case.
-    ///
-    /// Wrapping calls to [`println`], [`eprintln`], or [`dbg`]
-    /// with a `should_log` check ensures that test debug output only contains information relevant
-    /// to the failing test case. Additionally, omitting unnecessary debug output can significantly
-    /// speed up the test.
-    ///
-    /// Alternatively, you can use helper macros [`vprintln`](crate::vprintln),
-    /// [`veprintln`](crate::veprintln) or [`vdbg`](crate::vdbg) that encapsulate the `should_log` check.
-    #[must_use]
-    pub fn should_log(&self) -> bool {
-        self.env.should_log()
     }
 
     // Hack to don't try to mutate choices that will not matter anyway.

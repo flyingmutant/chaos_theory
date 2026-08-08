@@ -29,6 +29,7 @@ use crate::{
     tape_event::{Event, ScopeKind},
     tape_mutate::MutationCache,
     unwind::PanicInfo,
+    util::DebugOutputGuard,
 };
 
 #[cfg(feature = "std")]
@@ -216,11 +217,13 @@ impl Env {
             tape_replay
         };
         let mut src = self.start_from_tape(seed, tape, self.slow.log_depth_silent);
+        let _debug_output_guard = DebugOutputGuard::new(src.as_ref().should_log());
         // TODO: use a version of `filter` here that rolls several times to try to get valid value?
         src.any_of(EXAMPLE_LABEL, g)
     }
 
     fn call_prop<T>(prop: impl FnOnce(&mut Source) -> T, src: &mut Source) -> T {
+        let _debug_output_guard = DebugOutputGuard::new(src.as_ref().should_log());
         let v = prop(src);
         // It is in theory possible to produce an invalid tape (by using `catch_unwind` and then continuing,
         // thus using an error tape as a prefix, which results in an invalid tape), but we consider this
@@ -267,9 +270,7 @@ impl Env {
             Self::call_prop_silent(
                 |src| {
                     #[cfg(feature = "std")]
-                    if src.should_log() {
-                        println!("[chaos_theory] --- determinism check self-replay ---");
-                    }
+                    crate::vprintln!("[chaos_theory] --- determinism check self-replay ---");
                     prop(src);
 
                     let self_ = src.as_mut();
@@ -1261,7 +1262,7 @@ mod tests {
                     || (e_result.time_exit && e_result.valid > 0)
             );
 
-            vprintln!(src, "replaying...");
+            vprintln!("replaying...");
             let mut f = Env::custom()
                 .with_rng_seed(src.any("replay seed"))
                 .with_rng_temperature(src.any("replay temperature"))
@@ -1276,8 +1277,8 @@ mod tests {
                 f_state.prop_fill(src);
             });
 
-            vdbg!(src, (e_result.valid, e_result.invalid, e_result.time_exit));
-            vdbg!(src, (f_result.valid, f_result.invalid, f_result.time_exit));
+            vdbg!((e_result.valid, e_result.invalid, e_result.time_exit));
+            vdbg!((f_result.valid, f_result.invalid, f_result.time_exit));
             assert!(!f.rng_used());
             assert_eq!(e_state, f_state);
             assert_eq!(e_result.ret.err(), f_result.ret.err());
