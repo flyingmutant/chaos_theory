@@ -1,5 +1,6 @@
 .env
 *.swp
+.DS_Store
 
 /target/
 /.aider*
