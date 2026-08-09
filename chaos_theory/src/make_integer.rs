@@ -317,6 +317,8 @@ mod tests {
     #[test]
     fn integer_smoke() {
         check(|src| {
+            prop_smoke(src, "bool", bool::arbitrary());
+
             prop_smoke(src, "u8", u8::arbitrary());
             prop_smoke(src, "u16", u16::arbitrary());
             prop_smoke(src, "u32", u32::arbitrary());
@@ -405,6 +407,11 @@ mod tests {
     }
 
     #[test]
+    fn bool_examples() {
+        print_debug_examples(bool::arbitrary(), None, Ord::cmp);
+    }
+
+    #[test]
     fn byte_examples() {
         print_debug_examples(u8::arbitrary().map(|b| (b, char::from(b))), None, Ord::cmp);
     }
@@ -424,7 +431,7 @@ mod tests {
     }
 
     #[test]
-    fn integer128_examples() {
+    fn i128_examples() {
         print_debug_examples(i128::arbitrary(), None, Ord::cmp);
     }
 }
