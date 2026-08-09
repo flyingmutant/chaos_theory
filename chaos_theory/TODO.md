@@ -16,7 +16,6 @@
 
 ## generators
 
-- u128
 - IpAddr/SocketAddr
 - permutation/shuffle/subsequence/random chunking
 - recursive

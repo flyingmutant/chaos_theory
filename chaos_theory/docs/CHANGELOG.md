@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `Arbitrary` impls for 128-bit integers.
 - Add `Arbitrary` impls for `PathBuf` and owned `Path` types.
 - Add target-specific `Arbitrary` impl for `OSString`.
 - Add `CString` generators.

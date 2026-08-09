@@ -7,6 +7,7 @@
 use core::{
     any::TypeId,
     fmt::Debug,
+    marker::PhantomData,
     num::{NonZero, Saturating, Wrapping},
     ops::RangeBounds,
     sync::atomic::{
@@ -117,22 +118,105 @@ impl<I: Int> Generator for Integer<I> {
     }
 }
 
-macro_rules! impl_arbitrary_int {
-    ($num: ty, $num_atomic: ty) => {
-        impl Arbitrary for $num {
-            fn arbitrary() -> impl Generator<Item = Self> {
-                int_in_range::<Self>(..)
-            }
+trait Int128: Copy + Debug {
+    type Half: Arbitrary + Copy;
+
+    const MIN: Self;
+    const MAX: Self;
+
+    fn lo(self) -> Self::Half;
+    fn hi(self) -> Option<Self::Half>;
+    fn from_halves(lo: Self::Half, hi: Option<Self::Half>) -> Self;
+}
+
+impl Int128 for u128 {
+    type Half = u64;
+
+    const MIN: Self = Self::MIN;
+    const MAX: Self = Self::MAX;
+
+    fn lo(self) -> Self::Half {
+        self as u64
+    }
+
+    fn hi(self) -> Option<Self::Half> {
+        (self > Self::from(u64::MAX)).then_some((self >> u64::BITS) as u64)
+    }
+
+    fn from_halves(lo: Self::Half, hi: Option<Self::Half>) -> Self {
+        hi.map_or_else(
+            || Self::from(lo),
+            |hi| (Self::from(hi) << u64::BITS) | Self::from(lo),
+        )
+    }
+}
+
+impl Int128 for i128 {
+    type Half = i64;
+
+    const MIN: Self = Self::MIN;
+    const MAX: Self = Self::MAX;
+
+    fn lo(self) -> Self::Half {
+        self as i64
+    }
+
+    fn hi(self) -> Option<Self::Half> {
+        i64::try_from(self)
+            .is_err()
+            .then_some((self >> i64::BITS) as i64)
+    }
+
+    fn from_halves(lo: Self::Half, hi: Option<Self::Half>) -> Self {
+        hi.map_or_else(
+            || Self::from(lo),
+            |hi| (Self::from(hi) << i64::BITS) | Self::from(lo as u64),
+        )
+    }
+}
+
+struct Integer128<I>(PhantomData<I>);
+
+impl<I: Int128> Debug for Integer128<I> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(core::any::type_name::<I>())
+    }
+}
+
+impl<I: Int128> Generator for Integer128<I> {
+    type Item = I;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let mut example = example.copied();
+        if example.is_none() {
+            example = src
+                .as_mut()
+                .choose_seed(INTEGER_BOUND_PROB, &[I::MIN, I::MAX])
+                .copied();
         }
 
-        impl Arbitrary for $num_atomic {
-            fn arbitrary() -> impl Generator<Item = Self> {
-                <$num>::arbitrary().map_reversible(Into::into, |i: &Self| {
-                    Some(MaybeOwned::Owned(i.load(Ordering::Relaxed)))
-                })
-            }
-        }
+        let example_lo = example.map(Int128::lo);
+        let lo = src.any("<lo>", example_lo.as_ref());
+        let example_hi = example.map(Int128::hi);
+        let hi = src.any("<hi>", example_hi.as_ref());
+        I::from_halves(lo, hi)
+    }
+}
 
+impl Arbitrary for u128 {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        Integer128(PhantomData)
+    }
+}
+
+impl Arbitrary for i128 {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        Integer128(PhantomData)
+    }
+}
+
+macro_rules! impl_arbitrary_int_wrappers {
+    ($num: ty) => {
         impl Arbitrary for NonZero<$num> {
             fn arbitrary() -> impl Generator<Item = Self> {
                 fn to_nonzero(i: $num) -> NonZero<$num> {
@@ -163,6 +247,26 @@ macro_rules! impl_arbitrary_int {
     };
 }
 
+macro_rules! impl_arbitrary_int {
+    ($num: ty, $num_atomic: ty) => {
+        impl Arbitrary for $num {
+            fn arbitrary() -> impl Generator<Item = Self> {
+                int_in_range::<Self>(..)
+            }
+        }
+
+        impl Arbitrary for $num_atomic {
+            fn arbitrary() -> impl Generator<Item = Self> {
+                <$num>::arbitrary().map_reversible(Into::into, |i: &Self| {
+                    Some(MaybeOwned::Owned(i.load(Ordering::Relaxed)))
+                })
+            }
+        }
+
+        impl_arbitrary_int_wrappers!($num);
+    };
+}
+
 impl_arbitrary_int!(usize, AtomicUsize);
 impl_arbitrary_int!(u8, AtomicU8);
 impl_arbitrary_int!(u16, AtomicU16);
@@ -174,6 +278,9 @@ impl_arbitrary_int!(i8, AtomicI8);
 impl_arbitrary_int!(i16, AtomicI16);
 impl_arbitrary_int!(i32, AtomicI32);
 impl_arbitrary_int!(i64, AtomicI64);
+
+impl_arbitrary_int_wrappers!(u128);
+impl_arbitrary_int_wrappers!(i128);
 
 /// Create a generator of integers in range.
 ///
@@ -214,12 +321,14 @@ mod tests {
             prop_smoke(src, "u16", u16::arbitrary());
             prop_smoke(src, "u32", u32::arbitrary());
             prop_smoke(src, "u64", u64::arbitrary());
+            prop_smoke(src, "u128", u128::arbitrary());
             prop_smoke(src, "usize", usize::arbitrary());
 
             prop_smoke(src, "i8", i8::arbitrary());
             prop_smoke(src, "i16", i16::arbitrary());
             prop_smoke(src, "i32", i32::arbitrary());
             prop_smoke(src, "i64", i64::arbitrary());
+            prop_smoke(src, "i128", i128::arbitrary());
             prop_smoke(src, "isize", isize::arbitrary());
         });
     }
@@ -312,6 +421,11 @@ mod tests {
         for g in gens {
             print_debug_examples(g, None, Ord::cmp);
         }
+    }
+
+    #[test]
+    fn integer128_examples() {
+        print_debug_examples(i128::arbitrary(), None, Ord::cmp);
     }
 }
 
