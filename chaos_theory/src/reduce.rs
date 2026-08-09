@@ -350,6 +350,11 @@ fn reduce_num_binsearch(n: u64, mut accept: impl FnMut(u64) -> Option<bool>) -> 
     while lo < hi {
         let h = lo + (hi - lo) / 2;
         debug_assert!(h < hi);
+        // Values below 4 were already rejected by reduce_num_small.
+        if h < 4 {
+            lo = h + 1;
+            continue;
+        }
         let ok = accept(h);
         if let Some(ok) = ok {
             if ok {

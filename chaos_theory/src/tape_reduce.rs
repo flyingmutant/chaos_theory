@@ -231,7 +231,10 @@ impl TreeNodeChild<usize> for TTreeChild {
                 (self, 0, 0, false)
             }
             Self::Choice(mut event) => {
-                if matches!(event, Event::Token { .. } | Event::Observe { .. }) {
+                if matches!(
+                    event,
+                    Event::Index { forced: true, .. } | Event::Token { .. } | Event::Observe { .. }
+                ) {
                     return (Self::Choice(event), 0, 0, false);
                 }
                 // Note: we minimize the choice value, not the event value.
