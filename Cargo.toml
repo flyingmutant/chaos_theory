@@ -1,9 +1,9 @@
 [workspace]
 members = [
   "chaos_theory",
-  "chaos_theory_core",
   "chaos_theory_derive",
-  "chaos_theory_v2",
+  "experimental/chaos_theory_core",
+  "experimental/chaos_theory_v2",
   "xtask",
 ]
 exclude = ["chaos_theory_example", "chaos_theory_example_fuzz"]
@@ -86,5 +86,5 @@ tinyvec = { version = "1.10.0", default-features = false }
 xshell = "0.2.6"
 uuid = { version = "1.22.0", default-features = false }
 
-chaos_theory_core = { path = "chaos_theory_core" }
+chaos_theory_core = { path = "experimental/chaos_theory_core" }
 chaos_theory_derive = { version = "0.3.5", path = "chaos_theory_derive" }
