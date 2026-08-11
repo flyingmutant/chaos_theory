@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.6 (2026-08-11)
 
 - Add `Arbitrary` impls for 128-bit integers.
 - Add `Arbitrary` impls for `PathBuf` and owned `Path` types.
