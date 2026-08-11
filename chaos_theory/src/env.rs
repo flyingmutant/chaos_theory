@@ -95,14 +95,10 @@ pub(crate) enum Tweak {
     None = 0,
     SeedChoice = 1,
     IntSign = 2,
-    IntValue = 3,
-    FloatSign = 4,
-    FloatSigInt = 5,
-    FloatSigFrac = 6,
-    FloatSigFracBits = 7,
-    CharCategory = 8,
-    CharRange = 9,
-    CharIndex = 10,
+    FloatSign = 3,
+    CharCategory = 4,
+    CharRange = 5,
+    CharIndex = 6,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -789,18 +785,16 @@ impl Env {
         self.tape_out.mark_next_choice_forced();
     }
 
-    fn choice_new_value(&mut self, max: u64, bias_to_small: bool, tweak: Tweak) -> u64 {
-        // Use the same bound for higher permutation stability.
-        // TODO: teach `choice_new_swarm` to do this internally
-        let mut w = self.choice_new_swarm(u64::MAX, tweak);
+    fn choice_new_value(&mut self, max: u64, bias_to_small: bool) -> u64 {
         if bias_to_small {
             let total_bits = max.bit_len();
             let use_bits = self.size_dist.sample(&mut self.rng, total_bits + 1);
+            let mut w = self.rng.next();
             w &= bitmask::<u64>(use_bits);
             w = w.min(max);
             w
         } else {
-            fast_reduce(w, max.saturating_add(1))
+            self.rng.next_below_u64(max.saturating_add(1))
         }
     }
 
@@ -809,7 +803,6 @@ impl Env {
         r: Range<u64>,
         example: Option<u64>,
         bias_to_small: bool,
-        tweak: Tweak,
     ) -> u64 {
         // Try to preserve the value bit pattern while ensuring that we fit into required range.
         // This is consistent with our "number-is-a-bit-string" idea.
@@ -846,7 +839,7 @@ impl Env {
                 let reuse = reuse_extra.map(|u| r.min.saturating_add(u));
                 fit_to_extra(reuse, r, max)
             })
-            .unwrap_or_else(|| self.choice_new_value(max, bias_to_small, tweak));
+            .unwrap_or_else(|| self.choice_new_value(max, bias_to_small));
         debug_assert!(value_extra <= max);
         let value = r.min + value_extra;
         debug_assert!(r.contains(&value));

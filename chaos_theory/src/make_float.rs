@@ -160,7 +160,7 @@ fn choose_sig_int<F: Float>(src: &mut SourceRaw, exp: i32, r: &FloatRange) -> u6
     };
     let range = Range::new_raw(min, max);
     src.as_mut()
-        .choose_value(range, r.example.map(|e| e.1), false, Tweak::FloatSigInt)
+        .choose_value(range, r.example.map(|e| e.1), false)
 }
 
 fn choose_sig_frac<F: Float>(src: &mut SourceRaw, exp: i32, sig_int: u64, r: &FloatRange) -> u64 {
@@ -174,16 +174,13 @@ fn choose_sig_frac<F: Float>(src: &mut SourceRaw, exp: i32, sig_int: u64, r: &Fl
         (0, bitmask_u64(frac_bits::<F>(exp)))
     };
     let range = Range::new_raw(min, max);
-    let mut sig_frac =
-        src.as_mut()
-            .choose_value(range, r.example.map(|e| e.2), false, Tweak::FloatSigFrac);
+    let mut sig_frac = src
+        .as_mut()
+        .choose_value(range, r.example.map(|e| e.2), false);
     let range = Range::new_raw(min.bit_len() as u64, sig_frac.bit_len() as u64);
-    let sig_frac_bits = src.as_mut().choose_value(
-        range,
-        r.example.map(|_| sig_frac.bit_len() as u64),
-        false,
-        Tweak::FloatSigFracBits,
-    );
+    let sig_frac_bits =
+        src.as_mut()
+            .choose_value(range, r.example.map(|_| sig_frac.bit_len() as u64), false);
     let bits_to_mask = sig_frac.bit_len() as u64 - sig_frac_bits;
     for i in 0..bits_to_mask {
         let sig_frac_masked = sig_frac & (!(1u64 << i));
