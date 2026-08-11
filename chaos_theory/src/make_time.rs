@@ -12,7 +12,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(feature = "std")]
 use crate::Tweak;
-use crate::{Arbitrary, Generator, Ranged, SourceRaw, make, range::Range};
+use crate::{Arbitrary, Generator, Ranged, SourceRaw, make, math::percent, range::Range};
+
+// In an ideal world, integer generation itself would be smart enough that we wouldn't need this.
+const DURATION_SPECIAL_PROB: f64 = percent(15);
 
 const NANOS_PER_SEC: u32 = 1_000_000_000;
 const DURATION_SMALLEST: Duration = Duration::new(0, 1);
@@ -40,10 +43,18 @@ impl Generator for Duration_ {
     type Item = Duration;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let mut example_secs = example.map(Duration::as_secs);
+        if example_secs.is_none() {
+            example_secs = src
+                .as_mut()
+                .choose_seed(DURATION_SPECIAL_PROB, &[60, 3600, 86400])
+                .copied()
+                .filter(|secs| self.secs.contains(secs));
+        }
         let secs = src.any_of(
             "<secs>",
             make::int_in_range(self.secs),
-            example.map(Duration::as_secs).as_ref(),
+            example_secs.as_ref(),
         );
         let (nanos_min, nanos_max) = if secs == self.secs.min && secs == self.secs.max {
             (self.nanos_start, self.nanos_end)
@@ -54,10 +65,18 @@ impl Generator for Duration_ {
         } else {
             (0, NANOS_PER_SEC - 1)
         };
+        let mut example_nanos = example.map(Duration::subsec_nanos);
+        if example_nanos.is_none() {
+            example_nanos = src
+                .as_mut()
+                .choose_seed(DURATION_SPECIAL_PROB, &[1000, 1_000_000, 500_000_000])
+                .copied()
+                .filter(|nanos| (nanos_min..=nanos_max).contains(nanos));
+        }
         let nanos = src.any_of(
             "<nanos>",
             make::int_in_range(nanos_min..=nanos_max),
-            example.map(Duration::subsec_nanos).as_ref(),
+            example_nanos.as_ref(),
         );
         Duration::new(secs, nanos)
     }
