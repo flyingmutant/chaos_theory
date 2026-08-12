@@ -4,13 +4,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use alloc::{string::String, vec::Vec};
 use core::{
     cmp::{self, Ordering},
     fmt::Debug,
+    num::NonZero,
     ops::RangeBounds,
 };
 
-use jiff::{SignedDuration, Timestamp};
+use jiff::{
+    SignedDuration, Timestamp,
+    tz::{self, Offset, TimeZone, TimeZoneDatabase},
+};
+
+#[cfg(feature = "std")]
+use std::sync::OnceLock;
 
 use crate::{Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent, range::Range};
 
@@ -20,6 +28,24 @@ use crate::{Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent,
 const DURATION_SPECIAL_PROB: f64 = percent(15);
 const SECOND_SPECIALS: &[i64] = &[60, 3600, 86400];
 const NANOSECOND_SPECIALS: &[i32] = &[1000, 1_000_000, 500_000_000];
+const UNKNOWN_TIME_ZONE_NAME: &str = "Etc/Unknown";
+const TIME_ZONE_SPECIAL_PROB: f64 = percent(30);
+const TIME_ZONE_OFFSET_SPECIALS: &[i32] = &[
+    -12 * 3600,            // Baker Island Time / Anywhere on Earth
+    -(9 * 3600 + 30 * 60), // Marquesas Islands Time
+    -8 * 3600,             // Pacific Standard Time
+    -5 * 3600,             // Eastern Standard Time
+    -(3 * 3600 + 30 * 60), // Newfoundland Standard Time
+    3600,                  // Central European Time
+    3 * 3600,              // Moscow Standard Time
+    5 * 3600 + 30 * 60,    // India Standard Time
+    5 * 3600 + 45 * 60,    // Nepal Time
+    8 * 3600,              // China Standard Time
+    9 * 3600 + 30 * 60,    // Australian Central Standard Time
+    10 * 3600 + 30 * 60,   // Lord Howe Standard Time
+    12 * 3600 + 45 * 60,   // Chatham Standard Time
+    14 * 3600,             // Line Islands Time
+];
 
 const NANOS_PER_SEC: i32 = 1_000_000_000;
 const MAX_SUBSEC_NANOS: i32 = NANOS_PER_SEC - 1;
@@ -37,6 +63,13 @@ impl Arbitrary for Timestamp {
 impl Arbitrary for SignedDuration {
     fn arbitrary() -> impl Generator<Item = Self> {
         signed_duration_in_range(..)
+    }
+}
+
+#[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
+impl Arbitrary for TimeZone {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        TimeZone_::new()
     }
 }
 
@@ -270,6 +303,126 @@ pub fn timestamp_in_range(range: impl RangeBounds<Timestamp>) -> impl Generator<
     }
 }
 
+fn collect_time_zone_names(db: &'static TimeZoneDatabase) -> Vec<String> {
+    let mut names = Vec::new();
+    names.push(String::from(UNKNOWN_TIME_ZONE_NAME));
+    names.extend(db.available().map(|name| String::from(name.as_str())));
+    names[1..].sort_unstable();
+    names
+}
+
+#[cfg(feature = "std")]
+fn time_zone_names(db: &'static TimeZoneDatabase) -> &'static [String] {
+    static NAMES: OnceLock<Vec<String>> = OnceLock::new();
+    NAMES.get_or_init(|| collect_time_zone_names(db))
+}
+
+struct TimeZone_ {
+    db: &'static TimeZoneDatabase,
+    #[cfg(feature = "std")]
+    names: &'static [String],
+    #[cfg(not(feature = "std"))]
+    names: Vec<String>,
+}
+
+impl TimeZone_ {
+    fn new() -> Self {
+        let db = tz::db();
+        Self {
+            db,
+            #[cfg(feature = "std")]
+            names: time_zone_names(db),
+            #[cfg(not(feature = "std"))]
+            names: collect_time_zone_names(db),
+        }
+    }
+
+    fn names(&self) -> &[String] {
+        #[cfg(feature = "std")]
+        {
+            self.names
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            &self.names
+        }
+    }
+
+    fn fixed(src: &mut SourceRaw, example_offset: Option<Offset>) -> TimeZone {
+        let mut example_seconds = example_offset.map(Offset::seconds);
+        if example_seconds.is_none() {
+            example_seconds = src
+                .as_mut()
+                .choose_seed(TIME_ZONE_SPECIAL_PROB, TIME_ZONE_OFFSET_SPECIALS)
+                .copied();
+        }
+        let seconds = src.any_of(
+            "<offset-seconds>",
+            make::int_in_range(Offset::MIN.seconds()..=Offset::MAX.seconds()),
+            example_seconds.as_ref(),
+        );
+        let offset = Offset::from_seconds(seconds)
+            .expect("internal error: generated invalid time zone offset");
+        TimeZone::fixed(offset)
+    }
+}
+
+impl Generator for TimeZone_ {
+    type Item = TimeZone;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let names = self.names();
+        let example_name_index = example.and_then(|time_zone| {
+            if time_zone.is_unknown() {
+                return Some(0);
+            }
+            let example_name = time_zone.iana_name()?;
+            names[1..]
+                .binary_search_by(|name| name.as_str().cmp(example_name))
+                .ok()
+                .map(|index| index + 1)
+        });
+        let example_offset = example
+            .filter(|time_zone| !time_zone.is_unknown())
+            .and_then(|time_zone| time_zone.to_fixed_offset().ok());
+
+        // POSIX and custom time zones are intentionally not preserved as examples.
+        let example_variant = if example_name_index.is_some() {
+            Some(1)
+        } else if example_offset.is_some() {
+            Some(0)
+        } else {
+            None
+        };
+        let variants = ["Fixed", "Named"];
+        let variants_num = NonZero::new(variants.len()).expect("internal error: no variants");
+        src.select(
+            "<time-zone>",
+            example_variant,
+            variants_num,
+            |ix| variants[ix],
+            |src, variant, _ix| match variant {
+                "Fixed" => Self::fixed(src, example_offset),
+                "Named" => {
+                    let (name, _) = src
+                        .choose("<time-zone-name>", example_name_index, names)
+                        .expect("internal error: no time zone names");
+                    self.db.get(name).unwrap_or_else(|_| TimeZone::unknown())
+                }
+                _ => unreachable!(),
+            },
+        )
+    }
+}
+
+impl Debug for TimeZone_ {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("TimeZone")
+            .field("named_zones", &self.names().len().saturating_sub(1))
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -344,6 +497,25 @@ mod tests {
     #[test]
     fn timestamp_examples() {
         print_debug_examples(Timestamp::arbitrary(), None, Ord::cmp);
+    }
+
+    #[test]
+    fn time_zone_smoke() {
+        check(|src| {
+            prop_smoke(src, "TimeZone", TimeZone::arbitrary());
+        });
+    }
+
+    #[test]
+    fn time_zone_examples() {
+        print_debug_examples(TimeZone::arbitrary(), None, |a, b| {
+            match (a.to_fixed_offset(), b.to_fixed_offset()) {
+                (Ok(a), Ok(b)) => a.cmp(&b),
+                (Ok(_), Err(_)) => Ordering::Less,
+                (Err(_), Ok(_)) => Ordering::Greater,
+                (Err(_), Err(_)) => a.iana_name().cmp(&b.iana_name()),
+            }
+        });
     }
 
     #[test]
