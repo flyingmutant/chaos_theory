@@ -13,7 +13,7 @@ use core::{
 };
 
 use jiff::{
-    SignedDuration, Timestamp,
+    SignedDuration, Timestamp, Zoned,
     tz::{self, Offset, TimeZone, TimeZoneDatabase},
 };
 
@@ -70,6 +70,15 @@ impl Arbitrary for SignedDuration {
 impl Arbitrary for TimeZone {
     fn arbitrary() -> impl Generator<Item = Self> {
         TimeZone_::new()
+    }
+}
+
+#[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
+impl Arbitrary for Zoned {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        Zoned_ {
+            time_zone: TimeZone_::new(),
+        }
     }
 }
 
@@ -423,6 +432,35 @@ impl Debug for TimeZone_ {
     }
 }
 
+struct Zoned_ {
+    time_zone: TimeZone_,
+}
+
+impl Generator for Zoned_ {
+    type Item = Zoned;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        let example_timestamp = example.map(Zoned::timestamp);
+        let timestamp = src.any_of(
+            "<timestamp>",
+            timestamp_in_range(..),
+            example_timestamp.as_ref(),
+        );
+        let time_zone = src.any_of(
+            "<time-zone>",
+            &self.time_zone,
+            example.map(Zoned::time_zone),
+        );
+        Zoned::new(timestamp, time_zone)
+    }
+}
+
+impl Debug for Zoned_ {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("Zoned").field(&self.time_zone).finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -516,6 +554,28 @@ mod tests {
                 (Err(_), Err(_)) => a.iana_name().cmp(&b.iana_name()),
             }
         });
+    }
+
+    #[test]
+    fn zoned_smoke() {
+        check(|src| {
+            prop_smoke(src, "Zoned", Zoned::arbitrary());
+        });
+    }
+
+    #[test]
+    fn zoned_gen_example() {
+        check(|src| {
+            let example: Zoned = src.any("example");
+            let value = src.as_raw().any("value", Some(&example));
+            assert_eq!(value.timestamp(), example.timestamp());
+            assert_eq!(value.time_zone(), example.time_zone());
+        });
+    }
+
+    #[test]
+    fn zoned_examples() {
+        print_debug_examples(Zoned::arbitrary(), None, Ord::cmp);
     }
 
     #[test]

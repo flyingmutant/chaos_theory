@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add initial feature-gated `jiff` support (`SignedDuration`, `Timestamp`, and `TimeZone`).
+- Add feature-gated `jiff` support (`SignedDuration`, `Timestamp`, `TimeZone`, and `Zoned`).
 
 ## 0.3.6 (2026-08-11)
 
