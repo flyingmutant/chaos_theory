@@ -807,17 +807,17 @@ impl Env {
         // Try to preserve the value bit pattern while ensuring that we fit into required range.
         // This is consistent with our "number-is-a-bit-string" idea.
         fn fit_to_extra(u: Option<u64>, r: Range<u64>, max: u64) -> Option<u64> {
-            u.filter(|u| r.contains(u) || r.min == 0).map(|u| {
-                let extra = u - r.min;
-                if extra <= max {
-                    return extra;
+            u.and_then(|u| {
+                let max_value = r.min + max;
+                if u >= r.min && u <= max_value {
+                    return Some(u - r.min);
                 }
-                let mut v = extra & bitmask::<u64>(max.bit_len());
-                while v > max {
+                let mut v = u & bitmask::<u64>(max_value.bit_len());
+                while v > max_value {
                     // Clear the top bit.
                     v &= !(1 << (v.bit_len() - 1));
                 }
-                v
+                if v >= r.min { Some(v - r.min) } else { None }
             })
         }
 
@@ -835,10 +835,7 @@ impl Env {
         };
         let example_extra = fit_to_extra(example, r, max);
         let value_extra = example_extra
-            .or_else(|| {
-                let reuse = reuse_extra.map(|u| r.min.saturating_add(u));
-                fit_to_extra(reuse, r, max)
-            })
+            .or_else(|| fit_to_extra(reuse_extra, Range::new_raw(0, max), max))
             .unwrap_or_else(|| self.choice_new_value(max, bias_to_small));
         debug_assert!(value_extra <= max);
         let value = r.min + value_extra;

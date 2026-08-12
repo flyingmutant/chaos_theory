@@ -62,32 +62,28 @@ impl<I: Int> Generator for Integer<I> {
         let mut example = example.copied();
         if example.is_none() {
             // Without custom seeds for bytes, we focus too heavy on the ASCII-unprintable range (0-31).
-            // We special-case I::MAX below because it will make us generate all-ones pattern.
+            // `I::MAX` may be out of range; `choose_value` will try to make it fit.
+            let seeds = [self.range.min, self.range.max, I::MAX];
             let is_bool = self.neg.is_none() && self.pos == Some(Range { min: 0, max: 1 });
             let is_byte = TypeId::of::<I>() == TypeId::of::<u8>() && !is_bool;
             if is_byte {
                 let base = BYTE_SPECIAL.len();
-                let additional = 2 + usize::from(self.range.max != I::MAX); // don't check if min/max are present
                 example = src
                     .as_mut()
-                    .choose_seed_index(BYTE_SPECIAL_PROB, base + additional)
-                    .map(|seed_ix| match seed_ix.wrapping_sub(base) {
-                        0 => self.range.min,
-                        1 => self.range.max,
-                        2 => I::MAX,
-                        _ => {
-                            let b = BYTE_SPECIAL[seed_ix];
-                            let u = I::Unsigned::from_bits(u64::from(b));
-                            I::from_unsigned(u)
+                    .choose_seed_index(BYTE_SPECIAL_PROB, base + seeds.len())
+                    .map(|seed_ix| {
+                        if seed_ix >= base {
+                            return seeds[seed_ix - base];
                         }
+                        let b = BYTE_SPECIAL[seed_ix];
+                        let u = I::Unsigned::from_bits(u64::from(b));
+                        I::from_unsigned(u)
                     });
             } else {
-                let seeds: &[I] = if self.range.max == I::MAX {
-                    &[self.range.min, self.range.max]
-                } else {
-                    &[self.range.min, self.range.max, I::MAX]
-                };
-                example = src.as_mut().choose_seed(INTEGER_BOUND_PROB, seeds).copied();
+                example = src
+                    .as_mut()
+                    .choose_seed(INTEGER_BOUND_PROB, &seeds)
+                    .copied();
             }
         }
         let example_neg = example.map(Int::is_negative);
