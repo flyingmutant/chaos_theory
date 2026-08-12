@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add initial feature-gated `jiff` support (`SignedDuration` + `Timestamp`).
+
 ## 0.3.6 (2026-08-11)
 
 - Add `Arbitrary` impls for 128-bit integers.

@@ -70,6 +70,7 @@ ecow = { version = "0.2.6", default-features = false }
 env_logger = "0.11.8"
 hashbrown = { version = "0.16.0", default-features = false }
 indexmap = { version = "2.11.4", default-features = false }
+jiff = { version = "0.2.35", default-features = false }
 libfuzzer-sys = "0.4.12"
 libm = "0.2.16"
 log = "0.4.27"

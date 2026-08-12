@@ -130,6 +130,8 @@ mod make_hashbrown;
 #[cfg(feature = "indexmap")]
 mod make_indexmap;
 mod make_integer;
+#[cfg(feature = "jiff")]
+mod make_jiff;
 #[cfg(feature = "ordered_float")]
 mod make_ordered_float;
 #[cfg(feature = "ordermap")]
@@ -211,6 +213,12 @@ pub mod make {
     /// [`indexmap`](https://docs.rs/indexmap) generators.
     pub mod indexmap {
         pub use crate::make_indexmap::*;
+    }
+
+    #[cfg(feature = "jiff")]
+    /// [`jiff`](https://docs.rs/jiff) generators.
+    pub mod jiff {
+        pub use crate::make_jiff::*;
     }
 
     #[cfg(feature = "ordermap")]
