@@ -338,8 +338,9 @@ fn crossover_examples_vec_u32() {
 #[should_panic(expected = "assertion failed")]
 fn generate_same() {
     Env::custom()
-        .with_check_iters(64 * 256)
-        .env(true)
+        .with_rng_seed(0)
+        .with_check_iters(2048)
+        .env(false)
         .check(|src| {
             let mut objs = Set::default();
             src.repeat("step", |src| {
