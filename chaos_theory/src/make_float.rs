@@ -174,22 +174,30 @@ fn choose_sig_frac<F: Float>(src: &mut SourceRaw, exp: i32, sig_int: u64, r: &Fl
         (0, bitmask_u64(frac_bits::<F>(exp)))
     };
     let range = Range::new_raw(min, max);
-    let mut sig_frac = src
+    let sig_frac = src
         .as_mut()
         .choose_value(range, r.example.map(|e| e.2), false);
-    let range = Range::new_raw(min.bit_len() as u64, sig_frac.bit_len() as u64);
+    let total_sig_frac_bits = sig_frac.bit_len() as u64;
+    let range = Range::new_raw(
+        total_sig_frac_bits - max_bits_to_mask(sig_frac, min),
+        total_sig_frac_bits,
+    );
     let sig_frac_bits =
         src.as_mut()
-            .choose_value(range, r.example.map(|_| sig_frac.bit_len() as u64), false);
-    let bits_to_mask = sig_frac.bit_len() as u64 - sig_frac_bits;
-    for i in 0..bits_to_mask {
-        let sig_frac_masked = sig_frac & (!(1u64 << i));
+            .choose_value(range, r.example.map(|_| total_sig_frac_bits), false);
+    sig_frac & !bitmask_u64(total_sig_frac_bits - sig_frac_bits)
+}
+
+fn max_bits_to_mask(sig_frac: u64, min: u64) -> u64 {
+    let mut bits = 0;
+    while bits < sig_frac.bit_len() as u64 {
+        let sig_frac_masked = sig_frac & !bitmask_u64(bits + 1);
         if sig_frac_masked < min {
             break;
         }
-        sig_frac = sig_frac_masked;
+        bits += 1;
     }
-    sig_frac
+    bits
 }
 
 fn frac_bits<F: Float>(exp: i32) -> u64 {
@@ -204,14 +212,15 @@ fn bitmask_u64(u: u64) -> u64 {
 #[cfg(test)]
 #[expect(clippy::float_cmp)]
 mod tests {
+    use super::*;
     use crate::{
-        Env, Float, Generator as _, Source, check,
+        Env, Float, Source, check,
         make_float::{Arbitrary, compose_float, extract_float_parts, float_in_range},
         range::Range,
         slow_test_enabled,
         tests::{print_debug_examples, prop_smoke},
     };
-    use core::{cmp::Ordering, ops::RangeBounds as _};
+    use core::cmp::Ordering;
 
     #[test]
     #[expect(clippy::similar_names)]
@@ -254,6 +263,22 @@ mod tests {
             extract_compose_impl_test::<f32>(src, "f32");
             extract_compose_impl_test::<f64>(src, "f64");
         });
+    }
+
+    #[test]
+    fn sig_frac_masking_respects_exact_lower_bound() {
+        let sig_frac = 0b111_1011u64;
+        let min = 0b110_0100u64;
+        let sig_frac_bits = sig_frac.bit_len() as u64;
+        let min_sig_frac_bits = sig_frac_bits - max_bits_to_mask(sig_frac, min);
+
+        assert_eq!(min_sig_frac_bits, 3);
+        assert_eq!(
+            sig_frac & !bitmask_u64(sig_frac_bits - min_sig_frac_bits),
+            0b111_0000
+        );
+        assert_eq!(max_bits_to_mask(0b110_0100, 0b110_0100), 2);
+        assert_eq!(max_bits_to_mask(0b111_1011, 0), 7);
     }
 
     #[test]
