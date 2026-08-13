@@ -769,8 +769,13 @@ impl Env {
             forced,
         };
         let reuse = self.pop_choice(&expected).map(|u| u as usize);
-        // When out of budget, always choose zero index.
-        let n_lim = if self.budget_remaining > 0 { n } else { 1 };
+        debug_assert!(!forced || example.is_some_and(|u| u < n));
+        // When out of budget, always choose zero unless the index is structurally forced.
+        let n_lim = if self.budget_remaining > 0 || forced {
+            n
+        } else {
+            1
+        };
         let example = example.filter(|u| *u < n_lim);
         let index = example
             .or_else(|| reuse.filter(|u| *u < n_lim))
@@ -1223,6 +1228,13 @@ impl Drop for SeedTapeReplayScope<'_, '_> {
 mod tests {
     use super::*;
     use crate::{CHECK_ITERS_DEFAULT, assume, check, make, tests::RgbState, vdbg, vprintln};
+
+    #[test]
+    fn forced_index_ignores_exhausted_budget() {
+        let mut env = Env::custom().with_rng_budget(0).env(false);
+        env.mark_next_choice_forced();
+        assert_eq!(env.choose_index(2, Some(1), Tweak::None), 1);
+    }
 
     #[test]
     fn check_replay_e2e() {
