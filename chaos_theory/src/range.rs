@@ -5,6 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use core::{
+    cmp::Ordering,
     fmt::{Debug, Display},
     ops::{Bound, RangeBounds},
 };
@@ -65,13 +66,14 @@ impl<R: Ranged> Range<R> {
 
 impl<R: Ranged + Arbitrary> Arbitrary for Range<R> {
     fn arbitrary() -> impl Generator<Item = Self> {
-        make::from_next::<Self>(|src, example| {
+        make::from_next_assume::<Self>(|src, example| {
             let mut min = src.any("min?", example.map(|r| &r.min));
             let mut max = src.any("max?", example.map(|r| &r.max));
-            if min > max {
-                (min, max) = (max, min);
+            match min.partial_cmp(&max)? {
+                Ordering::Greater => (min, max) = (max, min),
+                Ordering::Less | Ordering::Equal => {}
             }
-            Self::new_raw(min, max)
+            Some(Self::new_raw(min, max))
         })
     }
 }

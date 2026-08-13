@@ -57,6 +57,15 @@ pub(crate) fn prop_smoke(
     label: &'static str,
     g: impl Generator<Item: PartialEq>,
 ) {
+    prop_smoke_by(src, label, g, PartialEq::eq);
+}
+
+pub(crate) fn prop_smoke_by<G: Generator>(
+    src: &mut Source,
+    label: &'static str,
+    g: G,
+    same: impl Fn(&G::Item, &G::Item) -> bool,
+) {
     src.scope(label, |src| {
         let chk = src.as_raw().as_mut().tape_checkpoint();
         // Ensure that the generation works, in general.
@@ -71,13 +80,19 @@ pub(crate) fn prop_smoke(
         let value = src.as_raw().any_of("value", &g, Some(&example));
 
         // Ensure generator can reconstruct examples.
-        assert_eq!(value, example);
+        assert!(
+            same(&value, &example),
+            "generator failed to reconstruct example: {value:?} != {example:?}"
+        );
 
         // Ensure that after discarding noop data, we generate the same value.
         let tape_ = tape.discard_noop();
         let mut env = src.as_raw().derived_oneshot_env(tape_);
         let example_ = env.example_of(g, None);
-        assert_eq!(example_, value);
+        assert!(
+            same(&example_, &value),
+            "discarding noop data changed value: {example_:?} != {value:?}"
+        );
     });
 }
 

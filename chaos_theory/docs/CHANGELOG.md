@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Make float `Arbitrary` be able to generate all possible bit patterns (including NaNs and -0).
 - Add feature-gated `jiff` support (`SignedDuration`, `Timestamp`, `TimeZone`, and `Zoned`).
 
 ## 0.3.6 (2026-08-11)

@@ -175,10 +175,13 @@ pub trait Float:
     fn from_bits(u: u64) -> Self;
 
     #[must_use]
+    fn to_bits(self) -> u64;
+
+    #[must_use]
     fn to_bits_unsigned(self) -> u64;
 
     #[must_use]
-    fn is_negative(self) -> bool;
+    fn is_sign_negative(self) -> bool;
 
     #[must_use]
     fn negate(self) -> Self;
@@ -209,12 +212,16 @@ macro_rules! impl_float {
                 Self::from_bits(u as $u)
             }
 
-            fn to_bits_unsigned(self) -> u64 {
-                u64::from(self.to_bits()) & bitmask::<u64>((size_of::<Self>() * 8) - 1)
+            fn to_bits(self) -> u64 {
+                u64::from(<$num>::to_bits(self))
             }
 
-            fn is_negative(self) -> bool {
-                self < Self::ZERO
+            fn to_bits_unsigned(self) -> u64 {
+                <Self as Float>::to_bits(self) & bitmask::<u64>((size_of::<Self>() * 8) - 1)
+            }
+
+            fn is_sign_negative(self) -> bool {
+                self.is_sign_negative()
             }
 
             fn negate(self) -> Self {

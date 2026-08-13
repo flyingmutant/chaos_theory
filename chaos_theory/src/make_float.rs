@@ -28,11 +28,10 @@ struct FloatRange {
 }
 
 impl FloatRange {
-    fn new<F: Float>(r: Range<F>, example: Option<F>) -> Self {
-        debug_assert!(r.min >= F::ZERO && r.max >= F::ZERO);
-        let (exp_min, sig_int_min, sig_frac_min) = extract_float_parts(r.min);
-        let (exp_max, sig_int_max, sig_frac_max) = extract_float_parts(r.max);
-        let example = example.map(|f| extract_float_parts(f));
+    fn new<F: Float>(r: Range<u64>, example: Option<u64>) -> Self {
+        let (exp_min, sig_int_min, sig_frac_min) = extract_magnitude_parts::<F>(r.min);
+        let (exp_max, sig_int_max, sig_frac_max) = extract_magnitude_parts::<F>(r.max);
+        let example = example.map(extract_magnitude_parts::<F>);
         Self {
             exp_min,
             exp_max,
@@ -47,9 +46,46 @@ impl FloatRange {
 
 #[derive(Debug)]
 struct Floating<F: Float> {
-    range: Range<F>,
-    neg: Option<Range<F>>,
-    pos: Option<Range<F>>,
+    // Magnitudes are ordered exactly like non-negative floats, continuing from infinity through
+    // every NaN payload. The sign ranges decide which signs are valid for each magnitude.
+    magnitudes: Range<u64>,
+    neg: Option<Range<u64>>,
+    pos: Option<Range<u64>>,
+    seed_min: F,
+    seed_max: F,
+}
+
+impl<F: Float> Floating<F> {
+    fn new(neg: Option<Range<u64>>, pos: Option<Range<u64>>) -> Self {
+        let infinity = F::MAX.to_bits_unsigned();
+        let magnitudes = match (neg, pos) {
+            (Some(neg), Some(pos)) => {
+                // Both signs are only present for ranges that cross zero (or for the complete
+                // bit-pattern domain), so their magnitude ranges overlap and have no gap.
+                debug_assert!(neg.min <= pos.max && pos.min <= neg.max);
+                Range::new_raw(neg.min.min(pos.min), neg.max.max(pos.max))
+            }
+            (Some(r), None) | (None, Some(r)) => r,
+            (None, None) => unreachable!("internal error: impossible range combination"),
+        };
+        let seed_min = match (neg, pos) {
+            (Some(r), _) => from_magnitude(r.max.min(infinity), true),
+            (None, Some(r)) => from_magnitude(r.min, false),
+            (None, None) => unreachable!("internal error: impossible range combination"),
+        };
+        let seed_max = match (neg, pos) {
+            (_, Some(r)) => from_magnitude(r.max.min(infinity), false),
+            (Some(r), None) => from_magnitude(r.min, true),
+            (None, None) => unreachable!("internal error: impossible range combination"),
+        };
+        Self {
+            magnitudes,
+            neg,
+            pos,
+            seed_min,
+            seed_max,
+        }
+    }
 }
 
 impl<F: Float> Generator for Floating<F> {
@@ -61,15 +97,25 @@ impl<F: Float> Generator for Floating<F> {
             // TODO: generate other interesting values as well
             example = src
                 .as_mut()
-                .choose_seed(FLOAT_BOUND_PROB, &[F::ZERO, self.range.min, self.range.max])
+                .choose_seed(FLOAT_BOUND_PROB, &[F::ZERO, self.seed_min, self.seed_max])
                 .copied();
         }
-        let example_neg = example.map(Float::is_negative);
-        let (example_neg, forced) = match (self.neg, self.pos) {
-            (Some(_), Some(_)) => (example_neg, false),
-            (None, Some(_)) => (Some(false), true),
-            (Some(_), None) => (Some(true), true),
-            _ => unreachable!("internal error: impossible range combination"),
+        // Choose magnitude before sign so a zero-only sign range does not make zero dominate a
+        // one-sided numeric range. The same choices are made for arbitrary and ranged floats.
+        let magnitude =
+            gen_unsigned_float::<F>(src, self.magnitudes, example.map(Float::to_bits_unsigned));
+        let neg_allowed = self
+            .neg
+            .is_some_and(|r| magnitude >= r.min && magnitude <= r.max);
+        let pos_allowed = self
+            .pos
+            .is_some_and(|r| magnitude >= r.min && magnitude <= r.max);
+        let example_neg = example.map(Float::is_sign_negative);
+        let (example_neg, forced) = match (neg_allowed, pos_allowed) {
+            (true, true) => (example_neg, false),
+            (false, true) => (Some(false), true),
+            (true, false) => (Some(true), true),
+            (false, false) => unreachable!("internal error: magnitude outside sign ranges"),
         };
         if forced {
             src.mark_next_choice_forced();
@@ -77,61 +123,93 @@ impl<F: Float> Generator for Floating<F> {
         let ix = src
             .as_mut()
             .choose_index(2, example_neg.map(usize::from), Tweak::FloatSign);
-        let range = if ix == 0 { &self.pos } else { &self.neg };
-        let f = F::from_bits(gen_unsigned_float(
-            src,
-            range.expect("internal error: range not set"),
-            example,
-        ));
-        if ix == 0 { f } else { f.negate() }
+        from_magnitude(magnitude, ix != 0)
     }
 }
 
-// TODO: NaN generation
-//
-// Plan:
-// - create OrderedFloat wrapper that considers NaN as signed and more than Inf
-// - customize Ranged (next_up/next_down) for OrderedFloat
-// - use OrderedFloat in this file
-// - NaN becomes a non-special case (both Inf and NaN appear in seeds and/or bounds)
-
 impl Arbitrary for f32 {
     fn arbitrary() -> impl Generator<Item = Self> {
-        float_in_range(..)
+        arbitrary_float()
     }
 }
 
 impl Arbitrary for f64 {
     fn arbitrary() -> impl Generator<Item = Self> {
-        float_in_range(..)
+        arbitrary_float()
     }
 }
 
-/// Create a generator of floats in range.
+fn arbitrary_float<F: Float>() -> Floating<F> {
+    // Unlike numeric ranges, Arbitrary covers every IEEE bit pattern, including signed NaNs.
+    let magnitudes = Range::new_raw(0, magnitude_mask::<F>());
+    Floating::new(Some(magnitudes), Some(magnitudes))
+}
+
+/// Create a generator of non-NaN floats in a numeric range.
+///
+/// If the range contains zero, both positive and negative zero can be generated.
+///
+/// # Panics
+///
+/// Panics if the range is empty or either bound is NaN.
 pub fn float_in_range<F: Float>(r: impl RangeBounds<F>) -> impl Generator<Item = F> {
     let range = Range::new(r);
-    let (neg, pos) = range.zero_split();
-    Floating {
-        range,
-        neg: neg.map(|r| Range::new_raw(r.max.negate(), r.min.negate())),
-        pos,
-    }
+    let contains_zero = range.min <= F::ZERO && range.max >= F::ZERO;
+    let neg = if range.min < F::ZERO {
+        let min = if contains_zero {
+            0
+        } else {
+            range.max.to_bits_unsigned()
+        };
+        Some(Range::new_raw(min, range.min.to_bits_unsigned()))
+    } else if contains_zero {
+        Some(Range::new_raw(0, 0))
+    } else {
+        None
+    };
+    let pos = if range.max > F::ZERO {
+        let min = if contains_zero {
+            0
+        } else {
+            range.min.to_bits_unsigned()
+        };
+        Some(Range::new_raw(min, range.max.to_bits_unsigned()))
+    } else if contains_zero {
+        Some(Range::new_raw(0, 0))
+    } else {
+        None
+    };
+    Floating::new(neg, pos)
 }
 
-fn gen_unsigned_float<F: Float>(src: &mut SourceRaw, r: Range<F>, example: Option<F>) -> u64 {
-    let r = &FloatRange::new(r, example);
+fn gen_unsigned_float<F: Float>(src: &mut SourceRaw, r: Range<u64>, example: Option<u64>) -> u64 {
+    let r = &FloatRange::new::<F>(r, example);
     let e = choose_exp(src, r);
     let si = choose_sig_int::<F>(src, e, r);
     let sf = choose_sig_frac::<F>(src, e, si, r);
     compose_float::<F>(e, si, sf)
 }
 
+#[cfg(test)]
 fn extract_float_parts<F: Float>(f: F) -> (i32, u64, u64) {
-    let u = f.to_bits_unsigned();
+    extract_magnitude_parts::<F>(f.to_bits_unsigned())
+}
+
+fn extract_magnitude_parts<F: Float>(u: u64) -> (i32, u64, u64) {
     let exp = (u >> F::MANTISSA_BITS) as i32 - F::EXPONENT_BIAS;
     let frac = u & bitmask_u64(F::MANTISSA_BITS);
     let n = frac_bits::<F>(exp);
     (exp, frac >> n, u & bitmask_u64(n))
+}
+
+fn from_magnitude<F: Float>(magnitude: u64, negative: bool) -> F {
+    debug_assert_eq!(magnitude & !magnitude_mask::<F>(), 0);
+    let sign = u64::from(negative) << (size_of::<F>() * 8 - 1);
+    F::from_bits(sign | magnitude)
+}
+
+fn magnitude_mask<F: Float>() -> u64 {
+    bitmask_u64((size_of::<F>() * 8 - 1) as u64)
 }
 
 fn compose_float<F: Float>(exp: i32, sig_int: u64, sig_frac: u64) -> u64 {
@@ -210,7 +288,6 @@ fn bitmask_u64(u: u64) -> u64 {
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp)]
 mod tests {
     use super::*;
     use crate::{
@@ -218,9 +295,13 @@ mod tests {
         make_float::{Arbitrary, compose_float, extract_float_parts, float_in_range},
         range::Range,
         slow_test_enabled,
-        tests::{print_debug_examples, prop_smoke},
+        tests::{print_debug_examples, prop_smoke_by},
     };
     use core::cmp::Ordering;
+
+    fn same_float<F: Float>(a: &F, b: &F) -> bool {
+        a.to_bits() == b.to_bits()
+    }
 
     #[test]
     #[expect(clippy::similar_names)]
@@ -230,16 +311,13 @@ mod tests {
         }
         for i in 0..i32::MAX {
             let f = f32::from_bits(i as u32);
-            let f_neg = f32::from_bits(i as u32).negate();
+            let f_neg = -f;
             let (e, si, sf) = extract_float_parts(f);
             let (e_neg, si_neg, sf_neg) = extract_float_parts(f_neg);
             let a_f = f32::from_bits(compose_float::<f32>(e, si, sf) as u32);
-            let a_f_neg =
-                f32::from_bits(compose_float::<f32>(e_neg, si_neg, sf_neg) as u32).negate();
-            if f == f {
-                assert_eq!(f, a_f);
-                assert_eq!(f_neg, a_f_neg);
-            }
+            let a_f_neg = -f32::from_bits(compose_float::<f32>(e_neg, si_neg, sf_neg) as u32);
+            assert_eq!(f.to_bits(), a_f.to_bits());
+            assert_eq!(f_neg.to_bits(), a_f_neg.to_bits());
         }
     }
 
@@ -252,11 +330,8 @@ mod tests {
             src.scope(label, |src| {
                 let f: F = src.any("f");
                 let (e, si, sf) = extract_float_parts(f);
-                let mut a_f = F::from_bits(compose_float::<F>(e, si, sf));
-                if f.is_negative() {
-                    a_f = a_f.negate();
-                }
-                assert_eq!(f, a_f);
+                let a_f = from_magnitude::<F>(compose_float::<F>(e, si, sf), f.is_sign_negative());
+                assert_eq!(f.to_bits(), a_f.to_bits());
             });
         }
         check(|src| {
@@ -284,9 +359,69 @@ mod tests {
     #[test]
     fn float_smoke() {
         check(|src| {
-            prop_smoke(src, "f32", f32::arbitrary());
-            prop_smoke(src, "f64", f64::arbitrary());
+            prop_smoke_by(src, "f32", f32::arbitrary(), same_float);
+            prop_smoke_by(src, "f64", f64::arbitrary(), same_float);
         });
+    }
+
+    fn next_like<F: Float>(g: &impl Generator<Item = F>, example: F) -> F {
+        let mut env = Env::custom().with_rng_budget(usize::MAX).env(false);
+        let mut src = Source::new(&mut env);
+        g.next(src.as_raw(), Some(&example))
+    }
+
+    #[test]
+    fn arbitrary_float_reconstructs_all_bit_pattern_classes() {
+        fn reconstruct<F: Float>() {
+            let g = arbitrary_float::<F>();
+            let sign = 1 << (size_of::<F>() * 8 - 1);
+            let infinity = F::MAX.to_bits_unsigned();
+            let quiet = 1 << (F::MANTISSA_BITS - 1);
+            let magnitude_max = magnitude_mask::<F>();
+            let patterns = [
+                0,
+                sign,
+                infinity,
+                sign | infinity,
+                infinity | 1,
+                sign | infinity | 1,
+                infinity | quiet,
+                sign | infinity | quiet,
+                magnitude_max,
+                sign | magnitude_max,
+            ];
+            for bits in patterns {
+                let example = F::from_bits(bits);
+                let value = next_like(&g, example);
+                assert_eq!(value.to_bits(), bits);
+            }
+        }
+
+        reconstruct::<f32>();
+        reconstruct::<f64>();
+    }
+
+    #[test]
+    fn numeric_ranges_treat_zero_signs_as_the_same_endpoint() {
+        let zero = float_in_range::<f32>(0.0..=0.0);
+        assert_eq!(next_like(&zero, 0.0).to_bits(), 0.0f32.to_bits());
+        assert_eq!(next_like(&zero, -0.0).to_bits(), (-0.0f32).to_bits());
+
+        let positive =
+            float_in_range::<f32>((core::ops::Bound::Excluded(0.0), core::ops::Bound::Unbounded));
+        assert!(next_like(&positive, -0.0) > 0.0);
+
+        let negative = float_in_range::<f32>((
+            core::ops::Bound::Unbounded,
+            core::ops::Bound::Excluded(-0.0),
+        ));
+        assert!(next_like(&negative, 0.0) < 0.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "invalid range")]
+    fn numeric_range_rejects_nan_bound() {
+        let _ = float_in_range(f32::NAN..);
     }
 
     #[test]
@@ -297,7 +432,7 @@ mod tests {
                 let g = float_in_range(r);
                 let value = src.any_of("value", &g);
                 assert!(r.contains(&value));
-                prop_smoke(src, label, &g);
+                prop_smoke_by(src, label, &g, same_float);
             });
         }
         check(|src| {
@@ -342,12 +477,11 @@ mod tests {
     }
 
     fn float_cmp<F: Float>(a: &F, b: &F) -> Ordering {
-        if a == b {
-            Ordering::Equal
-        } else if a < b {
-            Ordering::Less
-        } else {
-            Ordering::Greater
+        match (a.is_sign_negative(), b.is_sign_negative()) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            (true, true) => b.to_bits_unsigned().cmp(&a.to_bits_unsigned()),
+            (false, false) => a.to_bits_unsigned().cmp(&b.to_bits_unsigned()),
         }
     }
 

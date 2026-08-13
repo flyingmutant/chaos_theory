@@ -76,6 +76,7 @@
     "MULT",
     "mpsc",
     "nanos",
+    "nans",
     "nocapture",
     "nostd",
     "Nonspacing",
