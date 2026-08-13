@@ -22,10 +22,10 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
 impl<F> Arbitrary for NotNan<F>
 where
-    F: Arbitrary + Float + Debug + FloatCore,
+    F: Float + Debug + FloatCore,
 {
     fn arbitrary() -> impl Generator<Item = Self> {
-        not_nan(F::arbitrary())
+        not_nan_in_range(..)
     }
 }
 
@@ -49,7 +49,9 @@ where
     ordered_float(float_in_range::<F>(range))
 }
 
-/// Create a [`NotNan`] generator.
+/// Create a [`NotNan`] generator from a float generator.
+///
+/// NaNs produced by `f` are treated as failed assumptions and discarded.
 #[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
 #[expect(clippy::missing_panics_doc)]
 pub fn not_nan<F>(f: impl Generator<Item = F>) -> impl Generator<Item = NotNan<F>>
@@ -64,11 +66,15 @@ where
 
 /// Create a [`NotNan`] generator constrained by `range`.
 #[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
+#[expect(clippy::missing_panics_doc)]
 pub fn not_nan_in_range<F>(range: impl RangeBounds<F>) -> impl Generator<Item = NotNan<F>>
 where
     F: Float + Debug + FloatCore,
 {
-    not_nan(float_in_range::<F>(range))
+    float_in_range::<F>(range).map_reversible(
+        |f| NotNan::new(f).expect("internal error: float_in_range generated NaN"),
+        |n| Some(MaybeOwned::Owned(n.into_inner())),
+    )
 }
 
 #[cfg(test)]
