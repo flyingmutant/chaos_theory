@@ -640,7 +640,7 @@ impl Tape {
     }
 
     pub(crate) fn last_event_ix(&self) -> usize {
-        debug_assert!(!self.events.is_empty());
+        debug_assert_ne!(self.events.as_slice(), []);
         self.events.len() - 1
     }
 
@@ -859,7 +859,7 @@ impl Tape {
     ) -> Result<(), &'static str> {
         let mut buf = vec![0; base64::decoded_len(data.len())];
         let rem = base64::decode(data, &mut buf)?;
-        debug_assert!(rem.is_empty());
+        debug_assert_eq!(rem.len(), 0);
         let rem = self.load_events(&buf, validate, build_choices)?;
         if !rem.is_empty() {
             return Err("leftover binary data after events");

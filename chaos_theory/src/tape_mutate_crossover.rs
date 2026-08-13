@@ -27,7 +27,7 @@ pub(crate) fn crossover_events(
     multi: bool,
     cache: &mut CrossoverCache,
 ) {
-    debug_assert!(result.is_empty());
+    debug_assert_eq!(result.as_slice(), []);
     let n = if multi { mutation_points(rng, t) } else { 1 };
     let mut want_merge_partial = true;
     let mut want_merge_full = true;
@@ -43,7 +43,7 @@ pub(crate) fn crossover_events(
             return;
         }
         if last_ok {
-            debug_assert!(!result.is_empty());
+            debug_assert_ne!(result.as_slice(), []);
             swap(result, events);
             result.clear();
         }
@@ -143,7 +143,7 @@ fn crossover_merge_repeat(
     full_merge: bool,
     cache: &mut CrossoverCache,
 ) -> bool {
-    debug_assert!(result.is_empty());
+    debug_assert_eq!(result.as_slice(), []);
     fill_merge_scope_info(events, rng, true, &mut cache.scopes);
     fill_merge_scope_info(other, rng, false, &mut cache.other_scopes);
     let pair = cache.choose_first_scope_pair_as_random(rng);
@@ -324,7 +324,7 @@ fn crossover_overwrite_section(
     t: u8,
     cache: &mut CrossoverCache,
 ) -> bool {
-    debug_assert!(result.is_empty());
+    debug_assert_eq!(result.as_slice(), []);
     fill_overwrite_scope_info(events, rng, true, &mut cache.scopes);
     fill_overwrite_scope_info(other, rng, false, &mut cache.other_scopes);
     let pair = cache.choose_first_scope_pair_as_random(rng);

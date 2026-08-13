@@ -295,7 +295,7 @@ pub(super) fn rng_tape_fallback(use_ev: bool) -> Option<Tape> {
     param_fallback(RNG_CHOICES_VAR, None, use_ev.then_some(&ENV), |s| {
         // A bit hacky: because we don't distinguish between empty and unset
         // environment variables, it is not possible to specify an empty tape.
-        debug_assert!(!s.is_empty());
+        debug_assert_ne!(s, "");
         let mut tape = Tape::default();
         tape.load_choices_base64(s.as_bytes())?;
         Ok::<_, &'static str>(Some(tape))

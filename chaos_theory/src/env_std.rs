@@ -237,43 +237,41 @@ impl Env {
                 "{CHECK_UNEXPECTED_NO_PANIC}\nPanic we were trying to reproduce ({}:{}): {}",
                 err.file, err.line, err.message
             );
-        } else {
-            let valid = res.valid;
-            let total = res.valid + res.invalid;
-            let elapsed = res.start.elapsed();
-            if res.replay {
-                // If multiple `check` calls are in one test, and non-first one had failed,
-                // then during replay these messages will show up for all checks before the failing one.
-                eprintln!("[chaos_theory] {CHECK_UNEXPECTED_NO_PANIC}");
-            } else if res.valid >= self.slow.check_iters || (res.time_exit && res.valid > 0) {
-                let have_cover = self.cover.is_some();
-                let cover = if have_cover {
-                    if res.cover_done {
-                        ", cover finished"
-                    } else {
-                        ", cover not finished"
-                    }
+        }
+        let valid = res.valid;
+        let total = res.valid + res.invalid;
+        let elapsed = res.start.elapsed();
+        if res.replay {
+            // If multiple `check` calls are in one test, and non-first one had failed,
+            // then during replay these messages will show up for all checks before the failing one.
+            eprintln!("[chaos_theory] {CHECK_UNEXPECTED_NO_PANIC}");
+        } else if res.valid >= self.slow.check_iters || (res.time_exit && res.valid > 0) {
+            let have_cover = self.cover.is_some();
+            let cover = if have_cover {
+                if res.cover_done {
+                    ", cover finished"
                 } else {
-                    ""
-                };
-                if res.time_exit {
-                    let limit = self.slow.check_time;
-                    eprintln!(
-                        "[chaos_theory] ~OK, passed {valid} tests ({elapsed:?} elapsed with time limit of {limit:?}{cover})"
-                    );
-                } else {
-                    eprintln!("[chaos_theory] OK, passed {valid} tests ({elapsed:?}{cover})");
+                    ", cover not finished"
                 }
             } else {
+                ""
+            };
+            if res.time_exit {
+                let limit = self.slow.check_time;
                 eprintln!(
-                    "[chaos_theory] only generated {valid} valid tests from {total} total ({elapsed:?})"
+                    "[chaos_theory] ~OK, passed {valid} tests ({elapsed:?} elapsed with time limit of {limit:?}{cover})"
                 );
-                let mut src =
-                    self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
-                // Panic with last invalid data (to help debug the issue), unless the test is flaky.
-                Self::call_prop(prop, &mut src);
-                panic!("{CHECK_UNEXPECTED_NO_PANIC}");
+            } else {
+                eprintln!("[chaos_theory] OK, passed {valid} tests ({elapsed:?}{cover})");
             }
+        } else {
+            eprintln!(
+                "[chaos_theory] only generated {valid} valid tests from {total} total ({elapsed:?})"
+            );
+            let mut src = self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
+            // Panic with last invalid data (to help debug the issue), unless the test is flaky.
+            Self::call_prop(prop, &mut src);
+            panic!("{CHECK_UNEXPECTED_NO_PANIC}");
         }
     }
 
