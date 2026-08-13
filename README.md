@@ -44,7 +44,7 @@ you can use to reproduce the case.
   - example-guided generation
   - built-in swarm testing
 - Macro-free, imperative API (with optional derive macro for `Arbitrary`)
-- Zero unsafe code and zero required dependencies
+- Zero unsafe code, zero required dependencies and `no_std`-compatible
 
 ## Documentation
 
