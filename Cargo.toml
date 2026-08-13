@@ -14,7 +14,7 @@ opt-level = 1
 debug = false
 
 [workspace.package]
-version = "0.3.6"
+version = "0.3.7"
 authors = ["Gregory Petrosyan <pgregory@pgregory.net>"]
 homepage = "https://github.com/flyingmutant/chaos_theory"
 repository = "https://github.com/flyingmutant/chaos_theory"
@@ -88,4 +88,4 @@ xshell = "0.2.6"
 uuid = { version = "1.22.0", default-features = false }
 
 chaos_theory_core = { path = "experimental/chaos_theory_core" }
-chaos_theory_derive = { version = "0.3.6", path = "chaos_theory_derive" }
+chaos_theory_derive = { version = "0.3.7", path = "chaos_theory_derive" }
