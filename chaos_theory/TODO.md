@@ -16,7 +16,6 @@
 
 ## generators
 
-- IpAddr/SocketAddr
 - permutation/shuffle/subsequence/random chunking
 - recursive
 

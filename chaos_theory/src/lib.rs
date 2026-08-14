@@ -132,6 +132,7 @@ mod make_indexmap;
 mod make_integer;
 #[cfg(feature = "jiff")]
 mod make_jiff;
+mod make_net;
 #[cfg(feature = "ordered_float")]
 mod make_ordered_float;
 #[cfg(feature = "ordermap")]
