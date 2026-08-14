@@ -97,7 +97,10 @@ impl<F: Float> Generator for Floating<F> {
             // TODO: generate other interesting values as well
             example = src
                 .as_mut()
-                .choose_seed(FLOAT_BOUND_PROB, &[F::ZERO, self.seed_min, self.seed_max])
+                .choose_seed(
+                    FLOAT_BOUND_PROB,
+                    &[F::ZERO, F::ZERO.negate(), self.seed_min, self.seed_max],
+                )
                 .copied();
         }
         // Choose magnitude before sign so a zero-only sign range does not make zero dominate a
