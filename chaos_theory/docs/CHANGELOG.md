@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the `no_std + regex` build.
 - Update to Unicode 17.
 
 ## 0.3.7 (2026-08-14)

@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::{borrow::ToOwned as _, string::String, sync::Arc, vec::Vec};
+use alloc::{borrow::ToOwned as _, boxed::Box, string::String, sync::Arc, vec::Vec};
 use core::{
     fmt::{self, Debug, Formatter},
     marker::PhantomData,
@@ -74,7 +74,7 @@ fn compiled_regex(expr: &str) -> Result<Arc<HirInfo>, Box<regex_syntax::Error>> 
 }
 
 #[cfg(not(feature = "std"))]
-fn compiled_regex(expr: &str) -> Result<Arc<HirInfo>, regex_syntax::Error> {
+fn compiled_regex(expr: &str) -> Result<Arc<HirInfo>, Box<regex_syntax::Error>> {
     compile_hir_info(expr)
 }
 
