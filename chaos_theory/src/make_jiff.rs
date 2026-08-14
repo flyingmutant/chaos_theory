@@ -4,7 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::{string::String, vec::Vec};
 use core::{
     cmp::{self, Ordering},
     fmt::Debug,
@@ -17,10 +16,10 @@ use jiff::{
     tz::{self, Offset, TimeZone, TimeZoneDatabase},
 };
 
-#[cfg(feature = "std")]
-use std::sync::OnceLock;
-
-use crate::{Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent, range::Range};
+use crate::{
+    Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent, range::Range,
+    time_zone_names::TIME_ZONE_NAMES_WITH_UNKNOWN,
+};
 
 // Keep these choices aligned with `make_time` where possible. In particular, the
 // `<secs>` and `<nanos>` scopes are intentionally the same so that tapes for standard
@@ -28,7 +27,6 @@ use crate::{Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent,
 const DURATION_SPECIAL_PROB: f64 = percent(15);
 const SECOND_SPECIALS: &[i64] = &[60, 3600, 86400];
 const NANOSECOND_SPECIALS: &[i32] = &[1000, 1_000_000, 500_000_000];
-const UNKNOWN_TIME_ZONE_NAME: &str = "Etc/Unknown";
 const TIME_ZONE_SPECIAL_PROB: f64 = percent(30);
 const TIME_ZONE_OFFSET_SPECIALS: &[i32] = &[
     -12 * 3600,            // Baker Island Time / Anywhere on Earth
@@ -312,49 +310,13 @@ pub fn timestamp_in_range(range: impl RangeBounds<Timestamp>) -> impl Generator<
     }
 }
 
-fn collect_time_zone_names(db: &'static TimeZoneDatabase) -> Vec<String> {
-    let mut names = Vec::new();
-    names.push(String::from(UNKNOWN_TIME_ZONE_NAME));
-    names.extend(db.available().map(|name| String::from(name.as_str())));
-    names[1..].sort_unstable();
-    names
-}
-
-#[cfg(feature = "std")]
-fn time_zone_names(db: &'static TimeZoneDatabase) -> &'static [String] {
-    static NAMES: OnceLock<Vec<String>> = OnceLock::new();
-    NAMES.get_or_init(|| collect_time_zone_names(db))
-}
-
 struct TimeZone_ {
     db: &'static TimeZoneDatabase,
-    #[cfg(feature = "std")]
-    names: &'static [String],
-    #[cfg(not(feature = "std"))]
-    names: Vec<String>,
 }
 
 impl TimeZone_ {
     fn new() -> Self {
-        let db = tz::db();
-        Self {
-            db,
-            #[cfg(feature = "std")]
-            names: time_zone_names(db),
-            #[cfg(not(feature = "std"))]
-            names: collect_time_zone_names(db),
-        }
-    }
-
-    fn names(&self) -> &[String] {
-        #[cfg(feature = "std")]
-        {
-            self.names
-        }
-        #[cfg(not(feature = "std"))]
-        {
-            &self.names
-        }
+        Self { db: tz::db() }
     }
 
     fn fixed(src: &mut SourceRaw, example_offset: Option<Offset>) -> TimeZone {
@@ -380,14 +342,14 @@ impl Generator for TimeZone_ {
     type Item = TimeZone;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let names = self.names();
+        let names = TIME_ZONE_NAMES_WITH_UNKNOWN;
         let example_name_index = example.and_then(|time_zone| {
             if time_zone.is_unknown() {
                 return Some(0);
             }
             let example_name = time_zone.iana_name()?;
             names[1..]
-                .binary_search_by(|name| name.as_str().cmp(example_name))
+                .binary_search(&example_name)
                 .ok()
                 .map(|index| index + 1)
         });
@@ -413,9 +375,15 @@ impl Generator for TimeZone_ {
             |src, variant, _ix| match variant {
                 "Fixed" => Self::fixed(src, example_offset),
                 "Named" => {
-                    let (name, _) = src
+                    let (name, name_index) = src
                         .choose("<time-zone-name>", example_name_index, names)
                         .expect("internal error: no time zone names");
+                    // Preserve examples even when Jiff's database can't resolve their names.
+                    if let Some(example) = example
+                        && example_name_index == Some(name_index)
+                    {
+                        return example.clone();
+                    }
                     self.db.get(name).unwrap_or_else(|_| TimeZone::unknown())
                 }
                 _ => unreachable!(),
@@ -426,9 +394,7 @@ impl Generator for TimeZone_ {
 
 impl Debug for TimeZone_ {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("TimeZone")
-            .field("named_zones", &self.names().len().saturating_sub(1))
-            .finish()
+        f.debug_struct("TimeZone").finish()
     }
 }
 

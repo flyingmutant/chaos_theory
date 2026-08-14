@@ -150,6 +150,10 @@ mod make_tinyvec;
 mod make_tuple;
 #[cfg(feature = "uuid")]
 mod make_uuid;
+#[cfg(feature = "jiff")]
+mod time_zone_names {
+    include!("../gen/time_zone_names.rs");
+}
 
 pub use config::*;
 pub use env::*;

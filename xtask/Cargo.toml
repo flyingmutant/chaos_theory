@@ -12,5 +12,6 @@ workspace = true
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
 env_logger.workspace = true
+jiff-tzdb.workspace = true
 log.workspace = true
 xshell.workspace = true
