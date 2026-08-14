@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Update to Unicode 17.
+
 ## 0.3.7 (2026-08-14)
 
 - Make float `Arbitrary` be able to generate all possible bit patterns (including NaNs and -0).
