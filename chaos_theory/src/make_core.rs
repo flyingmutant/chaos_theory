@@ -28,7 +28,9 @@ impl Arbitrary for PhantomPinned {
     }
 }
 
-// Always generate uninitialized storage because its initialization state cannot be inspected safely.
+// Always generate uninitialized storage. `MaybeUninit` does not expose its initialization state,
+// so a generator that sometimes initialized it would give callers no safe way to know when they
+// may access or drop `T`; initialized values requiring drop would usually leak.
 impl<T> Arbitrary for MaybeUninit<T> {
     fn arbitrary() -> impl Generator<Item = Self> {
         make::from_fn(|_| Self::uninit())
