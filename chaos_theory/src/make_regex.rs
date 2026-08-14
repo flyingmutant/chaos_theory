@@ -4,8 +4,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::{borrow::ToOwned as _, boxed::Box, string::String, sync::Arc, vec::Vec};
+use alloc::{borrow::ToOwned as _, boxed::Box, ffi::CString, string::String, sync::Arc, vec::Vec};
 use core::{
+    ffi::CStr,
     fmt::{self, Debug, Formatter},
     marker::PhantomData,
     num::NonZero,
@@ -15,7 +16,7 @@ use core::{
 use std::sync::{LazyLock, RwLock};
 
 use crate::{
-    Effect, Generator, OptionExt as _, Scope, SourceRaw,
+    Effect, Generator, MaybeOwned, OptionExt as _, Scope, SourceRaw,
     make::{self, CharBuf as _, next_string_impl, next_vec_impl},
     make_char::regex::{
         byte_any, byte_any_non_crlf, byte_any_non_lf, byte_class, char_class, char_non_crlf,
@@ -488,6 +489,64 @@ where
         fullmatch,
         _marker: PhantomData,
     }
+}
+
+/// Create a generator of [`CString`] values whose contents match the given regular expression.
+///
+/// Matching excludes the terminating NUL byte. Matches containing interior NUL bytes are
+/// discarded. Unlike [`string_matching`], this generator supports regular expressions that match
+/// non-UTF-8 byte sequences.
+///
+/// With `fullmatch`, the whole C string contents will match the regular expression.
+/// Otherwise, the whole contents or a subslice can match.
+///
+/// # Panics
+///
+/// `cstring_matching` panics when the regular expression can't be parsed. Generation can also
+/// panic if too many generated matches contain NUL bytes; in particular, a regular expression
+/// requiring a NUL byte can't produce a C string.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
+pub fn cstring_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = CString> + use<> {
+    cstring_slice_matching(expr, fullmatch)
+}
+
+/// Create a generator of owned C string slice values whose contents match the given regular
+/// expression.
+///
+/// Matching excludes the terminating NUL byte. Matches containing interior NUL bytes are
+/// discarded. Unlike [`string_slice_matching`], this generator supports regular expressions that
+/// match non-UTF-8 byte sequences.
+///
+/// With `fullmatch`, the whole C string contents will match the regular expression.
+/// Otherwise, the whole contents or a subslice can match.
+///
+/// Examples of standard owned C string slices:
+///
+/// - [`Box<CStr>`](alloc::boxed::Box)
+/// - [`Rc<CStr>`](alloc::rc::Rc)
+/// - [`Arc<CStr>`](alloc::sync::Arc)
+/// - [`Cow<'_, CStr>`](alloc::borrow::Cow)
+///
+/// # Panics
+///
+/// `cstring_slice_matching` panics when the regular expression can't be parsed. Generation can
+/// also panic if too many generated matches contain NUL bytes; in particular, a regular expression
+/// requiring a NUL byte can't produce a C string.
+#[cfg_attr(docsrs, doc(cfg(feature = "regex")))]
+pub fn cstring_slice_matching<T>(expr: &str, fullmatch: bool) -> impl Generator<Item = T> + use<T>
+where
+    T: From<CString> + Deref<Target = CStr> + Debug,
+{
+    bytes_matching(expr, fullmatch)
+        .filter_assume(|bytes| !bytes.contains(&b'\0'))
+        .map_reversible(
+            |bytes| {
+                CString::new(bytes)
+                    .expect("internal error: generated NUL byte after filtering")
+                    .into()
+            },
+            |s: &T| Some(MaybeOwned::Owned(s.to_bytes().to_vec())),
+        )
 }
 
 #[cfg(test)]

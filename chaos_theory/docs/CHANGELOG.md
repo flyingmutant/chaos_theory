@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add regular expression generators for `CString` and owned `CStr` types.
 - Fix the `no_std + regex` build.
 - Update to Unicode 17.
 
