@@ -169,11 +169,13 @@ impl Generator for Char {
             src.as_mut()
                 .choose_index(SORTED_CATEGORIES.len(), example_cat_ix, Tweak::CharCategory);
         let cat = SORTED_CATEGORIES[cat_ix].1;
+        let example = example.filter(|_| example_cat_ix == Some(cat_ix));
         let example_range_ix = example.map(|c| char_range_index(c, cat));
         let range_ix = src
             .as_mut()
             .choose_index(cat.len(), example_range_ix, Tweak::CharRange);
         let range = &cat[range_ix];
+        let example = example.filter(|_| example_range_ix == Some(range_ix));
         let example_ix = example.map(|c| c as usize - range.0 as usize);
         let c_ix = src.as_mut().choose_index(
             range.1 as usize - range.0 as usize + 1,
@@ -281,6 +283,7 @@ pub(crate) mod regex {
             .as_mut()
             .choose_index(ranges.len(), example_range_ix, Tweak::CharRange);
         let range = &ranges[range_ix];
+        let example = example.filter(|_| example_range_ix == Some(range_ix));
         let example_ix = example.map(|c| c as usize - range.start() as usize);
         let c_ix = src.as_mut().choose_index(
             range.end() as usize - range.start() as usize + 1,
@@ -320,6 +323,7 @@ pub(crate) mod regex {
                 src.as_mut()
                     .choose_index(ranges.len(), example_range_ix, Tweak::CharRange);
             let range = &ranges[range_ix];
+            let example = example.filter(|_| example_range_ix == Some(range_ix));
             let example_ix = example.map(|c| c as usize - range.start() as usize);
             let c_ix = src.as_mut().choose_index(
                 range.end() as usize - range.start() as usize + 1,
