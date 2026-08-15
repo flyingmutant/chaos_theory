@@ -118,6 +118,9 @@ pub(crate) fn reproduce_inform(
         let _ = write!(env_vars, " {CHECK_DETERMINISM_VAR}=true");
     }
     eprintln!("[chaos_theory] run test with `{env_vars}` to reproduce{suffix} the failure");
+    eprintln!(
+        "[chaos_theory] use vdbg!/vprintln!/veprintln! instead of dbg!/println!/eprintln! when debugging to omit output from intermediate property runs"
+    );
 }
 
 pub(crate) fn non_determinism_inform(msg: impl Display) {
