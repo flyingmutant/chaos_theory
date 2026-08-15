@@ -67,6 +67,7 @@ bstr = { version = "1.12.1", default-features = false }
 bytes = { version = "1.11.1", default-features = false }
 clap = "4.5.37"
 ecow = { version = "0.2.6", default-features = false }
+either = { version = "1.17.0", default-features = false }
 env_logger = "0.11.8"
 hashbrown = { version = "0.16.0", default-features = false }
 indexmap = { version = "2.11.4", default-features = false }

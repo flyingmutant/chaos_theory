@@ -198,9 +198,10 @@ Common categories:
 - Regex (feature-gated): [`string_matching`][make_string_matching],
   [`bytes_matching`][make_bytes_matching]
 - Extra crates (feature-gated): [`bstr`][make_bstr], [`bytes`][make_bytes],
-  [`ecow`][make_ecow], [`hashbrown`][make_hashbrown], [`indexmap`][make_indexmap],
-  [`jiff`][make_jiff], [`ordermap`][make_ordermap], [`ordered_float`][make_ordered_float],
-  [`serde_json`][make_serde_json], [`tinyvec`][make_tinyvec], [`uuid`][make_uuid]
+  [`ecow`][make_ecow], [`either`][make_either], [`hashbrown`][make_hashbrown],
+  [`indexmap`][make_indexmap], [`jiff`][make_jiff], [`ordermap`][make_ordermap],
+  [`ordered_float`][make_ordered_float], [`serde_json`][make_serde_json],
+  [`tinyvec`][make_tinyvec], [`uuid`][make_uuid]
 
 If a generator exists, prefer using it instead of re-implementing the logic.
 
@@ -501,6 +502,7 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [make_bytes_matching]: crate::make::bytes_matching
 [make_bstr]: crate::make::bstr
 [make_bytes]: crate::make::bytes
+[make_either]: crate::make::either
 [make_hashbrown]: crate::make::hashbrown
 [make_indexmap]: crate::make::indexmap
 [make_jiff]: crate::make::jiff

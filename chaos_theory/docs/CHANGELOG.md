@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add feature-gated `either` support with `make::either::{either, left, right}` and `Arbitrary` impl.
 - Add `Arbitrary` impls for IP and socket address types.
 - Add regular expression generators for `CString` and owned `CStr` types.
 - Fix the `no_std + regex` build.
