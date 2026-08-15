@@ -4,8 +4,6 @@ This is a short guide to chaos_theory basics. It covers how to write properties 
 [`Source`][source], with a focus on the two core building blocks after [`any`][source_any]:
 [`repeat`][source_repeat] and [`select`][source_select], and includes an overview of generators.
 
-*Note: original version of this document was AI-generated.*
-
 ## The Shape Of A Property
 
 Property tests in chaos_theory look like this:
