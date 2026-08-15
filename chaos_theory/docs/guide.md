@@ -22,20 +22,6 @@ check(|src| {
 
 [`Source`][source] gives you structured randomness. Your job is to explore the system using it.
 
-## `no_std` Usage
-
-`chaos_theory` enables `std` by default. To use it in `no_std + alloc`, disable defaults:
-
-```toml
-[dependencies]
-chaos_theory = { version = "0.3", default-features = false, features = ["no_std", "derive"] }
-```
-
-In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceRaw`,
-`Env::example`, `make::*` core/alloc generators), while `check` and fuzzing APIs remain `std`-only.
-`Config::env(true)` does not read environment variables in `no_std`.
-Default seeding is deterministic there and can be advanced with `jump_seed_sequence`.
-
 ## Working With `Source`
 
 The basic operations:
@@ -176,7 +162,7 @@ Use [`should_log`][should_log], [`vdbg!`][vdbg], [`vprintln!`][vprintln], and
 
 Most users never write custom generators. You can get far with:
 
-- built-in generators in [`make::*`][make],
+- built-in [`Arbitrary`][arbitrary] implementations and generators in [`make::*`][make],
 - composing with [`select`][source_select], [`repeat`][source_repeat], and [`any`][source_any],
 - occasional use of [`from_fn`][make_from_fn] if needed.
 
@@ -213,10 +199,17 @@ Common categories:
   [`bytes_matching`][make_bytes_matching]
 - Extra crates (feature-gated): [`bstr`][make_bstr], [`bytes`][make_bytes],
   [`ecow`][make_ecow], [`hashbrown`][make_hashbrown], [`indexmap`][make_indexmap],
-  [`ordermap`][make_ordermap], [`ordered_float`][make_ordered_float],
+  [`jiff`][make_jiff], [`ordermap`][make_ordermap], [`ordered_float`][make_ordered_float],
   [`serde_json`][make_serde_json], [`tinyvec`][make_tinyvec], [`uuid`][make_uuid]
 
 If a generator exists, prefer using it instead of re-implementing the logic.
+
+### Common `Arbitrary` Implementations
+
+Not every supported type has a named function in [`make::*`][make]. Many standard-library
+types and feature-gated third-party types implement [`Arbitrary`][arbitrary] directly, so they
+can be generated with [`Source::any`][source_any]. If you do not see a suitable `make::*`
+function, check the list of `Arbitrary` implementations before writing a custom generator.
 
 ### Default Distribution
 
@@ -427,6 +420,20 @@ values and minimizes effectively.
 Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][source_any] or
 [`Source::any_of`][source_any_of] instead.
 
+## `no_std` Usage
+
+`chaos_theory` enables `std` by default. To use it in `no_std + alloc`, disable defaults:
+
+```toml
+[dependencies]
+chaos_theory = { version = "0.3", default-features = false, features = ["no_std", "derive"] }
+```
+
+In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceRaw`,
+`Env::example`, `make::*` core/alloc generators), while `check` and fuzzing APIs remain `std`-only.
+`Config::env(true)` does not read environment variables in `no_std`.
+Default seeding is deterministic there and can be advanced with `jump_seed_sequence`.
+
 [source]: crate::Source
 [source_any]: crate::Source::any
 [source_any_of]: crate::Source::any_of
@@ -496,6 +503,7 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 [make_bytes]: crate::make::bytes
 [make_hashbrown]: crate::make::hashbrown
 [make_indexmap]: crate::make::indexmap
+[make_jiff]: crate::make::jiff
 [make_ordermap]: crate::make::ordermap
 [make_ordered_float]: crate::make::ordered_float
 [make_serde_json]: crate::make::serde_json
