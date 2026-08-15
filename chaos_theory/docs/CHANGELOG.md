@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.8 (2026-08-15)
 
 - Add feature-gated `either` support with `make::either::{either, left, right}` and `Arbitrary` impl.
 - Add `Arbitrary` impls for IP and socket address types.
