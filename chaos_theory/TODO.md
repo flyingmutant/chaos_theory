@@ -3,8 +3,9 @@
 ## docs
 
 - usage examples
+  - update example crates
 - skill or one-pager for coding agents
-  - logging, iteration control, seeds, hangs
+  - iteration control, seeds, hangs
 
 ## API
 
@@ -22,7 +23,7 @@
 ## features
 
 - consider saving failures, at least temporarily
-- print out potentially-hanging seed
+- print out potentially-hanging seed (how?)
 - consider `reflecting` as a feature (not just a seed)
 - consider runs with forced boundary conditions
   - can swarming with choice = free-gen vs boundary-gen give this for free?
