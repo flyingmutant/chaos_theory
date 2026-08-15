@@ -48,7 +48,10 @@ you can use to reproduce the case.
 
 ## Documentation
 
-https://docs.rs/chaos_theory
+- [API reference](https://docs.rs/chaos_theory)
+- [Guide](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/guide/index.html)
+- [FAQ](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/faq/index.html)
+- [Changelog](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/changelog/index.html)
 
 ## Status
 
