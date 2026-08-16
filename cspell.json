@@ -134,6 +134,7 @@
     "veprintln",
     "vprintln",
     "wasi",
+    "worklist",
     "wyhash",
     "Wyrand",
     "xous",
