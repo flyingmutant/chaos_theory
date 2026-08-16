@@ -4,12 +4,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use core::cmp::Ordering;
+
 use crate::{
     Effect,
     reduce::{Seq, Tree, TreeNodeChild, reduce_num, reduce_seq, visit_seq_chunks},
     tape::Tape,
     tape_event::{Event, ScopeKind},
 };
+
+type TRepeatElement = Option<(usize, Effect, bool)>;
 
 #[derive(Debug)]
 struct TTreeNode {
@@ -49,7 +53,7 @@ pub(crate) enum TTreeChild {
     Repeat {
         id: usize,
         size: Option<Event>,
-        elements: Vec<Option<(usize, Effect, bool)>>,
+        elements: Vec<TRepeatElement>,
     },
 }
 
@@ -221,6 +225,158 @@ impl TTree {
                 early_exit
             }
         }
+    }
+
+    pub(crate) fn sort_child(
+        &mut self,
+        node_id: usize,
+        ix: usize,
+        choice_indices: &mut Vec<usize>,
+        accept: &mut impl FnMut(&Self) -> Option<bool>,
+    ) -> bool {
+        let TTreeChild::Repeat { elements, .. } = &self.nodes[node_id].children[ix] else {
+            return false;
+        };
+        if elements.len() < 2 {
+            return false;
+        }
+        let elements = elements.clone();
+        // Reuse the dense node lookup across repeats, while keeping their choice data local.
+        if choice_indices.len() != self.nodes.len() {
+            choice_indices.resize(self.nodes.len(), 0);
+        }
+        let mut choices = Vec::with_capacity(elements.len());
+        for (id, _effect, _discardable) in elements.iter().flatten() {
+            let mut element_choices = Vec::new();
+            self.collect_node_choices(*id, &mut element_choices);
+            choice_indices[*id] = choices.len();
+            choices.push(element_choices);
+        }
+
+        let mut early_exit = false;
+        visit_seq_chunks(elements.len(), 2, |begin, end| {
+            let original = self.repeat_elements(node_id, ix)[begin..end].to_vec();
+            let mut sorted = original.clone();
+            Self::sort_repeat_elements(&mut sorted, choice_indices, &choices);
+            if sorted == original {
+                return true;
+            }
+            early_exit = self.try_reorder(node_id, ix, begin, &original, &sorted, accept);
+            !early_exit
+        });
+        if early_exit {
+            return true;
+        }
+
+        for right in (1..elements.len()).rev() {
+            let original = {
+                let elements = self.repeat_elements(node_id, ix);
+                [elements[right - 1], elements[right]]
+            };
+            if Self::repeat_element_cmp(&original[0], &original[1], choice_indices, &choices)
+                == Ordering::Greater
+            {
+                let reordered = [original[1], original[0]];
+                if self.try_reorder(node_id, ix, right - 1, &original, &reordered, accept) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn repeat_elements(&self, node_id: usize, ix: usize) -> &[TRepeatElement] {
+        let TTreeChild::Repeat { elements, .. } = &self.nodes[node_id].children[ix] else {
+            unreachable!("internal error: sorting non-repeat child");
+        };
+        elements
+    }
+
+    fn repeat_elements_mut(&mut self, node_id: usize, ix: usize) -> &mut [TRepeatElement] {
+        let TTreeChild::Repeat { elements, .. } = &mut self.nodes[node_id].children[ix] else {
+            unreachable!("internal error: sorting non-repeat child");
+        };
+        elements
+    }
+
+    fn collect_node_choices(&self, id: usize, choices: &mut Vec<u64>) {
+        for child in &self.nodes[id].children {
+            match child {
+                TTreeChild::Choice(event) => choices.extend(event.choice_value()),
+                TTreeChild::Scope { id } => self.collect_node_choices(*id, choices),
+                TTreeChild::Repeat { id, elements, .. } => {
+                    self.collect_node_choices(*id, choices);
+                    for (id, _effect, _discardable) in elements.iter().flatten() {
+                        self.collect_node_choices(*id, choices);
+                    }
+                }
+            }
+        }
+    }
+
+    fn repeat_element_choices<'a>(
+        element: &TRepeatElement,
+        choice_indices: &[usize],
+        choices: &'a [Vec<u64>],
+    ) -> &'a [u64] {
+        let Some((id, _effect, _discardable)) = element else {
+            return &[];
+        };
+        &choices[choice_indices[*id]]
+    }
+
+    fn repeat_element_cmp(
+        a: &TRepeatElement,
+        b: &TRepeatElement,
+        choice_indices: &[usize],
+        choices: &[Vec<u64>],
+    ) -> Ordering {
+        let a = Self::repeat_element_choices(a, choice_indices, choices);
+        let b = Self::repeat_element_choices(b, choice_indices, choices);
+        // Order elements by whichever concatenation places the smaller one first.
+        a.iter().chain(b).cmp(b.iter().chain(a))
+    }
+
+    fn sort_repeat_elements(
+        elements: &mut [TRepeatElement],
+        choice_indices: &[usize],
+        choices: &[Vec<u64>],
+    ) {
+        // Empty elements compare equal to everything, so keep their slots fixed.
+        let mut nonempty: Vec<_> = elements
+            .iter()
+            .copied()
+            .filter(|element| {
+                !Self::repeat_element_choices(element, choice_indices, choices).is_empty()
+            })
+            .collect();
+        nonempty.sort_by(|a, b| Self::repeat_element_cmp(a, b, choice_indices, choices));
+        let mut nonempty = nonempty.into_iter();
+        for element in elements {
+            if !Self::repeat_element_choices(element, choice_indices, choices).is_empty() {
+                *element = nonempty
+                    .next()
+                    .expect("internal error: missing sorted repeat element");
+            }
+        }
+    }
+
+    fn try_reorder(
+        &mut self,
+        node_id: usize,
+        ix: usize,
+        begin: usize,
+        original: &[TRepeatElement],
+        reordered: &[TRepeatElement],
+        accept: &mut impl FnMut(&Self) -> Option<bool>,
+    ) -> bool {
+        let end = begin + original.len();
+        self.repeat_elements_mut(node_id, ix)[begin..end].copy_from_slice(reordered);
+        let accepted = accept(self);
+        if accepted != Some(true) {
+            self.repeat_elements_mut(node_id, ix)[begin..end].copy_from_slice(original);
+        }
+        accepted.is_none()
     }
 
     fn try_zero_nodes(
@@ -454,18 +610,45 @@ mod tests {
     use super::*;
     use crate::{check, make};
 
-    fn scope(id: u64, kind: ScopeKind, choice: Event) -> [Event; 3] {
-        [
-            Event::ScopeStart {
-                id,
-                kind,
-                effect: Effect::Success,
-                discardable: false,
-                meta: None,
-            },
-            choice,
-            Event::ScopeEnd,
-        ]
+    fn scope(
+        id: u64,
+        kind: ScopeKind,
+        choices: impl IntoIterator<Item = Event>,
+    ) -> impl Iterator<Item = Event> {
+        core::iter::once(Event::ScopeStart {
+            id,
+            kind,
+            effect: Effect::Success,
+            discardable: false,
+            meta: None,
+        })
+        .chain(choices)
+        .chain(core::iter::once(Event::ScopeEnd))
+    }
+
+    fn repeat_tree<T: Copy + Into<u64>>(elements: &[Vec<T>]) -> TTree {
+        let mut events = Vec::new();
+        events.extend(scope(
+            1,
+            ScopeKind::RepeatSize,
+            [Event::Size {
+                size: elements.len() as u64,
+                min: 0,
+                max: elements.len() as u64,
+            }],
+        ));
+        for (ix, choices) in elements.iter().enumerate() {
+            events.extend(scope(
+                ix as u64 + 2,
+                ScopeKind::RepeatElement,
+                choices.iter().copied().map(|value| Event::Value {
+                    value: value.into(),
+                    min: 0,
+                    max: u64::MAX,
+                }),
+            ));
+        }
+        TTree::from_events(&events)
     }
 
     #[test]
@@ -482,22 +665,22 @@ mod tests {
             events.extend(scope(
                 1,
                 ScopeKind::RepeatSize,
-                Event::Size {
+                [Event::Size {
                     size: len as u64,
                     min: 0,
                     max: len as u64,
-                },
+                }],
             ));
             events.extend(mins.into_iter().enumerate().flat_map(|(ix, min)| {
                 let min = u64::from(min);
                 scope(
                     ix as u64 + 2,
                     ScopeKind::RepeatElement,
-                    Event::Value {
+                    [Event::Value {
                         value: min + 1,
                         min,
                         max: min + 1,
-                    },
+                    }],
                 )
             }));
 
@@ -512,6 +695,62 @@ mod tests {
             let mut accept = |t: &TTree| Some([len, keep].contains(&nontrivial(t)));
             assert!(!tree.trivialize_child(0, 0, &mut accept));
             assert_eq!(nontrivial(&tree), keep);
+        });
+    }
+
+    #[test]
+    fn sort_repeat_elements() {
+        check(|src| {
+            let elements = src.any_of(
+                "elements",
+                make::vec_with_size(make::vec_with_size(make::arbitrary::<u8>(), ..5), 2..),
+            );
+            let mut expected: Vec<_> = (0..elements.len()).collect();
+            let mut nonempty: Vec<_> = expected
+                .iter()
+                .copied()
+                .filter(|ix| !elements[*ix].is_empty())
+                .collect();
+            nonempty.sort_by(|a, b| {
+                elements[*a]
+                    .iter()
+                    .chain(&elements[*b])
+                    .cmp(elements[*b].iter().chain(&elements[*a]))
+            });
+            let mut nonempty = nonempty.into_iter();
+            for ix in &mut expected {
+                if !elements[*ix].is_empty() {
+                    *ix = nonempty.next().unwrap();
+                }
+            }
+            let mut tree = repeat_tree(&elements);
+            let mut choice_indices = Vec::new();
+            assert!(!tree.sort_child(0, 0, &mut choice_indices, &mut |_| Some(true)));
+            let actual: Vec<_> = tree
+                .repeat_elements(0, 0)
+                .iter()
+                .flatten()
+                .map(|(id, _effect, _discardable)| id - 2)
+                .collect();
+            assert_eq!(actual, expected);
+
+            let base = u64::from(src.any::<u32>("base"));
+            let original = [base + 4, base + 3, base + 2, base + 1];
+            let chunk = [base + 4, base + 3, base + 1, base + 2];
+            let adjacent = [base + 4, base + 1, base + 3, base + 2];
+            let mut tree = repeat_tree(&original.map(|value| vec![value]));
+            let mut choice_indices = Vec::new();
+            let mut accept = |t: &TTree| {
+                let tape = t.to_tape(false);
+                let choices = &tape.as_choices()[1..];
+                Some(
+                    [original, chunk, adjacent]
+                        .iter()
+                        .any(|order| choices == order),
+                )
+            };
+            assert!(!tree.sort_child(0, 0, &mut choice_indices, &mut accept));
+            assert_eq!(&tree.to_tape(false).as_choices()[1..], adjacent);
         });
     }
 }

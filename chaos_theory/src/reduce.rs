@@ -79,14 +79,14 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         // Things we don't do:
         // - try to match the repeat size with an integer before and reduce both simultaneously
         //   - more generally, try to match equal values and reduce them simultaneously
-        // - try re-order the sequences
         // - try to unset or reorder bits in numbers
         // - try to re-distribute integer amounts
         // - for recursive data, replace values with sub-values.
-        //
-        // We hierarchically reduce sequences and minimize choices, individually and by
-        // zeroing whole regions.
-        let passes = [Self::pass_reduce_tree, Self::pass_trivialize_tree];
+        let passes = [
+            Self::pass_reduce_tree,     // delete nodes and minimize choices
+            Self::pass_trivialize_tree, // zero whole regions
+            Self::pass_sort_tree,       // increase sortedness
+        ];
         loop {
             let reductions_before = self.reductions;
             for pass in passes {
@@ -185,6 +185,21 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         }
         let early_exit = visit_tree(&mut tree, |t, node, ix| {
             let early_exit = t.trivialize_child(node, ix, &mut accept);
+            (t.child(node, ix), early_exit)
+        });
+        if early_exit { Err(()) } else { Ok(()) }
+    }
+
+    fn pass_sort_tree(&mut self) -> Result<(), ()> {
+        let mut tree = self.tape.clone().into_tree();
+        let mut choice_indices = Vec::new();
+        let mut accept = |t: &TTree| {
+            // Don't ignore noop scopes, as they might affect the result.
+            let tape = t.to_tape(false);
+            self.try_incorporate(tape, true).ok()
+        };
+        let early_exit = visit_tree(&mut tree, |t, node, ix| {
+            let early_exit = t.sort_child(node, ix, &mut choice_indices, &mut accept);
             (t.child(node, ix), early_exit)
         });
         if early_exit { Err(()) } else { Ok(()) }
