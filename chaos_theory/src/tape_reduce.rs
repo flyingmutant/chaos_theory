@@ -6,12 +6,12 @@
 
 use crate::{
     Effect,
-    reduce::{Seq, Tree, TreeNodeChild, reduce_num, reduce_seq},
+    reduce::{Seq, Tree, TreeNodeChild, reduce_num, reduce_seq, visit_seq_chunks},
     tape::Tape,
     tape_event::{Event, ScopeKind},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 struct TTreeNode {
     scope_id: u64,
     scope_kind: ScopeKind,
@@ -191,6 +191,98 @@ impl TTree {
             events.push(Event::ScopeEnd);
         }
     }
+
+    pub(crate) fn trivialize_root(
+        &mut self,
+        accept: &mut impl FnMut(&Self) -> Option<bool>,
+    ) -> bool {
+        self.try_zero_nodes([0], accept)
+    }
+
+    pub(crate) fn trivialize_child(
+        &mut self,
+        node_id: usize,
+        ix: usize,
+        accept: &mut impl FnMut(&Self) -> Option<bool>,
+    ) -> bool {
+        match self.child(node_id, ix) {
+            TTreeChild::Choice(_) => false,
+            TTreeChild::Scope { id } => self.try_zero_nodes([id], accept),
+            TTreeChild::Repeat { elements, .. } => {
+                let mut early_exit = false;
+                visit_seq_chunks(elements.len(), 1, |begin, end| {
+                    let nodes = elements[begin..end]
+                        .iter()
+                        .flatten()
+                        .map(|(id, _effect, _discardable)| *id);
+                    early_exit = self.try_zero_nodes(nodes, accept);
+                    !early_exit
+                });
+                early_exit
+            }
+        }
+    }
+
+    fn try_zero_nodes(
+        &mut self,
+        nodes: impl IntoIterator<Item = usize>,
+        accept: &mut impl FnMut(&Self) -> Option<bool>,
+    ) -> bool {
+        // Mutate in place and roll back rejected candidates to avoid cloning the whole tree per attempt.
+        let undo = self.zero_nodes(nodes);
+        if undo.is_empty() {
+            return false;
+        }
+        let accepted = accept(self);
+        if accepted != Some(true) {
+            for (id, ix, choice) in undo {
+                let TTreeChild::Choice(event) = &mut self.nodes[id].children[ix] else {
+                    unreachable!("internal error: restoring non-choice event");
+                };
+                event.set_choice_value(choice);
+            }
+        }
+        accepted.is_none()
+    }
+
+    fn zero_nodes(&mut self, nodes: impl IntoIterator<Item = usize>) -> Vec<(usize, usize, u64)> {
+        // We currently trivialize the choices recorded for the region. A stronger alternative
+        // would clear it and replay under a scoped `force_minimal` mode, which could also
+        // trivialize newly selected structure.
+        let mut pending: Vec<_> = nodes.into_iter().collect();
+        let mut undo = Vec::new();
+        while let Some(node_id) = pending.pop() {
+            for (ix, child) in self.nodes[node_id].children.iter_mut().enumerate() {
+                match child {
+                    TTreeChild::Choice(event) => {
+                        if matches!(
+                            &*event,
+                            Event::Size { .. }
+                                | Event::Value { .. }
+                                | Event::Index { forced: false, .. }
+                        ) {
+                            let choice = event.unwrap_choice_value();
+                            if choice != 0 {
+                                undo.push((node_id, ix, choice));
+                                event.set_choice_value(0);
+                            }
+                        }
+                    }
+                    TTreeChild::Scope { id } => pending.push(*id),
+                    TTreeChild::Repeat { id, elements, .. } => {
+                        pending.push(*id);
+                        pending.extend(
+                            elements
+                                .iter()
+                                .flatten()
+                                .map(|(id, _effect, _discardable)| *id),
+                        );
+                    }
+                }
+            }
+        }
+        undo
+    }
 }
 
 impl Tree for TTree {
@@ -354,5 +446,72 @@ impl Seq for TTreeChild {
             unreachable!("internal error: malformed repeat");
         };
         elements.len()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{check, make};
+
+    fn scope(id: u64, kind: ScopeKind, choice: Event) -> [Event; 3] {
+        [
+            Event::ScopeStart {
+                id,
+                kind,
+                effect: Effect::Success,
+                discardable: false,
+                meta: None,
+            },
+            choice,
+            Event::ScopeEnd,
+        ]
+    }
+
+    #[test]
+    fn trivialize_repeat_chunks() {
+        check(|src| {
+            let mins = src.any_of(
+                "elements",
+                make::vec_with_size(make::arbitrary::<u32>(), 2..),
+            );
+            let len = mins.len();
+            let level = src.any_of("level", make::size(1..=len.ilog2() as usize));
+            let keep = len - (len >> level);
+            let mut events = Vec::new();
+            events.extend(scope(
+                1,
+                ScopeKind::RepeatSize,
+                Event::Size {
+                    size: len as u64,
+                    min: 0,
+                    max: len as u64,
+                },
+            ));
+            events.extend(mins.into_iter().enumerate().flat_map(|(ix, min)| {
+                let min = u64::from(min);
+                scope(
+                    ix as u64 + 2,
+                    ScopeKind::RepeatElement,
+                    Event::Value {
+                        value: min + 1,
+                        min,
+                        max: min + 1,
+                    },
+                )
+            }));
+
+            let mut tree = TTree::from_events(&events);
+            let nontrivial = |t: &TTree| {
+                let tape = t.to_tape(false);
+                tape.as_choices()[1..]
+                    .iter()
+                    .filter(|choice| **choice != 0)
+                    .count()
+            };
+            let mut accept = |t: &TTree| Some([len, keep].contains(&nontrivial(t)));
+            assert!(!tree.trivialize_child(0, 0, &mut accept));
+            assert_eq!(nontrivial(&tree), keep);
+        });
     }
 }

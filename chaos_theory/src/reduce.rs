@@ -7,7 +7,7 @@
 use core::time::Duration;
 use std::{sync::Once, time::Instant};
 
-use crate::{Set, tape::Tape, unwind::PanicInfo};
+use crate::{Set, tape::Tape, tape_reduce::TTree, unwind::PanicInfo};
 
 pub(crate) fn reduce_tape(
     tape: Tape,
@@ -84,8 +84,9 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         // - try to re-distribute integer amounts
         // - for recursive data, replace values with sub-values.
         //
-        // All we do is hierarchically reduce the sequences in the tree and reduce numbers using binary search.
-        let passes = [Self::pass_reduce_tree];
+        // We hierarchically reduce sequences and minimize choices, individually and by
+        // zeroing whole regions.
+        let passes = [Self::pass_reduce_tree, Self::pass_trivialize_tree];
         loop {
             let reductions_before = self.reductions;
             for pass in passes {
@@ -170,6 +171,24 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         });
         if early_exit { Err(()) } else { Ok(()) }
     }
+
+    fn pass_trivialize_tree(&mut self) -> Result<(), ()> {
+        let mut tree = self.tape.clone().into_tree();
+        let mut accept = |t: &TTree| {
+            // Don't ignore noop scopes, as they might affect the result.
+            let tape = t.to_tape(false);
+            self.try_incorporate(tape, true).ok()
+        };
+        // The implicit root is not a child visited below; this is unnecessary if it becomes a real scope.
+        if tree.trivialize_root(&mut accept) {
+            return Err(());
+        }
+        let early_exit = visit_tree(&mut tree, |t, node, ix| {
+            let early_exit = t.trivialize_child(node, ix, &mut accept);
+            (t.child(node, ix), early_exit)
+        });
+        if early_exit { Err(()) } else { Ok(()) }
+    }
 }
 
 pub(crate) trait Tree {
@@ -192,6 +211,35 @@ pub(crate) trait Seq: Sized {
     fn size_min(&self) -> usize;
     fn size_masked(&self) -> usize;
     fn size_total(&self) -> usize;
+}
+
+// Visit successively halved chunks from the tail toward the head. Return false from `visit`
+// to stop early.
+pub(crate) fn visit_seq_chunks(
+    size_total: usize,
+    subset_size_min: usize,
+    mut visit: impl FnMut(usize, usize) -> bool,
+) {
+    debug_assert!(subset_size_min > 0);
+    let mut subset_size = size_total;
+    while subset_size >= subset_size_min {
+        let mut n = 0;
+        loop {
+            let begin = (subset_size * n).min(size_total);
+            let end = (subset_size * (n + 1)).min(size_total);
+            if begin == end {
+                break;
+            }
+            let rev_begin = size_total - end;
+            let rev_end = size_total - begin;
+            debug_assert!(rev_begin < rev_end);
+            if !visit(rev_begin, rev_end) {
+                return;
+            }
+            n += 1;
+        }
+        subset_size /= 2;
+    }
 }
 
 // Hierarchical version of the ddmin-like algorithm.
@@ -290,39 +338,28 @@ pub(crate) fn reduce_seq<S: Seq>(
     let size_total = s.size_total();
     let size_orig = size_total - s.size_masked();
     let size_min = s.size_min();
-    let mut subset_size = size_total;
     let mut remaining = size_orig;
     let mut early_exit = false;
-    'main_loop: while subset_size > 0 && remaining > size_min {
-        let mut n = 0;
-        loop {
-            let begin = (subset_size * n).min(size_total);
-            let end = (subset_size * (n + 1)).min(size_total);
-            if begin == end {
-                break;
-            }
-            // Iterate from the right to the left, with intuition being that we want to try to remove the end of the sequence first.
-            let rev_begin = size_total - end;
-            let rev_end = size_total - begin;
-            debug_assert!(rev_begin < rev_end);
-            if let Some((c, masked)) = s.mask(rev_begin, rev_end)
-                && remaining - masked >= size_min
-            {
-                let ok = accept(&c);
-                if let Some(ok) = ok {
-                    if ok {
-                        remaining -= masked;
-                        s = c;
-                    }
-                } else {
-                    early_exit = true;
-                    break 'main_loop;
-                }
-            }
-            n += 1;
+    visit_seq_chunks(size_total, 1, |begin, end| {
+        if remaining <= size_min {
+            return false;
         }
-        subset_size /= 2;
-    }
+        if let Some((c, masked)) = s.mask(begin, end)
+            && remaining - masked >= size_min
+        {
+            let ok = accept(&c);
+            if let Some(ok) = ok {
+                if ok {
+                    remaining -= masked;
+                    s = c;
+                }
+            } else {
+                early_exit = true;
+                return false;
+            }
+        }
+        true
+    });
     (s, size_orig - remaining, early_exit)
 }
 
