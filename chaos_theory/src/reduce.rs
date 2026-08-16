@@ -87,20 +87,22 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
             Self::pass_trivialize_tree, // zero whole regions
             Self::pass_sort_tree,       // increase sortedness
         ];
-        loop {
-            let reductions_before = self.reductions;
+        'fixed_point: loop {
             for pass in passes {
+                let reductions_before = self.reductions;
                 let r = pass(self);
                 if r.is_err() {
                     // Timeout.
                     self.timed_out = true;
                     return;
                 }
+                // Rebuild from the best tape and give simpler passes priority after any progress.
+                if self.reductions != reductions_before {
+                    continue 'fixed_point;
+                }
             }
-            if self.reductions == reductions_before {
-                // No pass can make any progress.
-                return;
-            }
+            // No pass can make any progress.
+            return;
         }
     }
 
