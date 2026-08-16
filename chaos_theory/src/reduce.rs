@@ -210,36 +210,24 @@ pub(crate) trait Seq: Sized {
 //     end while
 // end procedure
 //
-fn reduce_tree<T: Tree>(
+fn visit_tree<T: Tree>(
     t: &mut T,
-    mut accept: impl FnMut(&T) -> Option<bool>,
-) -> (usize, usize, bool) {
+    mut visit: impl FnMut(&mut T, T::NodeId, usize) -> (T::Child, bool),
+) -> bool {
     let mut queue = Vec::new();
     queue.extend(t.root());
-    let mut removed_total = 0;
-    let mut reduced_total = 0;
     let mut level_children = Vec::new();
-    let mut early_exit = false;
-    'main_loop: while let Some(node) = queue.pop() {
+    while let Some(node) = queue.pop() {
         let children_num = t.children_num(node);
         for ix_fwd in 0..children_num {
             // Iterate from the right to the left, with intuition being that we want to try to remove the end of the sequence first.
             let ix = children_num - ix_fwd - 1;
-            let child = t.child(node, ix);
-            let (child_min, removed, reduced, child_early_exit) = child.reduce(|c| {
-                // Note: we are modifying the tree in-place.
-                t.child_replace(node, ix, c);
-                accept(t)
-            });
-            t.child_replace(node, ix, &child_min);
-            removed_total += removed;
-            reduced_total += reduced;
-            if child_early_exit {
-                early_exit = true;
-                break 'main_loop;
+            let (child, early_exit) = visit(t, node, ix);
+            if early_exit {
+                return true;
             }
             // Push groups in the reverse order.
-            level_children.push(child_min);
+            level_children.push(child);
         }
         let children = core::mem::take(&mut level_children);
         // Extend the queue with groups in the normal order.
@@ -247,6 +235,27 @@ fn reduce_tree<T: Tree>(
             child.extend_vec(&mut queue);
         }
     }
+    false
+}
+
+fn reduce_tree<T: Tree>(
+    t: &mut T,
+    mut accept: impl FnMut(&T) -> Option<bool>,
+) -> (usize, usize, bool) {
+    let mut removed_total = 0;
+    let mut reduced_total = 0;
+    let early_exit = visit_tree(t, |t, node, ix| {
+        let child = t.child(node, ix);
+        let (child_min, removed, reduced, child_early_exit) = child.reduce(|c| {
+            // Note: we are modifying the tree in-place.
+            t.child_replace(node, ix, c);
+            accept(t)
+        });
+        t.child_replace(node, ix, &child_min);
+        removed_total += removed;
+        reduced_total += reduced;
+        (child_min, child_early_exit)
+    });
     (removed_total, reduced_total, early_exit)
 }
 
@@ -484,6 +493,26 @@ mod tests {
             debug_assert_eq!(node_child.0.len(), child.0.len());
             node_child.0 = child.0.clone();
         }
+    }
+
+    #[test]
+    fn visit_toy_tree_order() {
+        let mut t = ToyTree::new();
+        let id = |n| ToyNodeId::new(n).unwrap();
+        t.add_child(None, 0, false); // 1: root
+        t.add_child(Some(id(1)), 0, false); // 2, 3: first group
+        t.add_child(Some(id(1)), 0, false);
+        t.add_child(Some(id(1)), 0, true); // 4: second group
+        t.add_child(Some(id(4)), 0, false); // 5: nested
+
+        let mut visited = Vec::new();
+        let early_exit = visit_tree(&mut t, |t, node, ix| {
+            visited.push((node.get(), ix));
+            (t.child(node, ix), false)
+        });
+
+        assert!(!early_exit);
+        assert_eq!(visited, [(1, 1), (1, 0), (4, 0), (5, 0), (3, 0), (2, 0)]);
     }
 
     #[test]
