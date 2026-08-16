@@ -157,6 +157,9 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
     }
 
     fn pass_reduce_tree(&mut self) -> Result<(), ()> {
+        // Keep repeat deletion and choice minimization fused in the same DF-BW traversal.
+        // Giving either operation global priority loses causal/tree order, which is important
+        // when later draws depend on earlier state or change the shape of the program.
         let mut tree = self.tape.clone().into_tree();
         let (_removed, _reduced, early_exit) = reduce_tree(&mut tree, |t| {
             // Don't ignore noop scopes, as they might affect the result.
