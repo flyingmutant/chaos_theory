@@ -30,11 +30,8 @@ chaos_theory has fuzzing as an optional extra you can use if and when you want t
 
 chaos_theory gives you much more flexible data generation, more efficient state space
 exploration (thanks to structural mutation), and better minimization (again, thanks
-to being fully structure-aware). It still uses `libfuzzer_sys` for the main fuzzing
+to being fully structure-aware). It still uses libFuzzer for the main fuzzing
 loop and corpus management, but fully takes over data generation and mutation.
-
-If you have a byte‑based protocol and `arbitrary` derives, that can be simpler.
-chaos_theory shines when structure matters and you want unified testing and fuzzing.
 
 ## How do I model state machines or stateful systems?
 
