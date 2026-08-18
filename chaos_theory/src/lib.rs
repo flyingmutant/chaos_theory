@@ -53,8 +53,9 @@ you can use to reproduce the case.
 
 # Documentation
 
-- [FAQ](crate::_docs::faq)
 - [Guide](crate::_docs::guide)
+- [Fuzzing](crate::_docs::fuzzing)
+- [FAQ](crate::_docs::faq)
 - [Changelog](crate::_docs::changelog)
 */
 
