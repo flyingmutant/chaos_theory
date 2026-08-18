@@ -1,0 +1,3 @@
+[submodule "chaos_theory_libfuzzer"]
+	path = chaos_theory_libfuzzer
+	url = https://github.com/flyingmutant/chaos_theory_libfuzzer.git
