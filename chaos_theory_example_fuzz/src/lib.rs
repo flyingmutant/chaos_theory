@@ -41,11 +41,3 @@ fn prop_fuzz_target_1_vec(src: &mut Source) {
 fn check_fuzz_target_1() {
     chaos_theory::check(prop_fuzz_target_1);
 }
-
-#[test]
-#[ignore = "should not run unless explicitly invoked"]
-fn write_seeds_fuzz_target_1() {
-    for _ in 0..32 {
-        chaos_theory::fuzz_write_seed("fuzz/corpus/fuzz_target_1/", prop_fuzz_target_1).unwrap();
-    }
-}

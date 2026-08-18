@@ -4,12 +4,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use alloc::{format, vec, vec::Vec};
+use alloc::vec::Vec;
 use core::mem::{replace, take};
-use std::{
-    path::Path,
-    time::{SystemTime, UNIX_EPOCH},
-};
 
 use crate::{
     Source, hash::hash_bytes, hash_identity::NoHashSet, rand::DefaultRand, reproduce_inform,
@@ -227,46 +223,6 @@ impl FuzzState {
 }
 
 impl Env {
-    /// Write seed input for fuzzer.
-    ///
-    /// See [`crate::fuzz_write_seed`] for the documentation.
-    ///
-    /// # Errors
-    ///
-    /// `fuzz_write_seed` fails when valid test case can not be generated or in case of a filesystem error.
-    #[expect(clippy::missing_panics_doc)]
-    pub fn fuzz_write_seed(
-        mut self,
-        seed_dir: impl AsRef<Path>,
-        prop: impl Fn(&mut Source),
-    ) -> Result<(), &'static str> {
-        self.slow.check_iters = 1;
-        let res = self.check_silent(prop);
-        if !(res.ret.is_err()
-            || res.valid >= self.slow.check_iters
-            || (res.time_exit && res.valid > 0))
-        {
-            return Err("failed to generate valid test case");
-        }
-        let fi = FuzzInput {
-            seed: self.seed,
-            tape: res.tape.discard_noop(), // speed up fuzzing a bit
-        };
-        let mut buf = vec![0; fi.max_size()];
-        let size = fi
-            .save(&mut buf)
-            .expect("internal error: failed to save seed input");
-        let secs = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|_| "failed to get current system time since unix epoch")?
-            .as_secs();
-        let filename = format!("{secs}-{:x}.seed", fi.seed);
-        let path = seed_dir.as_ref().join(filename);
-        std::fs::create_dir_all(seed_dir)
-            .map_err(|_| "failed to create seed directory or one of its parent directories")?;
-        std::fs::write(path, &buf[..size]).map_err(|_| "failed to write seed to file")
-    }
-
     #[doc(hidden)]
     #[must_use]
     pub fn fuzz_check<'state>(

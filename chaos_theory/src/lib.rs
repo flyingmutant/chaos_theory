@@ -74,9 +74,6 @@ extern crate test;
 #[cfg(feature = "derive")]
 pub use chaos_theory_derive::Arbitrary;
 
-#[cfg(feature = "std")]
-use std::path::Path;
-
 mod base64;
 mod config;
 mod cover;
@@ -272,26 +269,6 @@ pub mod make {
 #[cfg(feature = "std")]
 pub fn check(prop: impl Fn(&mut Source)) {
     Env::new().check(prop);
-}
-
-/// Write an optional seed input for the fuzzer.
-///
-/// Fuzzing can start from an empty corpus. Explicit seeds can still be useful to
-/// warm-start expensive properties or properties with many rejected test cases.
-/// This can conveniently be called repeatedly from an ignored test.
-///
-/// To customize the `fuzz_write_seed` behavior, use [`Env::custom`] and [`Env::fuzz_write_seed`]
-/// (or specify environment variables mentioned in [`Config::env`](crate::Config::env) documentation).
-///
-/// # Errors
-///
-/// `fuzz_write_seed` fails when valid test case can not be generated or in case of a filesystem error.
-#[cfg(feature = "std")]
-pub fn fuzz_write_seed(
-    seed_dir: impl AsRef<Path>,
-    prop: impl Fn(&mut Source),
-) -> Result<(), &'static str> {
-    Env::new().fuzz_write_seed(seed_dir, prop)
 }
 
 /// Advance the deterministic `no_std` seed sequence by `steps`.

@@ -4,6 +4,7 @@
 
 - Switch libFuzzer backend to the `chaos_theory_libfuzzer` fork.
 - Rename `fuzz_target_libfuzzer_sys!` to `fuzz_target_libfuzzer!`.
+- Drop `fuzz_write_seed` (it is no longer required).
 
 ## 0.3.8 (2026-08-15)
 
