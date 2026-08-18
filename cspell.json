@@ -9,7 +9,8 @@
     "corpus/",
     "/chaos_theory/UCD/",
     "/chaos_theory/gen/",
-    "/chaos_theory/src/tests_crates_regex.rs"
+    "/chaos_theory/src/tests_crates_regex.rs",
+    "/chaos_theory_libfuzzer"
   ],
   "words": [
     "AMQP",
@@ -85,6 +86,7 @@
     "nanos",
     "nans",
     "nocapture",
+    "nonoverlapping",
     "Nonspacing",
     "nostd",
     "oneshot",
