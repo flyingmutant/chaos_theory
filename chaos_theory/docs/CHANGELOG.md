@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-08-19)
 
 - Switch libFuzzer backend to the `chaos_theory_libfuzzer` fork.
 - Rename `fuzz_target_libfuzzer_sys!` to `fuzz_target_libfuzzer!`.

@@ -22,7 +22,7 @@ dependency name:
 ```toml
 [dependencies]
 libfuzzer-sys = { package = "chaos_theory_libfuzzer", version = "0.4.13" }
-chaos_theory = "0.3"
+chaos_theory = "0.4"
 my_crate = { path = ".." }
 ```
 
