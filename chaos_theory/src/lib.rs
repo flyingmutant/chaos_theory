@@ -282,7 +282,7 @@ pub fn check(prop: impl Fn(&mut Source)) {
 /// Recommended approach is to write a lot of seeds (e.g. 1024), and apply
 /// corpus minimization to them before starting fuzzing.
 ///
-/// To customize the `write_fuzz_seed` behavior, use [`Env::custom`] and [`Env::fuzz_write_seed`]
+/// To customize the `fuzz_write_seed` behavior, use [`Env::custom`] and [`Env::fuzz_write_seed`]
 /// (or specify environment variables mentioned in [`Config::env`](crate::Config::env) documentation).
 ///
 /// # Errors
