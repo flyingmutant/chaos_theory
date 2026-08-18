@@ -9,8 +9,6 @@
 /// This requires the [`chaos_theory_libfuzzer`](https://crates.io/crates/chaos_theory_libfuzzer)
 /// fork as the package for the `libfuzzer-sys` dependency.
 ///
-/// Don't forget to use [`fuzz_write_seed`](crate::fuzz_write_seed) before fuzzing.
-///
 /// Example:
 ///
 /// ```rust

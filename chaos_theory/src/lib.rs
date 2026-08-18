@@ -274,13 +274,11 @@ pub fn check(prop: impl Fn(&mut Source)) {
     Env::new().check(prop);
 }
 
-/// Write seed input for the fuzzer. This can conveniently be done from an ignored test.
+/// Write an optional seed input for the fuzzer.
 ///
-/// A good default number of seeds to write before starting fuzzing is 32.
-/// Fewer seeds are required for simple systems, while complex ones can benefit from
-/// more seeds (at the expense of slowing down fuzzing due to seed redundancy).
-/// Recommended approach is to write a lot of seeds (e.g. 1024), and apply
-/// corpus minimization to them before starting fuzzing.
+/// Fuzzing can start from an empty corpus. Explicit seeds can still be useful to
+/// warm-start expensive properties or properties with many rejected test cases.
+/// This can conveniently be called repeatedly from an ignored test.
 ///
 /// To customize the `fuzz_write_seed` behavior, use [`Env::custom`] and [`Env::fuzz_write_seed`]
 /// (or specify environment variables mentioned in [`Config::env`](crate::Config::env) documentation).
