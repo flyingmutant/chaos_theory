@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Switch libFuzzer backend to the `chaos_theory_libfuzzer` fork.
+- Rename `fuzz_target_libfuzzer_sys!` to `fuzz_target_libfuzzer!`.
+
 ## 0.3.8 (2026-08-15)
 
 - Add feature-gated `either` support with `make::either::{either, left, right}` and `Arbitrary` impl.
