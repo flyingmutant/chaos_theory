@@ -14,20 +14,20 @@
 /// Example:
 ///
 /// ```rust
-/// use chaos_theory::{fuzz_target_libfuzzer_sys, Source};
+/// use chaos_theory::{fuzz_target_libfuzzer, Source};
 ///
 /// fn prop(src: &mut Source) {
 ///     let points: Vec<(i32, i32)> = src.any("points");
 ///     // invariants here
 /// }
 ///
-/// fuzz_target_libfuzzer_sys!(prop);
+/// fuzz_target_libfuzzer!(prop);
 /// ```
 ///
 /// Fuzzer failures are not minimized to avoid triggering libFuzzer timeout detection;
 /// replay with `CHAOS_THEORY_REPLAY=...` using [`check`](crate::check) to reproduce and minimize.
 #[macro_export]
-macro_rules! fuzz_target_libfuzzer_sys {
+macro_rules! fuzz_target_libfuzzer {
     ($prop:expr) => {
         ::std::thread_local! {
             static _CHAOS_THEORY_FUZZ_STATE: ::std::cell::RefCell<$crate::FuzzState> =
