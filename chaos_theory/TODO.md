@@ -30,5 +30,6 @@
 
 ## internals
 
+- fuzz smoke in CI
 - consider using `core::range::Range` (requires 1.96)
 - consider using `assert_matches!` (requires 1.96)
