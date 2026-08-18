@@ -187,6 +187,20 @@ impl Tape {
         }
     }
 
+    pub(crate) fn clear_for_output(&mut self) {
+        self.clear();
+        if self.meta.is_none() {
+            self.meta = Some(TapeMeta::default());
+        }
+    }
+
+    pub(crate) fn move_meta_to(&mut self, other: &mut Self) {
+        debug_assert!(other.is_empty());
+        if other.meta.is_none() {
+            other.meta = self.meta.take();
+        }
+    }
+
     pub(crate) fn reserve_for_replay(&mut self, replay: &Self) {
         debug_assert!(self.is_empty());
         self.choices.reserve(replay.choices.len() * 2);

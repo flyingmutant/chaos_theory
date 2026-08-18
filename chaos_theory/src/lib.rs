@@ -296,52 +296,6 @@ pub fn fuzz_write_seed(
     Env::new().fuzz_write_seed(seed_dir, prop)
 }
 
-/// Check that property holds (does not panic) on fuzzer-provided input.
-///
-/// You probably want to use higher-level wrapper like
-/// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
-#[must_use]
-#[cfg(feature = "std")]
-pub fn fuzz_check(
-    input: &[u8],
-    out: Option<(&mut [u8], &mut usize)>,
-    prop: impl Fn(&mut Source),
-) -> bool {
-    Env::new().fuzz_check(input, out, prop)
-}
-
-/// Mutate fuzzer input.
-///
-/// You probably want to use higher-level wrapper like
-/// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
-#[expect(clippy::type_complexity)]
-#[cfg(feature = "std")]
-pub fn fuzz_mutate(
-    data: &mut [u8],
-    size: usize,
-    max_size: usize,
-    seed: u32,
-    allow_void: bool,
-    mutate_bin: Option<fn(&mut [u8], usize, usize) -> usize>,
-) -> usize {
-    Env::new().fuzz_mutate(data, size, max_size, seed, allow_void, mutate_bin)
-}
-
-/// Cross-over two fuzzer inputs.
-///
-/// You probably want to use higher-level wrapper like
-/// [`fuzz_target_libfuzzer_sys`] instead of manually invoking this function.
-#[cfg(feature = "std")]
-pub fn fuzz_mutate_crossover(
-    input: &[u8],
-    other: &[u8],
-    out: &mut [u8],
-    seed: u32,
-    allow_void: bool,
-) -> usize {
-    Env::new().fuzz_mutate_crossover(input, other, out, seed, allow_void)
-}
-
 /// Advance the deterministic `no_std` seed sequence by `steps`.
 ///
 /// This affects default seeding in `no_std`, such as [`Env::new`].

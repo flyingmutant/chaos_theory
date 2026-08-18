@@ -39,6 +39,10 @@ use crate::non_determinism_inform;
 #[path = "env_std.rs"]
 mod std_impl;
 
+#[cfg(feature = "std")]
+#[doc(hidden)]
+pub use std_impl::FuzzState;
+
 #[cfg(all(test, feature = "std"))]
 use std_impl::FuzzInput;
 
