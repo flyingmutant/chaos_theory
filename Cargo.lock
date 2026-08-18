@@ -126,12 +126,12 @@ dependencies = [
  "bstr",
  "bytes",
  "chaos_theory_derive",
+ "chaos_theory_libfuzzer",
  "ecow",
  "either",
  "hashbrown",
  "indexmap",
  "jiff",
- "libfuzzer-sys",
  "libm",
  "ordered-float",
  "ordermap",
@@ -154,6 +154,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.100",
+]
+
+[[package]]
+name = "chaos_theory_libfuzzer"
+version = "0.4.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "764132535281d92d4c165bae877ebe0711bebb53710b22ff035a96b286239f90"
+dependencies = [
+ "arbitrary",
+ "cc",
 ]
 
 [[package]]
@@ -390,16 +400,6 @@ name = "libc"
 version = "0.2.182"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
-
-[[package]]
-name = "libfuzzer-sys"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f12a681b7dd8ce12bff52488013ba614b869148d54dd79836ab85aafdd53f08d"
-dependencies = [
- "arbitrary",
- "cc",
-]
 
 [[package]]
 name = "libm"

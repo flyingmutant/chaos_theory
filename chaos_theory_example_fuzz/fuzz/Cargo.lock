@@ -69,7 +69,17 @@ version = "0.0.0"
 dependencies = [
  "chaos_theory",
  "chaos_theory_example_fuzz",
- "libfuzzer-sys",
+ "chaos_theory_libfuzzer",
+]
+
+[[package]]
+name = "chaos_theory_libfuzzer"
+version = "0.4.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "764132535281d92d4c165bae877ebe0711bebb53710b22ff035a96b286239f90"
+dependencies = [
+ "arbitrary",
+ "cc",
 ]
 
 [[package]]
@@ -188,16 +198,6 @@ name = "libc"
 version = "0.2.172"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
-
-[[package]]
-name = "libfuzzer-sys"
-version = "0.4.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf78f52d400cf2d84a3a973a78a592b4adc535739e0a5597a0da6f0c357adc75"
-dependencies = [
- "arbitrary",
- "cc",
-]
 
 [[package]]
 name = "log"

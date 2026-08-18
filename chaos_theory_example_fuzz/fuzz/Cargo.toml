@@ -8,7 +8,7 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+libfuzzer-sys = { package = "chaos_theory_libfuzzer", version = "0.4.13" }
 chaos_theory = { path = "../../chaos_theory" }
 chaos_theory_example_fuzz = { path = ".." }
 

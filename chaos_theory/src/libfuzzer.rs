@@ -4,9 +4,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-/// Define a [`libfuzzer_sys`](https://docs.rs/libfuzzer-sys) fuzz target.
+/// Define a `libfuzzer_sys` fuzz target compatible with `cargo-fuzz`.
 ///
-/// This requires the `chaos-theory-libfuzzer-sys` fork of `libfuzzer-sys`.
+/// This requires the [`chaos_theory_libfuzzer`](https://crates.io/crates/chaos_theory_libfuzzer)
+/// fork as the package for the `libfuzzer-sys` dependency.
 ///
 /// Don't forget to use [`fuzz_write_seed`](crate::fuzz_write_seed) before fuzzing.
 ///
@@ -63,7 +64,7 @@ macro_rules! fuzz_target_libfuzzer_sys {
                     _CHAOS_THEORY_EFFECTIVE_INPUT_SUPPORTED
                         .load(::std::sync::atomic::Ordering::SeqCst),
                     "chaos_theory fuzz targets require effective-input support; use \
-                     chaos-theory-libfuzzer-sys instead of upstream libfuzzer-sys"
+                     package = \"chaos_theory_libfuzzer\" for the libfuzzer-sys dependency"
                 );
             },
             |input: &[u8]| -> ::libfuzzer_sys::Corpus {
