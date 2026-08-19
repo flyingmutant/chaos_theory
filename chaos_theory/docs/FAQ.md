@@ -18,11 +18,13 @@ quite a few design ideas left over after implementing rapid. Thus chaos_theory w
 
 ## How is it different from `proptest`?
 
-chaos_theory is built around simple macro-free imperative API, has fuzzing support,
-and cool tricks like built-in swarm testing and example-based data generation.
+chaos_theory is built around a simple macro-free imperative API, supports
+coverage-guided structural fuzzing, and can explore more efficiently thanks to
+built-in swarm testing and example-guided data generation.
 
-`proptest` is more mature and feature‑rich; chaos_theory is newer and currently
-lacks some important features like recursion helpers.
+For most use cases, I believe chaos_theory to be both simpler and more effective.
+That said, `proptest` is more mature; chaos_theory is newer and still has some
+catching up to do.
 
 ## How is it different from `arbitrary` plus `libfuzzer_sys`?
 
