@@ -227,6 +227,7 @@ impl TTree {
         }
     }
 
+    // TODO: make this work not only on repeat elements (e.g. tuple/struct fields)
     pub(crate) fn sort_child(
         &mut self,
         node_id: usize,
