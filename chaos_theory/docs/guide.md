@@ -251,7 +251,7 @@ Enable derive support:
 
 ```toml
 [dev-dependencies]
-chaos_theory = { version = "0.3", features = ["derive"] }
+chaos_theory = { version = "0.4", features = ["derive"] }
 ```
 
 Then derive:
@@ -486,7 +486,7 @@ README for a more detailed explanation.
 
 ```toml
 [dependencies]
-chaos_theory = { version = "0.3", default-features = false, features = ["no_std", "derive"] }
+chaos_theory = { version = "0.4", default-features = false, features = ["no_std", "derive"] }
 ```
 
 In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceRaw`,
