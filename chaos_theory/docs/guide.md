@@ -422,9 +422,17 @@ Avoid calling [`Generator::next`][generator_next] directly. Use [`Source::any`][
 ## Fuzzing
 
 Fuzzing should just be another way to drive a property you already test, not a
-separate fuzz-only property. `chaos_theory` is responsible for structured
-generation and mutation, while [`cargo-fuzz`](https://github.com/rust-fuzz/cargo-fuzz)
+separate fuzz-only harness. chaos_theory handles structured generation and
+mutation, while [`cargo-fuzz`](https://github.com/rust-fuzz/cargo-fuzz)
 and libFuzzer provide the coverage-guided loop and corpus management.
+
+chaos_theory is an immediate-mode structural fuzzing API: data generation
+is intermixed and interdependent with property and SUT code. This allows for
+a very natural way to write complex harnesses – but is quite unusual (unique?)
+in the fuzzing world, which mostly uses a simpler and less convenient "generate
+all the data before running a property" approach. Because of this, chaos_theory
+uses a modified version of libFuzzer that allows fuzz targets to report their
+*effective input* after execution: [`chaos_theory_libfuzzer`](https://crates.io/crates/chaos_theory_libfuzzer).
 
 ### Set Up `cargo-fuzz`
 
@@ -467,22 +475,15 @@ From the package root, start fuzzing:
 cargo +nightly fuzz run fuzz_target_1
 ```
 
-For ordinary property failures, `chaos_theory` prints a
+For ordinary property failures, chaos_theory prints a
 `CHAOS_THEORY_REPLAY=...` value. Apply it to the regular test that calls
 [`check`][check] with your property to reproduce and minimize the failure
 outside the fuzzing process. Native crashes remain available as normal
 cargo-fuzz artifacts.
 
-### Why The Fork?
-
-In short – because `chaos_theory` is an immediate-mode structural fuzzing API,
-which is quite unusual (unique?) in the fuzzing world. See the
-[`chaos_theory_libfuzzer`](https://crates.io/crates/chaos_theory_libfuzzer)
-README for a more detailed explanation.
-
 ## `no_std` Usage
 
-`chaos_theory` enables `std` by default. To use it in `no_std + alloc`, disable defaults:
+chaos_theory enables `std` by default. To use it in `no_std + alloc`, disable defaults:
 
 ```toml
 [dependencies]
