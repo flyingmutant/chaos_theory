@@ -50,7 +50,6 @@ you can use to reproduce the case.
 
 - [API reference](https://docs.rs/chaos_theory)
 - [Guide](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/guide/index.html)
-- [Fuzzing](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/fuzzing/index.html)
 - [FAQ](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/faq/index.html)
 - [Changelog](https://docs.rs/chaos_theory/latest/chaos_theory/_docs/changelog/index.html)
 
