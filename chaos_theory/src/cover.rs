@@ -5,6 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 // TODO(meta): replace all this with new meta-events
+// TODO: should we default to MC/DC-like "two states of every boolean" coverage?
 
 use crate::tape_event::ScopeKind;
 

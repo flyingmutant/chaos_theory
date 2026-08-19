@@ -2,6 +2,10 @@
 
 ## docs
 
+- better guide text
+  - section about how logging works
+  - section about common `CHAOS_THEORY_` variables
+  - more common anti-patterns
 - usage examples
   - update example crates
 - skill or one-pager for coding agents
@@ -22,8 +26,10 @@
 
 ## features
 
-- consider saving failures, at least temporarily
+- ability for derived generators to use `filter_assume` at the top level
+- `index_nonempty`?
 - print out potentially-hanging seed (how?)
+  - maybe support detecting hangs with some kind of signal magic?
 - consider `reflecting` as a feature (not just a seed)
 - consider runs with forced boundary conditions
   - can swarming with choice = free-gen vs boundary-gen give this for free?
