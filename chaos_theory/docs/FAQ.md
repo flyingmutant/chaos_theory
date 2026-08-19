@@ -26,12 +26,12 @@ lacks some important features like recursion helpers.
 
 ## How is it different from `arbitrary` plus `libfuzzer_sys`?
 
-chaos_theory has fuzzing as an optional extra you can use if and when you want to.
-
 chaos_theory gives you much more flexible data generation, more efficient state space
 exploration (thanks to structural mutation), and better minimization (again, thanks
 to being fully structure-aware). It still uses libFuzzer for the main fuzzing
 loop and corpus management, but fully takes over data generation and mutation.
+
+chaos_theory is especially well-suited for fuzzing complex API-driven stateful systems.
 
 ## How do I model state machines or stateful systems?
 
