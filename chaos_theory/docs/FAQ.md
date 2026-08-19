@@ -101,7 +101,6 @@ Use [`vdbg!`][vdbg], [`vprintln!`][vprintln], [`veprintln!`][veprintln], or call
 
 If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 
-[source]: crate::Source
 [source_repeat]: crate::Source::repeat
 [source_select]: crate::Source::select
 [should_log]: crate::should_log
@@ -110,9 +109,7 @@ If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 
 [generator]: crate::Generator
 [generator_filter_assume]: crate::Generator::filter_assume
-[generator_seeded]: crate::Generator::seeded
 
-[check]: crate::check
 [assume]: crate::assume
 [vdbg]: crate::vdbg
 [vprintln]: crate::vprintln
