@@ -274,6 +274,7 @@ or on the payload field of an enum variant. The expression must evaluate to a
 
 ```rust
 # #[cfg(feature = "derive")]
+# mod derive {
 use chaos_theory::{Generator, make};
 
 fn odd_u8() -> impl Generator<Item = u8> {
@@ -289,6 +290,7 @@ enum Op {
         by: i16,
     },
 }
+# }
 ```
 
 ### Writing Custom Generators
