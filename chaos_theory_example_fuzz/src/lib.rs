@@ -1,4 +1,4 @@
-use chaos_theory::{Source, make};
+use chaos_theory::Source;
 
 pub fn prop_fuzz_target_1(src: &mut Source) {
     prop_fuzz_target_1_vec(src);
@@ -11,9 +11,7 @@ fn _prop_fuzz_target_1_string(src: &mut Source) {
 
 #[expect(clippy::collapsible_if, clippy::collapsible_else_if)]
 fn prop_fuzz_target_1_vec(src: &mut Source) {
-    let s: Vec<u8> = src.any_of("s", make::vec_with_size(make::arbitrary(), 7..));
-    // TODO: figure out why this one does not work:
-    // let s: Vec<u8> = src.any("s");
+    let s: Vec<u8> = src.any("s");
     if false {
         assert_ne!(s, b"banana!");
     } else {
