@@ -83,9 +83,8 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         // - try to re-distribute integer amounts
         // - for recursive data, replace values with sub-values.
         let passes = [
-            Self::pass_reduce_tree,     // delete nodes and minimize choices
-            Self::pass_trivialize_tree, // zero whole regions
-            Self::pass_sort_tree,       // increase sortedness
+            Self::pass_reduce_tree, // binary-search-like delta debugging: delete nodes and minimize choices
+            Self::pass_sort_tree,   // try to canonicalize the tape by increasing sortedness
         ];
         'fixed_point: loop {
             for pass in passes {
@@ -170,24 +169,6 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
             // Note: after incorporating candidate tape, self.tape may be less than next tapes we'll generate.
             // However, we'll not build a new tree from the tape unless we are finishing trying to reduce this one.
             self.try_incorporate(tape, true).ok()
-        });
-        if early_exit { Err(()) } else { Ok(()) }
-    }
-
-    fn pass_trivialize_tree(&mut self) -> Result<(), ()> {
-        let mut tree = self.tape.clone().into_tree();
-        let mut accept = |t: &TTree| {
-            // Don't ignore noop scopes, as they might affect the result.
-            let tape = t.to_tape(false);
-            self.try_incorporate(tape, true).ok()
-        };
-        // The implicit root is not a child visited below; this is unnecessary if it becomes a real scope.
-        if tree.trivialize_root(&mut accept) {
-            return Err(());
-        }
-        let early_exit = visit_tree(&mut tree, |t, node, ix| {
-            let early_exit = t.trivialize_child(node, ix, &mut accept);
-            (t.child(node, ix), early_exit)
         });
         if early_exit { Err(()) } else { Ok(()) }
     }
