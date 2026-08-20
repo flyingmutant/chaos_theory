@@ -289,6 +289,8 @@ impl TTree {
         let a = Self::repeat_element_choices(a, choice_indices, choices);
         let b = Self::repeat_element_choices(b, choice_indices, choices);
         // Order elements by whichever concatenation places the smaller one first.
+        // This has an added benefit of sorting preserving the repeat-select action order.
+        // TODO: think about putting the simpler one first instead, at least in some cases
         a.iter().chain(b).cmp(b.iter().chain(a))
     }
 
