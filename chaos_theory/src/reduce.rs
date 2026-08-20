@@ -211,16 +211,16 @@ pub(crate) trait Seq: Sized {
     fn size_total(&self) -> usize;
 }
 
-// Visit successively halved chunks from the tail toward the head. Return false from `visit`
-// to stop early.
-pub(crate) fn visit_seq_chunks(
+// Visit sequence simplification candidates from the tail toward the head. Start with
+// successively halved disjoint chunks larger than two, then visit every overlapping pair,
+// and optionally every singleton. Return false from `visit` to stop early.
+pub(crate) fn visit_seq_candidates(
     size_total: usize,
-    subset_size_min: usize,
+    visit_singletons: bool,
     mut visit: impl FnMut(usize, usize) -> bool,
 ) {
-    debug_assert!(subset_size_min > 0);
     let mut subset_size = size_total;
-    while subset_size >= subset_size_min {
+    while subset_size > 2 {
         let mut n = 0;
         loop {
             let begin = (subset_size * n).min(size_total);
@@ -237,6 +237,22 @@ pub(crate) fn visit_seq_chunks(
             n += 1;
         }
         subset_size /= 2;
+    }
+
+    if size_total >= 2 {
+        for end in (2..=size_total).rev() {
+            if !visit(end - 2, end) {
+                return;
+            }
+        }
+    }
+
+    if visit_singletons {
+        for begin in (0..size_total).rev() {
+            if !visit(begin, begin + 1) {
+                return;
+            }
+        }
     }
 }
 
@@ -338,7 +354,7 @@ pub(crate) fn reduce_seq<S: Seq>(
     let size_min = s.size_min();
     let mut remaining = size_orig;
     let mut early_exit = false;
-    visit_seq_chunks(size_total, 1, |begin, end| {
+    visit_seq_candidates(size_total, true, |begin, end| {
         if remaining <= size_min {
             return false;
         }

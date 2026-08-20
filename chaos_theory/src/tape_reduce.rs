@@ -8,7 +8,7 @@ use core::cmp::Ordering;
 
 use crate::{
     Effect,
-    reduce::{Seq, Tree, TreeNodeChild, reduce_num, reduce_seq, visit_seq_chunks},
+    reduce::{Seq, Tree, TreeNodeChild, reduce_num, reduce_seq, visit_seq_candidates},
     tape::Tape,
     tape_event::{Event, ScopeKind},
 };
@@ -224,7 +224,7 @@ impl TTree {
         }
 
         let mut early_exit = false;
-        visit_seq_chunks(elements.len(), 2, |begin, end| {
+        visit_seq_candidates(elements.len(), false, |begin, end| {
             let original = self.repeat_elements(node_id, ix)[begin..end].to_vec();
             let mut sorted = original.clone();
             Self::sort_repeat_elements(&mut sorted, choice_indices, &choices);
@@ -236,21 +236,6 @@ impl TTree {
         });
         if early_exit {
             return true;
-        }
-
-        for right in (1..elements.len()).rev() {
-            let original = {
-                let elements = self.repeat_elements(node_id, ix);
-                [elements[right - 1], elements[right]]
-            };
-            if Self::repeat_element_cmp(&original[0], &original[1], choice_indices, &choices)
-                == Ordering::Greater
-            {
-                let reordered = [original[1], original[0]];
-                if self.try_reorder(node_id, ix, right - 1, &original, &reordered, accept) {
-                    return true;
-                }
-            }
         }
         false
     }
