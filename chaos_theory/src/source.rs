@@ -79,7 +79,7 @@ impl<'env> Source<'env> {
 
     /// Choose an element that satisfies the predicate from a slice.
     ///
-    /// `choose_where` is similar to [`Generator::filter`]: it will return `None`
+    /// `choose_where` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
@@ -105,7 +105,7 @@ impl<'env> Source<'env> {
 
     /// Choose a mutable element that satisfies the predicate from a slice.
     ///
-    /// `choose_mut_where` is similar to [`Generator::filter`]: it will return `None`
+    /// `choose_mut_where` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
@@ -120,7 +120,7 @@ impl<'env> Source<'env> {
 
     /// Try to generate `Some` value.
     ///
-    /// `find` is similar to [`Generator::filter`]: it will return `None`
+    /// `find` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to generate `Some` in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
@@ -331,7 +331,7 @@ impl SourceRaw<'_> {
 
     /// Choose an element that satisfies the predicate from a slice.
     ///
-    /// `choose_where` is similar to [`Generator::filter`]: it will return `None`
+    /// `choose_where` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
@@ -366,7 +366,7 @@ impl SourceRaw<'_> {
 
     /// Choose a mutable element that satisfies the predicate from a slice.
     ///
-    /// `choose_mut_where` is similar to [`Generator::filter`]: it will return `None`
+    /// `choose_mut_where` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
@@ -428,7 +428,7 @@ impl SourceRaw<'_> {
 
     /// Try to generate `Some` value.
     ///
-    /// `find` is similar to [`Generator::filter`]: it will return `None`
+    /// `find` is similar to [`Generator::try_filter`]: it will return `None`
     /// if unable to generate `Some` in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.

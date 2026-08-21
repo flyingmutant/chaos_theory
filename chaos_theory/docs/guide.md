@@ -140,12 +140,13 @@ for complex stateful systems.
 
 ## Filtering And Validity
 
-If you need to reject invalid values, prefer recoverable filtering:
+If you need to reject invalid values, there are three levels of filtering:
 
-- [`Generator::filter`][generator_filter] returns `Option` so you can handle failure
-  without panicking.
-- [`filter_assume`][generator_filter_assume] and [`assume!`][assume] mark the whole test case as
-  invalid when the condition fails.
+- [`Generator::filter`][generator_filter] retries until it produces a matching value and marks
+  the whole test case as invalid if it cannot.
+- [`Generator::try_filter`][generator_try_filter] returns `Option` so you can recover from failure
+  locally.
+- [`assume!`][assume] rejects the whole test case from inside the property.
 
 Too many invalid cases will make [`check`][check] fail early because it cannot generate enough
 valid tests.
@@ -517,7 +518,7 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [arbitrary]: crate::Arbitrary
 [generator]: crate::Generator
 [generator_filter]: crate::Generator::filter
-[generator_filter_assume]: crate::Generator::filter_assume
+[generator_try_filter]: crate::Generator::try_filter
 [generator_map]: crate::Generator::map
 [generator_map_reversible]: crate::Generator::map_reversible
 [generator_or]: crate::Generator::or

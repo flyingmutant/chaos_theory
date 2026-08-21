@@ -69,7 +69,7 @@ Prefer structured generation, as heavy filtering can lead to slow or failed test
   [`select`][source_select], or [`Generator`][generator] combinators.
 
 Sometimes constraints are awkward to encode structurally. In those cases,
-[`filter_assume`][generator_filter_assume] or [`assume!`][assume] are
+[`filter`][generator_filter] or [`assume!`][assume] are
 the right tools. Use them deliberately and keep rejection rates low.
 
 ## Why did `check` fail with “only generated N valid tests”?
@@ -77,7 +77,7 @@ the right tools. Use them deliberately and keep rejection rates low.
 The property rejected too many generated values. Common causes:
 
 - [`assume!`][assume] is used too often.
-- [`filter_assume`][generator_filter_assume] predicates reject too much.
+- [`filter`][generator_filter] predicates reject too much.
 - [`repeat`][source_repeat] steps return [`Noop`][effect_noop] too often.
 
 Reduce rejection rates, generate constrained data structurally,
@@ -108,7 +108,7 @@ If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 [effect_noop]: crate::Effect::Noop
 
 [generator]: crate::Generator
-[generator_filter_assume]: crate::Generator::filter_assume
+[generator_filter]: crate::Generator::filter
 
 [assume]: crate::assume
 [vdbg]: crate::vdbg

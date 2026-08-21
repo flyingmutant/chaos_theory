@@ -66,7 +66,7 @@ impl<R: Ranged> Range<R> {
 
 impl<R: Ranged + Arbitrary> Arbitrary for Range<R> {
     fn arbitrary() -> impl Generator<Item = Self> {
-        make::from_next_assume::<Self>(|src, example| {
+        make::from_next_some::<Self>(|src, example| {
             let mut min = src.any("min?", example.map(|r| &r.min));
             let mut max = src.any("max?", example.map(|r| &r.max));
             match min.partial_cmp(&max)? {

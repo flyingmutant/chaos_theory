@@ -127,7 +127,7 @@ impl RgbState {
 
         let amount_gen = make::int_in_range(1..)
             .seeded(&seeds_a, true)
-            .filter_assume(|a| *a != 3)
+            .filter(|a| *a != 3)
             .collect_n::<Vec<_>>(1..3)
             .seeded(&seeds_b, true)
             .collect_n::<Vec<Vec<_>>>(1..3)
@@ -394,10 +394,10 @@ fn test_assume_working() {
 }
 
 #[test]
-#[should_panic(expected = "assumption failed")]
-fn fail_assume_filter() {
+#[should_panic(expected = "filter predicate rejected too many generated values")]
+fn fail_filter() {
     check(|src| {
-        let _never = src.any_of("never", make::just(0).filter_assume(|i| *i != 0));
+        let _never = src.any_of("never", make::just(0).filter(|i| *i != 0));
     });
 }
 

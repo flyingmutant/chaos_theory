@@ -699,7 +699,7 @@ fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
                 });
                 let id = src.any_of(
                     "id",
-                    make::arbitrary().filter_assume(|id| *id != 0),
+                    make::arbitrary().filter(|id| *id != 0),
                     example.map(|e| e.0),
                 );
                 let (&kind, _) = src

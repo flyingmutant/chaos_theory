@@ -223,7 +223,7 @@ macro_rules! impl_arbitrary_int_wrappers {
                 }
 
                 <$num>::arbitrary()
-                    .filter_assume(|i| *i != 0)
+                    .filter(|i| *i != 0)
                     .map_reversible(to_nonzero, from_nonzero)
             }
         }

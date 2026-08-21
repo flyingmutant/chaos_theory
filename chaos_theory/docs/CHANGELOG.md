@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Rename `Generator::{filter_assume, filter}` to `Generator::{filter, try_filter}`.
+- Rename `make::{from_fn_assume, from_next_assume}` to `make::{from_fn_some, from_next_some}`.
+- Make `make::index` produce `usize` and panic for an empty range; add `make::try_index`.
+
 ## 0.4.0 (2026-08-19)
 
 - Switch libFuzzer backend to the `chaos_theory_libfuzzer` fork.

@@ -37,11 +37,38 @@ pub fn size(r: impl RangeBounds<usize>) -> impl Generator<Item = usize> {
 
 #[derive(Debug)]
 struct Index {
-    // We don't use NonZero here because we are more like `choose` than `select`.
     n: usize,
 }
 
 impl Generator for Index {
+    type Item = usize;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        src.as_mut()
+            .choose_index(self.n, example.copied(), Tweak::None)
+    }
+}
+
+/// Create a generator of valid index values.
+///
+/// When possible, prefer using [`Source::choose`][crate::Source::choose] and
+/// [`Source::select`][crate::Source::select].
+///
+/// # Panics
+///
+/// `index` panics when `n` is zero.
+#[track_caller]
+pub fn index(n: usize) -> impl Generator<Item = usize> {
+    assert!(n != 0, "index range is empty");
+    Index { n }
+}
+
+#[derive(Debug)]
+struct TryIndex {
+    n: usize,
+}
+
+impl Generator for TryIndex {
     type Item = Option<usize>;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
@@ -52,12 +79,14 @@ impl Generator for Index {
     }
 }
 
-/// Create a generator of valid index values.
+/// Create a generator that tries to produce valid index values.
+///
+/// The generator yields `None` when `n` is zero.
 ///
 /// When possible, prefer using [`Source::choose`][crate::Source::choose] and
 /// [`Source::select`][crate::Source::select].
-pub fn index(n: usize) -> impl Generator<Item = Option<usize>> {
-    Index { n }
+pub fn try_index(n: usize) -> impl Generator<Item = Option<usize>> {
+    TryIndex { n }
 }
 
 #[derive(Debug)]
@@ -98,8 +127,9 @@ mod tests {
     #[test]
     fn index_smoke() {
         check(|src| {
+            prop_smoke(src, "index", index(100));
             let n = src.any("n");
-            prop_smoke(src, "index", index(n));
+            prop_smoke(src, "try_index", try_index(n));
         });
     }
 
@@ -115,7 +145,7 @@ mod tests {
         let g = index(N).collect_n::<Vec<_>>(M..=M).map(|v| {
             let mut u: [usize; N] = [0; N];
             for i in v {
-                u[i.unwrap()] += 1;
+                u[i] += 1;
             }
             u
         });

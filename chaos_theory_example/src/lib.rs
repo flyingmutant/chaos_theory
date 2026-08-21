@@ -79,7 +79,7 @@ mod tests {
             fn new(src: &mut Source, state: &State) -> Option<Self> {
                 let key: String = src.any_of(
                     "key",
-                    make::arbitrary().filter(|k| state.pairs.iter().all(|p| &p.key != k)),
+                    make::arbitrary().try_filter(|k| state.pairs.iter().all(|p| &p.key != k)),
                 )?;
                 let val: String = src.any("val");
                 Some(Self { key, val })
@@ -134,7 +134,7 @@ mod tests {
             let key: String = src
                 .any_of(
                     "key",
-                    make::arbitrary().filter(|k| state.pairs.iter().all(|p| &p.key != k)),
+                    make::arbitrary().try_filter(|k| state.pairs.iter().all(|p| &p.key != k)),
                 )
                 .pre()?;
             let val: String = src.any("val");

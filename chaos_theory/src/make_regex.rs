@@ -538,7 +538,7 @@ where
     T: From<CString> + Deref<Target = CStr> + Debug,
 {
     bytes_matching(expr, fullmatch)
-        .filter_assume(|bytes| !bytes.contains(&b'\0'))
+        .filter(|bytes| !bytes.contains(&b'\0'))
         .map_reversible(
             |bytes| {
                 CString::new(bytes)

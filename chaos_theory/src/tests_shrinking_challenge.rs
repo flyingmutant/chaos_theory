@@ -24,7 +24,7 @@ fn fail_bound5() {
             "t",
             make::arbitrary::<i16>()
                 .collect::<Vec<_>>()
-                .filter_assume(|v| sum(v) < C)
+                .filter(|v| sum(v) < C)
                 .collect_n::<Vec<Vec<_>>>(5..=5),
         );
 
@@ -129,7 +129,7 @@ fn fail_coupling() {
             "v",
             make::int_in_range(0..=10)
                 .collect::<Vec<_>>()
-                .filter_assume(|v| v.iter().all(|i| *i < v.len())),
+                .filter(|v| v.iter().all(|i| *i < v.len())),
         );
 
         for (i, j) in v.iter().enumerate() {
@@ -145,10 +145,8 @@ fn fail_coupling() {
 // https://github.com/jlink/shrinking-challenge/blob/main/challenges/deletion.md
 fn fail_deletion() {
     check(|src| {
-        let mut v: Vec<i32> = src.any_of(
-            "v",
-            make::arbitrary::<Vec<_>>().filter_assume(|v| !v.is_empty()),
-        );
+        let mut v: Vec<i32> =
+            src.any_of("v", make::arbitrary::<Vec<_>>().filter(|v| !v.is_empty()));
         let (&i, _) = src.choose("i", &v).unwrap();
         v.remove(v.iter().position(|n| *n == i).unwrap());
         assert!(v.iter().all(|n| *n != i));

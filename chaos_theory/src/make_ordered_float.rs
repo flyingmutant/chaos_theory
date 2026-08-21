@@ -58,7 +58,7 @@ pub fn not_nan<F>(f: impl Generator<Item = F>) -> impl Generator<Item = NotNan<F
 where
     F: Float + Debug + FloatCore,
 {
-    f.filter_assume(|f| !f.is_nan()).map_reversible(
+    f.filter(|f| !f.is_nan()).map_reversible(
         |f| NotNan::new(f).expect("internal error: NotNan::new failed after filter"),
         |n| Some(MaybeOwned::Owned(n.into_inner())),
     )

@@ -19,7 +19,7 @@ use crate::{
     range::SizeRange,
 };
 
-const FILTER_ASSUME_TOO_MUCH: &str = "filter_assume predicate rejected too many generated values";
+const FILTER_TOO_MUCH: &str = "filter predicate rejected too many generated values";
 pub(crate) const UNABLE_GENERATE_UNIQUE: &str =
     "unable to generate specified number of unique values";
 
@@ -75,20 +75,20 @@ pub trait Generator: Debug {
         }
     }
 
-    /// Create a generator which uses a predicate to filter the generated items.
+    /// Create a generator which tries to use a predicate to filter the generated items.
     ///
-    /// `filter` will return `None` when it is unable to satisfy the predicate in
+    /// `try_filter` will return `None` when it is unable to satisfy the predicate in
     /// some number of tries.
     ///
-    /// Use `filter` when you can gracefully react to failure to satisfy the predicate
+    /// Use `try_filter` when you can gracefully react to failure to satisfy the predicate
     /// (for example, by returning [`Effect::Noop`] to retry a [`Source::repeat`](crate::Source::repeat)
-    /// step). Otherwise, use [`Generator::filter_assume`].
-    fn filter<F>(self, predicate: F) -> impl Generator<Item = Option<Self::Item>>
+    /// step). Otherwise, use [`Generator::filter`].
+    fn try_filter<F>(self, predicate: F) -> impl Generator<Item = Option<Self::Item>>
     where
         F: Fn(&Self::Item) -> bool,
         Self: Sized,
     {
-        Filter {
+        TryFilter {
             gen_: self,
             pred: predicate,
         }
@@ -96,18 +96,18 @@ pub trait Generator: Debug {
 
     /// Create a generator which uses a predicate to filter the generated items.
     ///
-    /// `filter_assume` should be used carefully, because predicates that reject too many items
+    /// `filter` should be used carefully, because predicates that reject too many items
     /// will lead to [`Env::check`](crate::Env::check) panicking due to being unable to
     /// construct enough valid test cases.
     ///
-    /// When possible, prefer [`Generator::filter`] or generators that always produce
-    /// valid values to `filter_assume`.
-    fn filter_assume<F>(self, predicate: F) -> impl Generator<Item = Self::Item>
+    /// When possible, prefer [`Generator::try_filter`] if the caller can handle `None`,
+    /// or use a generator that always produces valid values.
+    fn filter<F>(self, predicate: F) -> impl Generator<Item = Self::Item>
     where
         F: Fn(&Self::Item) -> bool,
         Self: Sized,
     {
-        FilterAssume {
+        Filter {
             gen_: self,
             pred: predicate,
         }
@@ -390,6 +390,41 @@ impl<G: Generator> Generator for Seeded<'_, G> {
     }
 }
 
+struct TryFilter<G, F> {
+    gen_: G,
+    pred: F,
+}
+
+impl<G, F> Debug for TryFilter<G, F>
+where
+    G: Generator,
+    F: Fn(&G::Item) -> bool,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_tuple("TryFilter").field(&self.gen_).finish()
+    }
+}
+
+impl<G, F> Generator for TryFilter<G, F>
+where
+    G: Generator,
+    F: Fn(&G::Item) -> bool,
+{
+    type Item = Option<G::Item>;
+
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        src.find(
+            "<try-filter>",
+            example.and_then(Option::as_ref),
+            |src, example| {
+                let example = example.filter(|e| (self.pred)(e));
+                let v = self.gen_.next(src, example);
+                (self.pred)(&v).then_some(v)
+            },
+        )
+    }
+}
+
 struct Filter<G, F> {
     gen_: G,
     pred: F,
@@ -410,50 +445,15 @@ where
     G: Generator,
     F: Fn(&G::Item) -> bool,
 {
-    type Item = Option<G::Item>;
-
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        src.find(
-            "<filter>",
-            example.and_then(Option::as_ref),
-            |src, example| {
-                let example = example.filter(|e| (self.pred)(e));
-                let v = self.gen_.next(src, example);
-                (self.pred)(&v).then_some(v)
-            },
-        )
-    }
-}
-
-struct FilterAssume<G, F> {
-    gen_: G,
-    pred: F,
-}
-
-impl<G, F> Debug for FilterAssume<G, F>
-where
-    G: Generator,
-    F: Fn(&G::Item) -> bool,
-{
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("FilterAssume").field(&self.gen_).finish()
-    }
-}
-
-impl<G, F> Generator for FilterAssume<G, F>
-where
-    G: Generator,
-    F: Fn(&G::Item) -> bool,
-{
     type Item = G::Item;
 
     fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
-        let v = src.find("<filter-assume>", example, |src, example| {
+        let v = src.find("<filter>", example, |src, example| {
             let example = example.filter(|e| (self.pred)(e));
             let v = self.gen_.next(src, example);
             (self.pred)(&v).then_some(v)
         });
-        v.assume_some_msg(FILTER_ASSUME_TOO_MUCH)
+        v.assume_some_msg(FILTER_TOO_MUCH)
     }
 }
 
@@ -674,8 +674,16 @@ mod tests {
     #[test]
     fn filter() {
         check(|src| {
-            let i = src.any_of("i", u8::arbitrary().filter_assume(|u| *u != 0));
+            let i = src.any_of("i", u8::arbitrary().filter(|u| *u != 0));
             assert_ne!(i, 0);
+        });
+    }
+
+    #[test]
+    fn try_filter() {
+        check(|src| {
+            let i = src.any_of("i", u8::arbitrary().try_filter(|u| *u != 0));
+            assert!(i.is_none_or(|i| i != 0));
         });
     }
 
