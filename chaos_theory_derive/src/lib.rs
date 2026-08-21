@@ -13,8 +13,9 @@ use alloc::collections::BTreeSet;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed, FieldsUnnamed,
-    GenericParam, Generics, Variant, parse_macro_input, spanned::Spanned as _, visit::Visit as _,
+    Attribute, Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed, FieldsUnnamed,
+    GenericParam, Generics, Type, Variant, parse_macro_input, spanned::Spanned as _,
+    visit::Visit as _,
 };
 
 const ATTR_NAMESPACE: &str = "chaos_theory";
@@ -29,7 +30,8 @@ pub fn derive_arbitrary(input: proc_macro::TokenStream) -> proc_macro::TokenStre
 }
 
 fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
-    ensure_no_unsupported_attributes(&input)?;
+    let container_config = parse_container_config(&input.attrs)?;
+    ensure_supported_data_attributes(&input.data)?;
 
     let DeriveInput {
         ident: name,
@@ -50,26 +52,28 @@ fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
             ));
         }
     };
+    let generator = apply_generator_config(
+        &container_config,
+        quote! {
+            ::chaos_theory::make::from_next(
+                |src: &mut ::chaos_theory::SourceRaw, example: Option<&Self>| {
+                    #body
+                },
+            )
+        },
+    );
 
     Ok(quote! {
         impl #impl_generics ::chaos_theory::Arbitrary for #name #ty_generics #where_clause {
             fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
-                ::chaos_theory::make::from_next(
-                    |src: &mut ::chaos_theory::SourceRaw, example: Option<&Self>| {
-                        #body
-                    },
-                )
+                #generator
             }
         }
     })
 }
 
-fn ensure_no_unsupported_attributes(input: &DeriveInput) -> syn::Result<()> {
-    for attr in &input.attrs {
-        ensure_supported_container_attribute(attr)?;
-    }
-
-    match &input.data {
+fn ensure_supported_data_attributes(data: &Data) -> syn::Result<()> {
+    match data {
         Data::Struct(DataStruct { fields, .. }) => {
             for field in fields {
                 parse_field_config(field)?;
@@ -78,7 +82,7 @@ fn ensure_no_unsupported_attributes(input: &DeriveInput) -> syn::Result<()> {
         Data::Enum(DataEnum { variants, .. }) => {
             for variant in variants {
                 for attr in &variant.attrs {
-                    ensure_supported_container_attribute(attr)?;
+                    ensure_no_variant_attribute(attr)?;
                 }
                 for field in &variant.fields {
                     parse_field_config(field)?;
@@ -91,27 +95,28 @@ fn ensure_no_unsupported_attributes(input: &DeriveInput) -> syn::Result<()> {
     Ok(())
 }
 
-fn ensure_supported_container_attribute(attr: &syn::Attribute) -> syn::Result<()> {
+fn ensure_no_variant_attribute(attr: &Attribute) -> syn::Result<()> {
     if attr.path().is_ident(ATTR_NAMESPACE) {
         return Err(Error::new_spanned(
             attr,
-            "`#[chaos_theory(...)]` attributes are only supported on fields",
+            "`#[chaos_theory(...)]` attributes are not supported on enum variants",
         ));
     }
     Ok(())
 }
 
 #[derive(Default)]
-struct FieldConfig {
+struct GeneratorConfig {
     generator: Option<TokenStream>,
+    filter: Option<TokenStream>,
 }
 
-struct RawFieldModifier {
+struct RawGeneratorModifier {
     name: syn::Ident,
     value: TokenStream,
 }
 
-impl syn::parse::Parse for RawFieldModifier {
+impl syn::parse::Parse for RawGeneratorModifier {
     fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
         let name = input.parse()?;
         input.parse::<syn::Token![=]>()?;
@@ -120,10 +125,21 @@ impl syn::parse::Parse for RawFieldModifier {
     }
 }
 
-fn parse_field_config(field: &syn::Field) -> syn::Result<FieldConfig> {
-    let mut config = FieldConfig::default();
+fn parse_container_config(attrs: &[Attribute]) -> syn::Result<GeneratorConfig> {
+    parse_generator_config(attrs, false)
+}
 
-    for attr in &field.attrs {
+fn parse_field_config(field: &syn::Field) -> syn::Result<GeneratorConfig> {
+    parse_generator_config(&field.attrs, true)
+}
+
+fn parse_generator_config(
+    attrs: &[Attribute],
+    allow_generator: bool,
+) -> syn::Result<GeneratorConfig> {
+    let mut config = GeneratorConfig::default();
+
+    for attr in attrs {
         if !attr.path().is_ident(ATTR_NAMESPACE) {
             continue;
         }
@@ -131,33 +147,55 @@ fn parse_field_config(field: &syn::Field) -> syn::Result<FieldConfig> {
         let syn::Meta::List(list) = &attr.meta else {
             return Err(Error::new_spanned(
                 attr,
-                "expected `#[chaos_theory(generator = EXPR)]`",
+                "expected `#[chaos_theory(MODIFIER = EXPR)]`",
             ));
         };
-
-        let modifier = syn::parse2::<RawFieldModifier>(list.tokens.clone()).map_err(|_| {
-            Error::new_spanned(attr, "expected `#[chaos_theory(generator = EXPR)]`")
-        })?;
+        let modifier = syn::parse2::<RawGeneratorModifier>(list.tokens.clone())
+            .map_err(|_| Error::new_spanned(attr, "expected `#[chaos_theory(MODIFIER = EXPR)]`"))?;
         if modifier.value.is_empty() {
             return Err(Error::new_spanned(
                 attr,
-                "expected `#[chaos_theory(generator = EXPR)]`",
+                "expected `#[chaos_theory(MODIFIER = EXPR)]`",
             ));
         }
 
-        if modifier.name != "generator" {
+        let slot = match modifier.name.to_string().as_str() {
+            "generator" if allow_generator => &mut config.generator,
+            "generator" => {
+                return Err(Error::new_spanned(
+                    modifier.name,
+                    "`generator` modifier is only supported on fields",
+                ));
+            }
+            "filter" => &mut config.filter,
+            _ => {
+                let expected = if allow_generator {
+                    "expected `generator` or `filter`"
+                } else {
+                    "expected `filter`"
+                };
+                return Err(Error::new_spanned(modifier.name, expected));
+            }
+        };
+        if slot.is_some() {
+            let name = modifier.name;
             return Err(Error::new_spanned(
-                attr,
-                "unsupported `chaos_theory` modifier; expected `generator = EXPR`",
+                &name,
+                format!("duplicate `{name}` modifier"),
             ));
         }
-        if config.generator.is_some() {
-            return Err(Error::new_spanned(attr, "duplicate `generator` modifier"));
-        }
-        config.generator = Some(modifier.value);
+        *slot = Some(modifier.value);
     }
 
     Ok(config)
+}
+
+fn apply_generator_config(config: &GeneratorConfig, generator: TokenStream) -> TokenStream {
+    if let Some(filter) = &config.filter {
+        quote! { ::chaos_theory::Generator::filter(#generator, #filter) }
+    } else {
+        generator
+    }
 }
 
 fn add_arbitrary_bounds(mut generics: Generics, data: &Data) -> syn::Result<Generics> {
@@ -264,7 +302,7 @@ fn derive_named_struct_ctor(fields: &FieldsNamed) -> syn::Result<TokenStream> {
             };
             let label = field_ident.to_string();
             let example = quote!(example.map(|e| &e.#field_ident));
-            let field_value = field_generator_expr(&config, &label, &example);
+            let field_value = field_generator_expr(&config, &field.ty, &label, &example);
             Ok(quote! { #field_ident: #field_value })
         })
         .collect::<syn::Result<Vec<_>>>()?;
@@ -286,7 +324,7 @@ fn derive_unnamed_struct_ctor(fields: &FieldsUnnamed) -> syn::Result<TokenStream
             let field_ix = syn::Index::from(ix);
             let label = ix.to_string();
             let example = quote!(example.map(|e| &e.#field_ix));
-            Ok(field_generator_expr(&config, &label, &example))
+            Ok(field_generator_expr(&config, &field.ty, &label, &example))
         })
         .collect::<syn::Result<Vec<_>>>()?;
 
@@ -297,12 +335,22 @@ fn derive_unnamed_struct_ctor(fields: &FieldsUnnamed) -> syn::Result<TokenStream
     })
 }
 
-fn field_generator_expr(config: &FieldConfig, label: &str, example: &TokenStream) -> TokenStream {
-    if let Some(generator) = &config.generator {
-        quote! { src.any_of(#label, #generator, #example) }
-    } else {
-        quote! { src.any(#label, #example) }
+fn field_generator_expr(
+    config: &GeneratorConfig,
+    field_type: &Type,
+    label: &str,
+    example: &TokenStream,
+) -> TokenStream {
+    if config.generator.is_none() && config.filter.is_none() {
+        return quote! { src.any(#label, #example) };
     }
+
+    let generator = config.generator.as_ref().map_or_else(
+        || quote! { <#field_type as ::chaos_theory::Arbitrary>::arbitrary() },
+        |generator| quote! { #generator },
+    );
+    let generator = apply_generator_config(config, generator);
+    quote! { src.any_of(#label, #generator, #example) }
 }
 
 fn derive_enum_body(type_ident: &syn::Ident, data: &DataEnum) -> syn::Result<TokenStream> {
@@ -391,7 +439,7 @@ fn derive_enum_variant_ctor(variant: &Variant) -> syn::Result<TokenStream> {
                             _ => None,
                         }
                     };
-                    let value = field_generator_expr(&config, &label, &example);
+                    let value = field_generator_expr(&config, &field.ty, &label, &example);
                     Ok(quote! {
                         #field_ident: #value
                     })
@@ -422,7 +470,7 @@ fn derive_enum_variant_ctor(variant: &Variant) -> syn::Result<TokenStream> {
                             _ => None,
                         }
                     };
-                    Ok(field_generator_expr(&config, &label, &example))
+                    Ok(field_generator_expr(&config, &field.ty, &label, &example))
                 })
                 .collect::<syn::Result<Vec<_>>>()?;
 

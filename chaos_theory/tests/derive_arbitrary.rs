@@ -33,6 +33,7 @@ fn derive_reconstructs_examples() {
         assert_reconstruct::<Imported>(src, "imported_example", "imported_value");
         assert_reconstruct::<Wrapper<u16>>(src, "wrapper_example", "wrapper_value");
         assert_reconstruct::<CustomPoint>(src, "custom_point_example", "custom_point_value");
+        assert_reconstruct::<FilteredPoint>(src, "filtered_point_example", "filtered_point_value");
         assert_reconstruct::<Action<u8>>(src, "action_example", "action_value");
         assert_reconstruct::<CustomAction<u8>>(src, "custom_action_example", "custom_action_value");
     });
@@ -43,6 +44,12 @@ fn derive_uses_custom_field_generators() {
     check(|src| {
         let point: CustomPoint = src.any("custom_point");
         assert_eq!(point.x % 2, 1);
+        assert_ne!(point.x, u8::MAX);
+        assert_ne!(point.y, 0);
+
+        let point: FilteredPoint = src.any("filtered_point");
+        assert_ne!(point.x, 0);
+        assert_ne!(point.x, point.y);
 
         let action: CustomAction<bool> = src.any("custom_action");
         match action {

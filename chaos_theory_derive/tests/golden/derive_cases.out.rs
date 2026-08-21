@@ -79,10 +79,41 @@ impl ::chaos_theory::Arbitrary for CustomPoint {
             example: Option<&Self>|
         {
             Self {
-                x: src.any_of("x", odd_u8(), example.map(|e| &e.x)),
-                y: src.any("y", example.map(|e| &e.y)),
+                x: src
+                    .any_of(
+                        "x",
+                        ::chaos_theory::Generator::filter(odd_u8(), |x| *x != u8::MAX),
+                        example.map(|e| &e.x),
+                    ),
+                y: src
+                    .any_of(
+                        "y",
+                        ::chaos_theory::Generator::filter(
+                            <u8 as ::chaos_theory::Arbitrary>::arbitrary(),
+                            |y| *y != 0,
+                        ),
+                        example.map(|e| &e.y),
+                    ),
             }
         })
+    }
+}
+
+// === FilteredPoint ===
+impl ::chaos_theory::Arbitrary for FilteredPoint {
+    fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
+        ::chaos_theory::Generator::filter(
+            ::chaos_theory::make::from_next(|
+                src: &mut ::chaos_theory::SourceRaw,
+                example: Option<&Self>|
+            {
+                Self {
+                    x: src.any("x", example.map(|e| &e.x)),
+                    y: src.any("y", example.map(|e| &e.y)),
+                }
+            }),
+            |point| point.x != 0 && point.x != point.y,
+        )
     }
 }
 
@@ -219,7 +250,10 @@ impl<T: core::fmt::Debug> ::chaos_theory::Arbitrary for CustomWrapper<T> {
                 value: src
                     .any_of(
                         "value",
-                        chaos_theory::make::from_fn(|_src| None),
+                        ::chaos_theory::Generator::filter(
+                            chaos_theory::make::from_fn(|_src| None),
+                            Option::is_none,
+                        ),
                         example.map(|e| &e.value),
                     ),
             }

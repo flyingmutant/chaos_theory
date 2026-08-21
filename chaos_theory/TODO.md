@@ -26,7 +26,6 @@
 
 ## features
 
-- ability for derived generators to use `filter` at the top level
 - print out potentially-hanging seed (how?)
   - maybe support detecting hangs with some kind of signal magic?
 - consider `reflecting` as a feature (not just a seed)

@@ -32,7 +32,16 @@ struct Wrapper<T> {
 
 #[derive(Debug, Clone, PartialEq, Eq, chaos_theory::Arbitrary)]
 struct CustomPoint {
+    #[chaos_theory(filter = |x| *x != u8::MAX)]
     #[chaos_theory(generator = odd_u8())]
+    x: u8,
+    #[chaos_theory(filter = |y| *y != 0)]
+    y: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, chaos_theory::Arbitrary)]
+#[chaos_theory(filter = |point| point.x != 0 && point.x != point.y)]
+struct FilteredPoint {
     x: u8,
     y: u8,
 }
@@ -56,6 +65,7 @@ enum CustomAction<T> {
 
 #[derive(Debug, chaos_theory::Arbitrary)]
 struct CustomWrapper<T: core::fmt::Debug> {
+    #[chaos_theory(filter = Option::is_none)]
     #[chaos_theory(generator = chaos_theory::make::from_fn(|_src| None))]
     value: Option<T>,
 }
