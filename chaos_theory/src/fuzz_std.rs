@@ -8,8 +8,9 @@ use alloc::vec::Vec;
 use core::mem::{replace, take};
 
 use crate::{
-    Source, hash::hash_bytes, hash_identity::NoHashSet, rand::DefaultRand, reproduce_inform,
-    tape::Tape, tape_mutate::MutationCache, tape_mutate_crossover::CrossoverCache,
+    Source, config::reproduce_inform, hash::hash_bytes, hash_identity::NoHashSet,
+    rand::DefaultRand, tape::Tape, tape_mutate::MutationCache,
+    tape_mutate_crossover::CrossoverCache,
 };
 
 use super::super::{Env, ReplayMode};

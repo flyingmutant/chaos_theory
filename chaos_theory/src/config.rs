@@ -325,7 +325,7 @@ impl Config {
             let _ = use_env_vars;
             Env::with_params(
                 self.seed.unwrap_or_else(random_seed_32),
-                self.temperature.unwrap_or(crate::TEMPERATURE_DEFAULT),
+                self.temperature.unwrap_or(crate::env::TEMPERATURE_DEFAULT),
                 self.budget.unwrap_or(BUDGET_DEFAULT),
                 self.tape,
                 self.cover_depth.unwrap_or(COVER_DEPTH_DEFAULT),

@@ -23,7 +23,7 @@ use core::{
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE,
+    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, generator::UNABLE_GENERATE_UNIQUE,
     range::SizeRange,
 };
 

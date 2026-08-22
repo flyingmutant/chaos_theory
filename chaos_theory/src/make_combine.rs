@@ -7,7 +7,7 @@
 use alloc::vec::Vec;
 use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
-use crate::{Generator, OptionExt as _, Source, SourceEx, Tweak};
+use crate::{Generator, OptionExt as _, Source, SourceEx, env::Tweak};
 
 const FROM_NEXT_SOME_TOO_MUCH: &str = "from_next_some function produced too many None values";
 

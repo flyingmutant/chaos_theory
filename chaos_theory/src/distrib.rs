@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::{
-    TEMPERATURE_BOUND_EXCLUSIVE, TEMPERATURE_DEFAULT,
+    env::{TEMPERATURE_BOUND_EXCLUSIVE, TEMPERATURE_DEFAULT},
     math::{exp, log, mul_add},
     rand::{Rand, RandCore},
 };
@@ -230,7 +230,7 @@ fn bound_wrap(v: u64, max: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use crate::{
-        MAX_SIZE, TEMPERATURE_DEFAULT,
+        env::{MAX_SIZE, TEMPERATURE_DEFAULT},
         rand::{DefaultRand, Sfc64, random_seed},
     };
 

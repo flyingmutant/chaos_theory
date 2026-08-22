@@ -14,7 +14,7 @@ use core::{
     result::Result,
 };
 
-use crate::{Arbitrary, Generator, MaybeOwned, SourceEx, Tweak, make};
+use crate::{Arbitrary, Generator, MaybeOwned, SourceEx, env::Tweak, make};
 
 impl<T: ?Sized> Arbitrary for PhantomData<T> {
     fn arbitrary() -> impl Generator<Item = Self> {

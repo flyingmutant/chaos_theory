@@ -10,8 +10,8 @@ use std::{panic, sync::Once, thread_local};
 
 use super::{PanicInfo, panic_message};
 
-pub(super) fn catch_silent<T, U>(func: impl FnOnce(T) -> U, arg: T) -> Result<U, PanicInfo> {
-    let r = __catch_silent(|| (func)(arg));
+pub(super) fn catch_silent_info<T, U>(func: impl FnOnce(T) -> U, arg: T) -> Result<U, PanicInfo> {
+    let r = catch_silent(|| (func)(arg));
     r.map_err(|e| {
         let (message, invalid_data, determinism_failure) = panic_message(e);
         let (file, line, column) = SilentPanicGuard::take_location();
@@ -26,7 +26,7 @@ pub(super) fn catch_silent<T, U>(func: impl FnOnce(T) -> U, arg: T) -> Result<U,
     })
 }
 
-pub(super) fn __catch_silent<T>(func: impl FnOnce() -> T) -> Result<T, Box<dyn Any + Send>> {
+pub(super) fn catch_silent<T>(func: impl FnOnce() -> T) -> Result<T, Box<dyn Any + Send>> {
     let f = panic::AssertUnwindSafe(|| {
         let _guard = SilentPanicGuard::new();
         (func)()

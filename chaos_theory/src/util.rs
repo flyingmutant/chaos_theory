@@ -11,7 +11,7 @@ use core::cell::Cell;
 #[cfg(feature = "std")]
 use std::thread_local;
 
-use crate::__panic_assume;
+use crate::unwind::panic_assume;
 
 const ASSUME_SOME_FAILED_MSG: &str = "OptionExt::assume_some failed";
 
@@ -33,7 +33,7 @@ impl<T> OptionExt<T> for Option<T> {
         if let Some(v) = self {
             v
         } else {
-            __panic_assume(msg)
+            panic_assume(msg)
         }
     }
 }
@@ -50,7 +50,7 @@ impl<T> OptionExt<T> for Option<T> {
 macro_rules! assume {
     ($cond:expr) => {
         if !$cond {
-            $crate::__panic_assume(stringify!($cond));
+            $crate::__private::panic_assume(stringify!($cond));
         }
     };
 }

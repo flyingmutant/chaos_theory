@@ -10,8 +10,8 @@ use core::num::NonZero;
 use serde_json::{Map, Number, Value};
 
 use crate::{
-    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE, make,
-    range::SizeRange,
+    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, generator::UNABLE_GENERATE_UNIQUE,
+    make, range::SizeRange,
 };
 
 #[cfg_attr(docsrs, doc(cfg(feature = "serde_json")))]

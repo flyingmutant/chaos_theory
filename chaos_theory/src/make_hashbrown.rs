@@ -4,9 +4,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use crate::make::value_fingerprint;
-use crate::{Arbitrary, Generator, range::SizeRange};
-use crate::{Effect, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE};
+use crate::{Arbitrary, Generator, make_collection::value_fingerprint, range::SizeRange};
+use crate::{Effect, OptionExt as _, SourceEx, generator::UNABLE_GENERATE_UNIQUE};
 use alloc::vec::Vec;
 use core::fmt::Debug;
 use core::hash::{BuildHasher, Hash};

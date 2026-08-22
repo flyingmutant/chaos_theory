@@ -17,8 +17,11 @@ use core::{
 use crate::tape::Tape;
 #[expect(clippy::unused_trait_names, reason = "docstring references")]
 use crate::{
-    __panic_assume, Arbitrary, Effect, Env, Generator, MAX_SIZE, OptionExt, Scope, Tweak,
-    range::SizeRange, tape_event::ScopeKind,
+    Arbitrary, Effect, Env, Generator, OptionExt,
+    env::{MAX_SIZE, Scope, Tweak},
+    range::SizeRange,
+    tape_event::ScopeKind,
+    unwind::panic_assume,
 };
 
 const REPEAT_REJECT_CONSEQ_SOFT_MAX: u32 = 8;
@@ -222,7 +225,7 @@ impl<'env> Source<'env> {
             step,
         );
         if !ok {
-            __panic_assume(UNABLE_PERFORM_MINIMUM_REPEAT);
+            panic_assume(UNABLE_PERFORM_MINIMUM_REPEAT);
         }
     }
 

@@ -11,7 +11,8 @@ use core::{
 use std::time::Instant;
 
 use crate::{
-    Source, cover::Cover, reduce::reduce_tape, reproduce_inform, tape::Tape, unwind::PanicInfo,
+    Source, config::reproduce_inform, cover::Cover, reduce::reduce_tape, tape::Tape,
+    unwind::PanicInfo,
 };
 
 use super::{

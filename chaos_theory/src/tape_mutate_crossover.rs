@@ -8,8 +8,9 @@ use alloc::vec::Vec;
 use core::mem::swap;
 
 use crate::{
-    Effect, MAX_SIZE,
+    Effect,
     distrib::{Biased, temperature_scale_down},
+    env::MAX_SIZE,
     hash_identity::NoHashMap,
     rand::DefaultRand,
     tape::Tape,

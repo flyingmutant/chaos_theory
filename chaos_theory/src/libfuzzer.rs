@@ -28,8 +28,8 @@
 macro_rules! fuzz_target_libfuzzer {
     ($prop:expr) => {
         ::std::thread_local! {
-            static _CHAOS_THEORY_FUZZ_STATE: ::std::cell::RefCell<$crate::FuzzState> =
-                ::std::cell::RefCell::new($crate::FuzzState::new());
+            static _CHAOS_THEORY_FUZZ_STATE: ::std::cell::RefCell<$crate::__private::FuzzState> =
+                ::std::cell::RefCell::new($crate::__private::FuzzState::new());
         }
 
         static _CHAOS_THEORY_EFFECTIVE_INPUT_SUPPORTED: ::std::sync::atomic::AtomicBool =

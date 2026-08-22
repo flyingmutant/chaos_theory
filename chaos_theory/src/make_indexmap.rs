@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::{Arbitrary, Generator, range::SizeRange};
-use crate::{Effect, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE};
+use crate::{Effect, OptionExt as _, SourceEx, generator::UNABLE_GENERATE_UNIQUE};
 use core::fmt::Debug;
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;

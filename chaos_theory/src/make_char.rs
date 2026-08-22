@@ -7,8 +7,9 @@
 use core::cmp::Ordering;
 
 use crate::{
-    Arbitrary, Generator, SourceEx, Tweak,
-    make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB},
+    Arbitrary, Generator, SourceEx,
+    env::Tweak,
+    make_integer::{BYTE_SPECIAL, BYTE_SPECIAL_PROB},
     math::percent,
 };
 
@@ -237,8 +238,10 @@ pub fn byte_ascii() -> impl Generator<Item = u8> {
 pub(crate) mod regex {
     use super::Char;
     use crate::{
-        Generator, SourceEx, Tweak,
-        make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB, from_next_some},
+        Generator, SourceEx,
+        env::Tweak,
+        make::from_next_some,
+        make_integer::{BYTE_SPECIAL, BYTE_SPECIAL_PROB},
     };
     use core::cmp::Ordering;
     use regex_syntax::hir::{ClassBytes, ClassBytesRange, ClassUnicode, ClassUnicodeRange};

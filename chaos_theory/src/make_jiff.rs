@@ -17,7 +17,7 @@ use jiff::{
 };
 
 use crate::{
-    Arbitrary, Generator, Ranged, SourceEx, Tweak, make, math::percent, range::Range,
+    Arbitrary, Generator, Ranged, SourceEx, env::Tweak, make, math::percent, range::Range,
     time_zone_names::TIME_ZONE_NAMES_WITH_UNKNOWN,
 };
 
@@ -431,7 +431,10 @@ impl Debug for Zoned_ {
 mod tests {
     use super::*;
     use crate::{
-        BUDGET_DEFAULT, Env, Source, TEMPERATURE_DEFAULT, check, make,
+        Env, Source, check,
+        config::BUDGET_DEFAULT,
+        env::TEMPERATURE_DEFAULT,
+        make,
         tape::Tape,
         tests::{print_debug_examples, prop_smoke},
     };

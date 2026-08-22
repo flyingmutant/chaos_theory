@@ -14,21 +14,22 @@ use core::{
 
 #[cfg(test)]
 use crate::tape::TapeCheckpoint;
+#[cfg(feature = "std")]
+use crate::unwind::catch_silent_info;
 use crate::{
-    Arbitrary, Config, DETERMINISM_FAILED_PREFIX, Generator, Source, SourceEx, Unsigned as _,
+    Arbitrary, Config, Generator, Source, SourceEx, Unsigned as _,
     cover::Cover,
     distrib::Biased,
     hash::hash_str,
     make::from_next,
     math::{bitmask, fast_reduce, mul_add, percent},
-    panic_determinism,
     permute::permute,
     rand::{DefaultRand, Rand, Wyrand},
     range::{Range, SizeRange},
     tape::Tape,
     tape_event::{Event, ScopeKind},
     tape_mutate::MutationCache,
-    unwind::PanicInfo,
+    unwind::{DETERMINISM_FAILED_PREFIX, PanicInfo, panic_determinism},
     util::DebugOutputGuard,
 };
 
@@ -242,7 +243,7 @@ impl Env {
     ) -> Result<T, PanicInfo> {
         if silent {
             #[cfg(feature = "std")]
-            return crate::unwind::catch_silent(|src| Self::call_prop(prop, src), src);
+            return catch_silent_info(|src| Self::call_prop(prop, src), src);
             #[cfg(not(feature = "std"))]
             return Ok(Self::call_prop(prop, src));
         }
@@ -1238,7 +1239,9 @@ impl Drop for SeedTapeReplayScope<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CHECK_ITERS_DEFAULT, assume, check, make, tests::RgbState, vdbg, vprintln};
+    use crate::{
+        assume, check, config::CHECK_ITERS_DEFAULT, make, tests::RgbState, vdbg, vprintln,
+    };
 
     #[test]
     fn forced_index_ignores_exhausted_budget() {

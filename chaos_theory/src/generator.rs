@@ -15,7 +15,8 @@ use core::{
 };
 
 use crate::{
-    Effect, MaybeOwned, OptionExt as _, SeedTapeReplayScope, SourceEx, USE_SEED_PROB,
+    Effect, MaybeOwned, OptionExt as _, SourceEx,
+    env::{SeedTapeReplayScope, USE_SEED_PROB},
     range::SizeRange,
 };
 

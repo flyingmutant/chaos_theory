@@ -11,7 +11,7 @@ use core::{fmt::Debug, ops::RangeBounds, time::Duration};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(feature = "std")]
-use crate::Tweak;
+use crate::env::Tweak;
 use crate::{Arbitrary, Generator, Ranged, SourceEx, make, math::percent, range::Range};
 
 // In an ideal world, integer generation itself would be smart enough that we wouldn't need this.

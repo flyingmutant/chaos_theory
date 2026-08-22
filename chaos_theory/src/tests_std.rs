@@ -8,13 +8,15 @@ use core::{cmp::Ordering, mem::swap};
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    Arbitrary as _, BUDGET_DEFAULT, CHECK_ITERS_DEFAULT, Effect, Env, Generator, Set, Source,
-    TEMPERATURE_DEFAULT, assume, check, make,
+    Arbitrary as _, Effect, Env, Generator, Set, Source, assume, check,
+    config::{BUDGET_DEFAULT, CHECK_ITERS_DEFAULT, slow_test_enabled},
+    env::TEMPERATURE_DEFAULT,
+    make,
     rand::{DefaultRand, random_seed},
-    slow_test_enabled,
     tape::Tape,
     tape_mutate_crossover::CrossoverCache,
-    unwind, vprintln,
+    unwind::catch_silent_info,
+    vprintln,
 };
 
 const NUM_EXAMPLES: usize = CHECK_ITERS_DEFAULT;
@@ -231,7 +233,7 @@ impl RgbState {
         copy_meta: bool,
     ) -> Tape {
         let chk = src.as_ex().as_mut().tape_checkpoint();
-        let r = unwind::catch_silent(
+        let r = catch_silent_info(
             &mut |src| {
                 self.prop_fill(src);
             },

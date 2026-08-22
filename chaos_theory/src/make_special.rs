@@ -6,7 +6,7 @@
 
 use core::ops::RangeBounds;
 
-use crate::{Generator, SourceEx, Tweak, range::SizeRange};
+use crate::{Generator, SourceEx, env::Tweak, range::SizeRange};
 
 #[derive(Debug)]
 struct Size {

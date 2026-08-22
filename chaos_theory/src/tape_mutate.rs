@@ -8,8 +8,9 @@ use alloc::vec::Vec;
 use core::mem::take;
 
 use crate::{
-    Effect, MAX_SIZE, USE_SEED_AS_IS_PROB, Unsigned as _,
+    Effect, Unsigned as _,
     distrib::{Biased, temperature_scale_down},
+    env::{MAX_SIZE, USE_SEED_AS_IS_PROB},
     hash_identity::NoHashMap,
     math::percent,
     rand::DefaultRand,

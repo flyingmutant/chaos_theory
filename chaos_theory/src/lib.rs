@@ -155,30 +155,52 @@ mod time_zone_names {
     include!("../gen/time_zone_names.rs");
 }
 
-pub use config::*;
-pub use env::*;
-pub use generator::*;
-pub use num::*;
-pub use source::*;
-pub use unwind::*;
-pub use util::*;
+pub use config::Config;
+pub use env::{Effect, Env};
+pub use generator::{Arbitrary, Gen, GenShared, Generator};
+pub use num::{Float, Int, Ranged, Unsigned};
+pub use source::{Source, SourceEx};
+pub use util::{MaybeOwned, OptionExt, should_log};
+
+#[doc(hidden)]
+pub mod __private {
+    #[cfg(feature = "std")]
+    pub use crate::env::FuzzState;
+    pub use crate::unwind::{ASSUME_FAILED_PREFIX, catch_silent, panic_assume, panic_message};
+}
 
 /// Collection of built-in generator implementations.
 pub mod make {
-    pub use crate::make_cell::*;
-    pub use crate::make_char::*;
-    pub use crate::make_collection::*;
-    pub use crate::make_combine::*;
-    pub use crate::make_core::*;
-    pub use crate::make_float::*;
-    pub use crate::make_integer::*;
-    #[cfg(feature = "regex")]
-    pub use crate::make_regex::*;
-    pub use crate::make_special::*;
-    pub use crate::make_string::*;
+    pub use crate::make_cell::{cell, once_cell, ref_cell, unsafe_cell};
+    pub use crate::make_char::{byte_ascii, char_ascii};
+    pub use crate::make_collection::{
+        array, btree_map, btree_map_with_size, btree_set, btree_set_with_size, slice,
+        slice_with_size, vec, vec_with_size,
+    };
     #[cfg(feature = "std")]
-    pub use crate::make_sync::*;
-    pub use crate::make_time::*;
+    pub use crate::make_collection::{hash_map, hash_map_with_size, hash_set, hash_set_with_size};
+    pub use crate::make_combine::{
+        from_fn, from_fn_some, from_next, from_next_some, just, mix_of, mix_of_owned, one_of,
+        one_of_owned,
+    };
+    pub use crate::make_core::{err, none, ok, option, result, some};
+    pub use crate::make_float::float_in_range;
+    pub use crate::make_integer::int_in_range;
+    #[cfg(feature = "regex")]
+    pub use crate::make_regex::{
+        byte_slice_matching, bytes_matching, cstring_matching, cstring_slice_matching,
+        string_matching, string_slice_matching,
+    };
+    pub use crate::make_special::{index, size, token, try_index};
+    pub use crate::make_string::{
+        cstring, cstring_slice, cstring_slice_with_size, cstring_with_size, string, string_slice,
+        string_slice_with_size, string_with_size,
+    };
+    #[cfg(feature = "std")]
+    pub use crate::make_sync::{barrier, mpsc_sync_channel, mutex, once_lock, rw_lock};
+    pub use crate::make_time::duration_in_range;
+    #[cfg(feature = "std")]
+    pub use crate::make_time::system_time_in_range;
 
     use crate::{Arbitrary, Generator};
 
@@ -192,73 +214,83 @@ pub mod make {
     #[cfg(feature = "bstr")]
     /// [`bstr`](https://docs.rs/bstr) generators.
     pub mod bstr {
-        pub use crate::make_bstr::*;
+        pub use crate::make_bstr::{bstring, bstring_with_size};
     }
 
     #[cfg(feature = "bytes")]
     /// [`bytes`](https://docs.rs/bytes) generators.
     pub mod bytes {
-        pub use crate::make_bytes::*;
+        pub use crate::make_bytes::{bytes, bytes_mut, bytes_mut_with_size, bytes_with_size};
     }
 
     #[cfg(feature = "hashbrown")]
     /// [`hashbrown`](https://docs.rs/hashbrown) generators.
     pub mod hashbrown {
-        pub use crate::make_hashbrown::*;
+        pub use crate::make_hashbrown::{
+            hash_map, hash_map_with_size, hash_set, hash_set_with_size,
+        };
     }
 
     #[cfg(feature = "ecow")]
     /// [`ecow`](https://docs.rs/ecow) generators.
     pub mod ecow {
-        pub use crate::make_ecow::*;
+        pub use crate::make_ecow::{eco_string, eco_string_with_size, eco_vec, eco_vec_with_size};
     }
 
     #[cfg(feature = "either")]
     /// [`either`](https://docs.rs/either) generators.
     pub mod either {
-        pub use crate::make_either::*;
+        pub use crate::make_either::{either, left, right};
     }
 
     #[cfg(feature = "indexmap")]
     /// [`indexmap`](https://docs.rs/indexmap) generators.
     pub mod indexmap {
-        pub use crate::make_indexmap::*;
+        pub use crate::make_indexmap::{
+            index_map, index_map_with_size, index_set, index_set_with_size,
+        };
     }
 
     #[cfg(feature = "jiff")]
     /// [`jiff`](https://docs.rs/jiff) generators.
     pub mod jiff {
-        pub use crate::make_jiff::*;
+        pub use crate::make_jiff::{signed_duration_in_range, timestamp_in_range};
     }
 
     #[cfg(feature = "ordermap")]
     /// [`ordermap`](https://docs.rs/ordermap) generators.
     pub mod ordermap {
-        pub use crate::make_ordermap::*;
+        pub use crate::make_ordermap::{
+            order_map, order_map_with_size, order_set, order_set_with_size,
+        };
     }
 
     #[cfg(feature = "serde_json")]
     /// [`serde_json`](https://docs.rs/serde_json) generators.
     pub mod serde_json {
-        pub use crate::make_serde_json::*;
+        pub use crate::make_serde_json::{json_number, json_object, json_value};
     }
 
     #[cfg(feature = "ordered_float")]
     /// [`ordered_float`](https://docs.rs/ordered-float) generators.
     pub mod ordered_float {
-        pub use crate::make_ordered_float::*;
+        pub use crate::make_ordered_float::{
+            not_nan, not_nan_in_range, ordered_float, ordered_float_in_range,
+        };
     }
 
     #[cfg(feature = "tinyvec")]
     /// [`tinyvec`](https://docs.rs/tinyvec) generators.
     pub mod tinyvec {
-        pub use crate::make_tinyvec::*;
+        pub use crate::make_tinyvec::{
+            array_vec, array_vec_with_size, tiny_vec, tiny_vec_with_size,
+        };
     }
 
     #[cfg(feature = "uuid")]
     /// [`uuid`](https://docs.rs/uuid) generators.
     pub mod uuid {
-        pub use crate::make_uuid::*;
+        pub use crate::make_uuid::uuid_v4;
     }
 }
 

@@ -17,7 +17,7 @@ use core::{
 };
 
 use crate::{
-    Arbitrary, Generator, Int, MaybeOwned, SourceEx, Tweak, Unsigned as _, math::percent,
+    Arbitrary, Generator, Int, MaybeOwned, SourceEx, Unsigned as _, env::Tweak, math::percent,
     range::Range,
 };
 

@@ -16,16 +16,22 @@ use core::{
 use std::sync::{LazyLock, RwLock};
 
 use crate::{
-    Effect, Generator, MaybeOwned, OptionExt as _, Scope, SourceEx,
-    make::{self, CharBuf as _, next_string_impl, next_vec_impl},
+    Effect, Generator, MaybeOwned, OptionExt as _, SourceEx,
+    env::Scope,
+    make,
     make_char::regex::{
         byte_any, byte_any_non_crlf, byte_any_non_lf, byte_class, char_class, char_non_crlf,
         char_non_lf,
     },
+    make_collection::next_vec_impl,
+    make_string::{CharBuf as _, next_string_impl},
     range::SizeRange,
 };
 #[cfg(feature = "std")]
-use crate::{Map, read_lock_no_poison, write_lock_no_poison};
+use crate::{
+    Map,
+    util::{read_lock_no_poison, write_lock_no_poison},
+};
 
 use regex_syntax::hir::{Class, ClassBytes, ClassUnicode, Hir, HirKind, Look};
 

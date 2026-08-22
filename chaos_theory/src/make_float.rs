@@ -7,7 +7,8 @@
 use core::{fmt::Debug, ops::RangeBounds};
 
 use crate::{
-    Arbitrary, Float, Generator, SourceEx, Tweak, Unsigned as _,
+    Arbitrary, Float, Generator, SourceEx, Unsigned as _,
+    env::Tweak,
     make::int_in_range,
     math::{self, percent},
     range::Range,
@@ -295,9 +296,9 @@ mod tests {
     use super::*;
     use crate::{
         Env, Float, Source, check,
+        config::slow_test_enabled,
         make_float::{Arbitrary, compose_float, extract_float_parts, float_in_range},
         range::Range,
-        slow_test_enabled,
         tests::{print_debug_examples, prop_smoke_by},
     };
     use core::cmp::Ordering;

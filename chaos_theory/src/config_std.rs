@@ -11,7 +11,7 @@ use core::{
 };
 use std::sync::{Once, OnceLock};
 
-use crate::{TEMPERATURE_DEFAULT, tape::Tape};
+use crate::{env::TEMPERATURE_DEFAULT, tape::Tape};
 
 const VAR_PREFIX: &str = "CHAOS_THEORY_";
 
