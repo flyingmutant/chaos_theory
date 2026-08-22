@@ -9,7 +9,7 @@ use core::{fmt::Debug, ops::RangeBounds};
 use crate::{
     Arbitrary, Float, Generator, SourceEx, Unsigned as _,
     env::Tweak,
-    make::int_in_range,
+    make::int_in,
     math::{self, percent},
     range::Range,
 };
@@ -156,8 +156,8 @@ fn arbitrary_float<F: Float>() -> Floating<F> {
 /// # Panics
 ///
 /// Panics if the range is empty or either bound is NaN.
-pub fn float_in_range<F: Float>(r: impl RangeBounds<F>) -> impl Generator<Item = F> {
-    let range = Range::new(r);
+pub fn float_in<F: Float>(range: impl RangeBounds<F>) -> impl Generator<Item = F> {
+    let range = Range::new(range);
     let contains_zero = range.min <= F::ZERO && range.max >= F::ZERO;
     let neg = if range.min < F::ZERO {
         let min = if contains_zero {
@@ -224,7 +224,7 @@ fn compose_float<F: Float>(exp: i32, sig_int: u64, sig_frac: u64) -> u64 {
 }
 
 fn choose_exp(src: &mut SourceEx, r: &FloatRange) -> i32 {
-    int_in_range(r.exp_min..=r.exp_max).next(src, r.example.map(|e| e.0).as_ref())
+    int_in(r.exp_min..=r.exp_max).next(src, r.example.map(|e| e.0).as_ref())
 }
 
 fn choose_sig_int<F: Float>(src: &mut SourceEx, exp: i32, r: &FloatRange) -> u64 {
@@ -297,7 +297,7 @@ mod tests {
     use crate::{
         Env, Float, Source, check,
         config::slow_test_enabled,
-        make_float::{Arbitrary, compose_float, extract_float_parts, float_in_range},
+        make_float::{Arbitrary, compose_float, extract_float_parts, float_in},
         range::Range,
         tests::{print_debug_examples, prop_smoke_by},
     };
@@ -407,15 +407,15 @@ mod tests {
 
     #[test]
     fn numeric_ranges_treat_zero_signs_as_the_same_endpoint() {
-        let zero = float_in_range::<f32>(0.0..=0.0);
+        let zero = float_in::<f32>(0.0..=0.0);
         assert_eq!(next_like(&zero, 0.0).to_bits(), 0.0f32.to_bits());
         assert_eq!(next_like(&zero, -0.0).to_bits(), (-0.0f32).to_bits());
 
         let positive =
-            float_in_range::<f32>((core::ops::Bound::Excluded(0.0), core::ops::Bound::Unbounded));
+            float_in::<f32>((core::ops::Bound::Excluded(0.0), core::ops::Bound::Unbounded));
         assert!(next_like(&positive, -0.0) > 0.0);
 
-        let negative = float_in_range::<f32>((
+        let negative = float_in::<f32>((
             core::ops::Bound::Unbounded,
             core::ops::Bound::Excluded(-0.0),
         ));
@@ -425,7 +425,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "invalid range")]
     fn numeric_range_rejects_nan_bound() {
-        let _ = float_in_range(f32::NAN..);
+        let _ = float_in(f32::NAN..);
     }
 
     #[test]
@@ -433,7 +433,7 @@ mod tests {
         fn gen_in_range<F: Float + Arbitrary>(src: &mut Source<'_>, label: &'static str) {
             src.scope(label, |src| {
                 let r: Range<F> = src.any("r");
-                let g = float_in_range(r);
+                let g = float_in(r);
                 let value = src.any_of("value", &g);
                 assert!(r.contains(&value));
                 prop_smoke_by(src, label, &g, same_float);
@@ -450,7 +450,7 @@ mod tests {
         fn range_coverage_test_impl<F: Float + Arbitrary>(src: &mut Source, label: &str) {
             src.scope(label, |src| {
                 let r: Range<F> = src.any("r");
-                let g = float_in_range(r);
+                let g = float_in(r);
                 let base_seed: u32 = src.any("base_seed");
                 let (mut got_max, mut got_min, mut got_zero) =
                     (false, false, !r.contains(&F::ZERO));
@@ -492,11 +492,11 @@ mod tests {
     #[test]
     fn f32_examples() {
         let gens = [
-            float_in_range::<f32>(-3.0..).boxed(),
-            float_in_range::<f32>(..=3.5).boxed(),
-            float_in_range::<f32>(1000.0..=1_000_000.0).boxed(),
-            float_in_range::<f32>(-4.5..=9.9).boxed(),
-            float_in_range::<f32>(0.0..1.0).boxed(),
+            float_in::<f32>(-3.0..).boxed(),
+            float_in::<f32>(..=3.5).boxed(),
+            float_in::<f32>(1000.0..=1_000_000.0).boxed(),
+            float_in::<f32>(-4.5..=9.9).boxed(),
+            float_in::<f32>(0.0..1.0).boxed(),
             f32::arbitrary().boxed(),
         ];
         for g in gens {
@@ -507,11 +507,11 @@ mod tests {
     #[test]
     fn f64_examples() {
         let gens = [
-            float_in_range::<f64>(-3.0..).boxed(),
-            float_in_range::<f64>(..=3.5).boxed(),
-            float_in_range::<f64>(1000.0..=1_000_000.0).boxed(),
-            float_in_range::<f64>(-4.5..=9.9).boxed(),
-            float_in_range::<f64>(0.0..1.0).boxed(),
+            float_in::<f64>(-3.0..).boxed(),
+            float_in::<f64>(..=3.5).boxed(),
+            float_in::<f64>(1000.0..=1_000_000.0).boxed(),
+            float_in::<f64>(-4.5..=9.9).boxed(),
+            float_in::<f64>(0.0..1.0).boxed(),
             f64::arbitrary().boxed(),
         ];
         for g in gens {

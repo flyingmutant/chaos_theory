@@ -73,12 +73,12 @@ where
     T: Debug + Hash + Eq,
     S: BuildHasher + Default + Debug,
 {
-    index_set_with_size::<T, S>(elem, ..)
+    index_set_n::<T, S>(elem, ..)
 }
 
 /// Create a [`IndexSet`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
-pub fn index_set_with_size<T, S>(
+pub fn index_set_n<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = IndexSet<T, S>>
@@ -144,12 +144,12 @@ where
     V: Debug,
     S: BuildHasher + Default + Debug,
 {
-    index_map_with_size::<K, V, S>(key, value, ..)
+    index_map_n::<K, V, S>(key, value, ..)
 }
 
 /// Create a [`IndexMap`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "indexmap")))]
-pub fn index_map_with_size<K, V, S>(
+pub fn index_map_n<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
     size: impl RangeBounds<usize>,
@@ -180,15 +180,12 @@ mod tests {
             prop_smoke(
                 src,
                 "IndexSet",
-                make::indexmap::index_set_with_size::<_, RandomState>(
-                    make::arbitrary::<i32>(),
-                    ..MAX_SIZE,
-                ),
+                make::indexmap::index_set_n::<_, RandomState>(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
             prop_smoke(
                 src,
                 "IndexMap",
-                make::indexmap::index_map_with_size::<_, _, RandomState>(
+                make::indexmap::index_map_n::<_, _, RandomState>(
                     make::arbitrary::<i32>(),
                     make::arbitrary::<i32>(),
                     ..MAX_SIZE,

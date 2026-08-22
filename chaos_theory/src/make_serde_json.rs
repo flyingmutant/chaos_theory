@@ -127,7 +127,7 @@ impl Generator for Number_ {
                 }
                 "int" => {
                     let example = example.and_then(Number::as_i64);
-                    Number::from(make::int_in_range(i64::MIN..=-1).next(src, example.as_ref()))
+                    Number::from(make::int_in(i64::MIN..=-1).next(src, example.as_ref()))
                 }
                 "float" => {
                     let example = example.and_then(Number::as_f64);
@@ -135,7 +135,7 @@ impl Generator for Number_ {
                         debug_assert!(example.is_finite());
                     }
                     Number::from_f64(
-                        make::float_in_range(f64::MIN..=f64::MAX).next(src, example.as_ref()),
+                        make::float_in(f64::MIN..=f64::MAX).next(src, example.as_ref()),
                     )
                     .expect("internal error: can't construct JSON number from finite f64")
                 }

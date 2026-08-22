@@ -66,12 +66,12 @@ where
 /// Create an [`EcoString`] generator.
 #[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
 pub fn eco_string(elem: impl Generator<Item = char>) -> impl Generator<Item = EcoString> {
-    eco_string_with_size(elem, ..)
+    eco_string_n(elem, ..)
 }
 
 /// Create an [`EcoString`] generator with the specified size (in characters).
 #[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
-pub fn eco_string_with_size(
+pub fn eco_string_n(
     elem: impl Generator<Item = char>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = EcoString> {
@@ -118,12 +118,12 @@ pub fn eco_vec<T>(elem: impl Generator<Item = T>) -> impl Generator<Item = EcoVe
 where
     T: Clone + Debug,
 {
-    eco_vec_with_size(elem, ..)
+    eco_vec_n(elem, ..)
 }
 
 /// Create an [`EcoVec`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
-pub fn eco_vec_with_size<T>(
+pub fn eco_vec_n<T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = EcoVec<T>>
@@ -150,12 +150,12 @@ mod tests {
             prop_smoke(
                 src,
                 "EcoString",
-                make::ecow::eco_string_with_size(make::arbitrary::<char>(), ..MAX_CHARS),
+                make::ecow::eco_string_n(make::arbitrary::<char>(), ..MAX_CHARS),
             );
             prop_smoke(
                 src,
                 "EcoVec<i32>",
-                make::ecow::eco_vec_with_size(make::arbitrary::<i32>(), ..MAX_SIZE),
+                make::ecow::eco_vec_n(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
         });
     }

@@ -53,14 +53,14 @@ const TIMESTAMP_ANCHOR: Timestamp = Timestamp::constant(946684800, 0); // 2000/0
 #[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
 impl Arbitrary for Timestamp {
     fn arbitrary() -> impl Generator<Item = Self> {
-        timestamp_in_range(..)
+        timestamp_in(..)
     }
 }
 
 #[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
 impl Arbitrary for SignedDuration {
     fn arbitrary() -> impl Generator<Item = Self> {
-        signed_duration_in_range(..)
+        signed_duration_in(..)
     }
 }
 
@@ -133,11 +133,7 @@ fn sec_nanos_next(
                 }
             });
     }
-    let secs = src.any_of(
-        "<secs>",
-        make::int_in_range(range.secs),
-        example_secs.as_ref(),
-    );
+    let secs = src.any_of("<secs>", make::int_in(range.secs), example_secs.as_ref());
 
     let nanos_range = range.nanos(secs);
     let mut example_nanos = example.map(|(_, nanos)| nanos);
@@ -156,11 +152,7 @@ fn sec_nanos_next(
                 }
             });
     }
-    let nanos = src.any_of(
-        "<nanos>",
-        make::int_in_range(nanos_range),
-        example_nanos.as_ref(),
-    );
+    let nanos = src.any_of("<nanos>", make::int_in(nanos_range), example_nanos.as_ref());
 
     (secs, nanos)
 }
@@ -212,7 +204,7 @@ impl Ranged for SignedDuration {
 
 /// Create a generator of Jiff [`SignedDuration`] values in `range`.
 #[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
-pub fn signed_duration_in_range(
+pub fn signed_duration_in(
     range: impl RangeBounds<SignedDuration>,
 ) -> impl Generator<Item = SignedDuration> {
     let range = Range::new(range);
@@ -285,7 +277,7 @@ impl Ranged for Timestamp {
 
 /// Create a generator of Jiff [`Timestamp`] values in `range`.
 #[cfg_attr(docsrs, doc(cfg(feature = "jiff")))]
-pub fn timestamp_in_range(range: impl RangeBounds<Timestamp>) -> impl Generator<Item = Timestamp> {
+pub fn timestamp_in(range: impl RangeBounds<Timestamp>) -> impl Generator<Item = Timestamp> {
     let range = Range::new(range);
     let (before, after) = if range.min >= TIMESTAMP_ANCHOR {
         (None, Some(timestamp_sec_nanos(range)))
@@ -329,7 +321,7 @@ impl TimeZone_ {
         }
         let seconds = src.any_of(
             "<offset-seconds>",
-            make::int_in_range(Offset::MIN.seconds()..=Offset::MAX.seconds()),
+            make::int_in(Offset::MIN.seconds()..=Offset::MAX.seconds()),
             example_seconds.as_ref(),
         );
         let offset = Offset::from_seconds(seconds)
@@ -407,11 +399,7 @@ impl Generator for Zoned_ {
 
     fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_timestamp = example.map(Zoned::timestamp);
-        let timestamp = src.any_of(
-            "<timestamp>",
-            timestamp_in_range(..),
-            example_timestamp.as_ref(),
-        );
+        let timestamp = src.any_of("<timestamp>", timestamp_in(..), example_timestamp.as_ref());
         let time_zone = src.any_of(
             "<time-zone>",
             &self.time_zone,
@@ -453,7 +441,7 @@ mod tests {
     fn signed_duration_gen_in_range() {
         check(|src| {
             let range: Range<SignedDuration> = src.any("range");
-            let generator = signed_duration_in_range(range);
+            let generator = signed_duration_in(range);
             let value = src.any_of("value", &generator);
             assert!(range.contains(&value));
             prop_smoke(src, "", &generator);
@@ -485,7 +473,7 @@ mod tests {
     fn timestamp_gen_in_range() {
         check(|src| {
             let range: Range<Timestamp> = src.any("range");
-            let generator = timestamp_in_range(range);
+            let generator = timestamp_in(range);
             let value = src.any_of("value", &generator);
             assert!(range.contains(&value));
             prop_smoke(src, "", &generator);
@@ -551,8 +539,8 @@ mod tests {
     fn signed_duration_std_duration_tape_compatible() {
         check(|src| {
             let domain_max = Duration::new(i64::MAX as u64, MAX_SUBSEC_NANOS as u32);
-            let a = src.any_of("a", make::duration_in_range(..=domain_max));
-            let b = src.any_of("b", make::duration_in_range(..=domain_max));
+            let a = src.any_of("a", make::duration_in(..=domain_max));
+            let b = src.any_of("b", make::duration_in(..=domain_max));
             let (std_min, std_max) = (a.min(b), a.max(b));
             let to_jiff = |duration: Duration| {
                 SignedDuration::new(duration.as_secs() as i64, duration.subsec_nanos() as i32)
@@ -561,10 +549,10 @@ mod tests {
             let seed = src.any("seed");
 
             let std_tape = tape_for(seed, |src| {
-                let _ = src.any_of("value", make::duration_in_range(std_min..=std_max));
+                let _ = src.any_of("value", make::duration_in(std_min..=std_max));
             });
             let jiff_tape = tape_for(seed, |src| {
-                let _ = src.any_of("value", signed_duration_in_range(jiff_min..=jiff_max));
+                let _ = src.any_of("value", signed_duration_in(jiff_min..=jiff_max));
             });
             assert_eq!(std_tape, jiff_tape);
         });
@@ -588,11 +576,11 @@ mod tests {
             let std_tape = tape_for(seed, |src| {
                 let _ = src.any_of(
                     "value",
-                    make::system_time_in_range(system_time_min..=system_time_max),
+                    make::system_time_in(system_time_min..=system_time_max),
                 );
             });
             let jiff_tape = tape_for(seed, |src| {
-                let _ = src.any_of("value", timestamp_in_range(timestamp_min..=timestamp_max));
+                let _ = src.any_of("value", timestamp_in(timestamp_min..=timestamp_max));
             });
             assert_eq!(std_tape, jiff_tape);
         });

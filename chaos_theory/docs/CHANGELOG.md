@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rename `*_with_size` to `*_n` and `*_in_range` to `*_in`.
 - Rename `SourceRaw` to `SourceEx`.
 - Report likely hanging check iterations and their seeds, as well as hanging replay/reduction runs.
 - Add a `filter` generator modifier to `#[derive(Arbitrary)]` for structs/enums/fields.

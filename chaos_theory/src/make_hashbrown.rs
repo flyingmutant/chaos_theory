@@ -78,12 +78,12 @@ where
     T: Debug + Hash + Eq,
     S: BuildHasher + Default + Debug,
 {
-    hash_set_with_size::<T, S>(elem, ..)
+    hash_set_n::<T, S>(elem, ..)
 }
 
 /// Create a [`HashSet`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
-pub fn hash_set_with_size<T, S>(
+pub fn hash_set_n<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = HashSet<T, S>>
@@ -153,12 +153,12 @@ where
     V: Debug,
     S: BuildHasher + Default + Debug,
 {
-    hash_map_with_size::<K, V, S>(key, value, ..)
+    hash_map_n::<K, V, S>(key, value, ..)
 }
 
 /// Create a [`HashMap`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "hashbrown")))]
-pub fn hash_map_with_size<K, V, S>(
+pub fn hash_map_n<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
     size: impl RangeBounds<usize>,
@@ -189,15 +189,12 @@ mod tests {
             prop_smoke(
                 src,
                 "HashSet",
-                make::hashbrown::hash_set_with_size::<_, RandomState>(
-                    make::arbitrary::<i32>(),
-                    ..MAX_SIZE,
-                ),
+                make::hashbrown::hash_set_n::<_, RandomState>(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
             prop_smoke(
                 src,
                 "HashMap",
-                make::hashbrown::hash_map_with_size::<_, _, RandomState>(
+                make::hashbrown::hash_map_n::<_, _, RandomState>(
                     make::arbitrary::<i32>(),
                     make::arbitrary::<i32>(),
                     ..MAX_SIZE,

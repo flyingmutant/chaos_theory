@@ -70,7 +70,7 @@ fn fail_length_list() {
     check(|src| {
         let v = src.any_of(
             "v",
-            make::int_in_range(1..=100)
+            make::int_in(1..=100)
                 .and_then(|n| ("list", make::arbitrary::<i32>().collect_n::<Vec<_>>(n..=n))),
         );
         assert!(v.iter().max().copied().unwrap_or_default() < 900);
@@ -127,7 +127,7 @@ fn fail_coupling() {
     check(|src| {
         let v: Vec<_> = src.any_of(
             "v",
-            make::int_in_range(0..=10)
+            make::int_in(0..=10)
                 .collect::<Vec<_>>()
                 .filter(|v| v.iter().all(|i| *i < v.len())),
         );

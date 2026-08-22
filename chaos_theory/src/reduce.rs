@@ -594,7 +594,7 @@ mod tests {
         check(|src| {
             let mut t = ToyTree::new();
             src.repeat("add child", |src| {
-                let parent_id = src.any_of("parent_id", make::int_in_range(..t.next_node_id.get()));
+                let parent_id = src.any_of("parent_id", make::int_in(..t.next_node_id.get()));
                 let value = src.any("value");
                 let new_group = src.any("new_group");
                 if parent_id == 0 {
@@ -661,7 +661,7 @@ mod tests {
 
         check(|src| {
             let s: Vec<u8> = src.any("s");
-            let size = src.any_of("size", make::int_in_range(..=s.len()));
+            let size = src.any_of("size", make::int_in(..=s.len()));
             let mut s = ToySeq(s, size);
             let can_remove = s.size_total() - s.size_masked() >= s.size_min();
             assume!(accept(&s));

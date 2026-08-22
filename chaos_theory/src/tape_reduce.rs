@@ -552,7 +552,7 @@ mod tests {
         check(|src| {
             let elements = src.any_of(
                 "elements",
-                make::vec_with_size(make::vec_with_size(make::arbitrary::<u8>(), ..5), 2..),
+                make::vec_n(make::vec_n(make::arbitrary::<u8>(), ..5), 2..),
             );
             let mut expected: Vec<_> = (0..elements.len()).collect();
             let mut nonempty: Vec<_> = expected

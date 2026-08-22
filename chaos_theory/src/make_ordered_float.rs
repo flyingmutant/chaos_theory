@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use crate::{Arbitrary, Float, Generator, MaybeOwned, make_float::float_in_range};
+use crate::{Arbitrary, Float, Generator, MaybeOwned, make_float::float_in};
 use core::fmt::Debug;
 use core::ops::RangeBounds;
 use ordered_float::{FloatCore, NotNan, OrderedFloat};
@@ -25,7 +25,7 @@ where
     F: Float + Debug + FloatCore,
 {
     fn arbitrary() -> impl Generator<Item = Self> {
-        not_nan_in_range(..)
+        not_nan_in(..)
     }
 }
 
@@ -40,13 +40,11 @@ where
 
 /// Create an [`OrderedFloat`] generator constrained by `range`.
 #[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
-pub fn ordered_float_in_range<F>(
-    range: impl RangeBounds<F>,
-) -> impl Generator<Item = OrderedFloat<F>>
+pub fn ordered_float_in<F>(range: impl RangeBounds<F>) -> impl Generator<Item = OrderedFloat<F>>
 where
     F: Float + Debug,
 {
-    ordered_float(float_in_range::<F>(range))
+    ordered_float(float_in::<F>(range))
 }
 
 /// Create a [`NotNan`] generator from a float generator.
@@ -67,12 +65,12 @@ where
 /// Create a [`NotNan`] generator constrained by `range`.
 #[cfg_attr(docsrs, doc(cfg(feature = "ordered_float")))]
 #[expect(clippy::missing_panics_doc)]
-pub fn not_nan_in_range<F>(range: impl RangeBounds<F>) -> impl Generator<Item = NotNan<F>>
+pub fn not_nan_in<F>(range: impl RangeBounds<F>) -> impl Generator<Item = NotNan<F>>
 where
     F: Float + Debug + FloatCore,
 {
-    float_in_range::<F>(range).map_reversible(
-        |f| NotNan::new(f).expect("internal error: float_in_range generated NaN"),
+    float_in::<F>(range).map_reversible(
+        |f| NotNan::new(f).expect("internal error: float_in generated NaN"),
         |n| Some(MaybeOwned::Owned(n.into_inner())),
     )
 }
@@ -87,22 +85,22 @@ mod tests {
             prop_smoke(
                 src,
                 "OrderedFloat<f32>",
-                make::ordered_float::ordered_float_in_range::<f32>(..),
+                make::ordered_float::ordered_float_in::<f32>(..),
             );
             prop_smoke(
                 src,
                 "OrderedFloat<f64>",
-                make::ordered_float::ordered_float_in_range::<f64>(..),
+                make::ordered_float::ordered_float_in::<f64>(..),
             );
             prop_smoke(
                 src,
                 "NotNan<f32>",
-                make::ordered_float::not_nan_in_range::<f32>(..),
+                make::ordered_float::not_nan_in::<f32>(..),
             );
             prop_smoke(
                 src,
                 "NotNan<f64>",
-                make::ordered_float::not_nan_in_range::<f64>(..),
+                make::ordered_float::not_nan_in::<f64>(..),
             );
         });
     }

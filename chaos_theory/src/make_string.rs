@@ -587,11 +587,11 @@ pub fn cstring(elem: impl Generator<Item = u8>) -> impl Generator<Item = CString
 /// Create a [`CString`] generator with the specified content size in bytes, excluding the terminating NUL.
 ///
 /// NUL bytes produced by `elem` are mapped to ASCII spaces.
-pub fn cstring_with_size(
+pub fn cstring_n(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = CString> {
-    cstring_slice_with_size(elem, size)
+    cstring_slice_n(elem, size)
 }
 
 /// Create an owned C string slice generator.
@@ -608,7 +608,7 @@ pub fn cstring_slice<T>(elem: impl Generator<Item = u8>) -> impl Generator<Item 
 where
     T: From<CString> + Deref<Target = CStr> + Debug,
 {
-    cstring_slice_with_size(elem, ..)
+    cstring_slice_n(elem, ..)
 }
 
 /// Create an owned C string slice generator with the specified content size in bytes,
@@ -622,7 +622,7 @@ where
 /// - [`Rc<CStr>`]
 /// - [`Arc<CStr>`]
 /// - [`Cow<'_, CStr>`](alloc::borrow::Cow)
-pub fn cstring_slice_with_size<T>(
+pub fn cstring_slice_n<T>(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = T>
@@ -642,17 +642,17 @@ where
 
 /// Create a [`String`] generator.
 pub fn string(elem: impl Generator<Item = char>) -> impl Generator<Item = String> {
-    string_with_size(elem, ..)
+    string_n(elem, ..)
 }
 
 // TODO: limit the length of the string (in bytes) - will need Effect::Done
 
 /// Create a [`String`] generator with the specified size (in characters).
-pub fn string_with_size(
+pub fn string_n(
     elem: impl Generator<Item = char>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = String> {
-    string_slice_with_size(elem, size)
+    string_slice_n(elem, size)
 }
 
 /// Create an owned string slice generator.
@@ -667,7 +667,7 @@ pub fn string_slice<T>(elem: impl Generator<Item = char>) -> impl Generator<Item
 where
     T: From<String> + Deref<Target = str> + Debug,
 {
-    string_slice_with_size(elem, ..)
+    string_slice_n(elem, ..)
 }
 
 /// Create an owned string slice generator with the specified size (in characters).
@@ -678,7 +678,7 @@ where
 /// - [`Rc<str>`]
 /// - [`Arc<str>`]
 /// - [`Cow<'_, str>`](alloc::borrow::Cow)
-pub fn string_slice_with_size<T>(
+pub fn string_slice_n<T>(
     elem: impl Generator<Item = char>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = T>

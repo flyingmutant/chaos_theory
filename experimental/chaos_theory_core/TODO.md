@@ -32,7 +32,6 @@
     - sometimes, we just want a full walk
 - make source contain example ref as dyn any, and unite two APIs completely?
 - consider source being an arc<mutex> internally and have no mutability and no lifetime
-- consider renaming `_with_size` to `_n`
 - `src.any("").filter()` API want? `choose_where` looks simple, `any_of + filter` does not
   - `any` == `choose` from whatever!
 - consider `make::string` + `make::string_of`
@@ -59,7 +58,7 @@
 - find a way to unify int/byte generation:
   - use flatter "small values" for all integers, without special-casing `u8`
   - also, fall `choose_value` back to using `choose_index` for small values
-    - make `byte_ascii()` be literally `int_in_range(..=0x7f)`
+    - make `byte_ascii()` be literally `int_in(..=0x7f)`
 - more semantics generation: biased `select`
   - problem: select bias might be a dynamic thing: consider any FSM-like API
   - maybe just have a way to nop-exit repeat step when no budget to run rare ops

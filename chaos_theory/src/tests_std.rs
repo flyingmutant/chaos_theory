@@ -127,7 +127,7 @@ impl RgbState {
         let seeds_b = [vec![0, 1], vec![2, 3], vec![7]];
         let seeds_c = [vec![vec![3, 1], vec![0, 2]], vec![vec![5]]];
 
-        let amount_gen = make::int_in_range(1..)
+        let amount_gen = make::int_in(1..)
             .seeded(&seeds_a, true)
             .filter(|a| *a != 3)
             .collect_n::<Vec<_>>(1..3)

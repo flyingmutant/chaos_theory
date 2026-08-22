@@ -199,7 +199,7 @@ struct Char {
 }
 
 #[derive(Debug)]
-// We could have used int_in_range::<u8>(..=0x7f),
+// We could have used int_in::<u8>(..=0x7f),
 // but that is based on `choose_value`, and we prefer `choose_index` here.
 struct Ascii {}
 
@@ -412,7 +412,7 @@ mod tests {
             const SURROGATE_RANGE: RangeInclusive<u32> = 0xD800..=0xDFFF;
             let example = src.any_of(
                 "example",
-                make::int_in_range(char::MIN as u32..=char::MAX as u32)
+                make::int_in(char::MIN as u32..=char::MAX as u32)
                     .filter(|u| !SURROGATE_RANGE.contains(u))
                     .map(|u| char::from_u32(u).unwrap()),
             );

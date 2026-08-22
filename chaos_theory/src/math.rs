@@ -66,7 +66,7 @@ mod tests {
     fn fast_reduce_works() {
         check(|src| {
             let r = src.any("r");
-            let n = src.any_of("n", make::int_in_range(1..));
+            let n = src.any_of("n", make::int_in(1..));
             let v = fast_reduce(r, n);
             assert!(v < n);
         });
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn bitmask_bitlen() {
         check(|src| {
-            let bits = src.any_of("bits", make::int_in_range(..=64usize));
+            let bits = src.any_of("bits", make::int_in(..=64usize));
             let m = bitmask::<u64>(bits);
             assert_eq!(m.bit_len(), bits);
             let u: u64 = src.any("u");

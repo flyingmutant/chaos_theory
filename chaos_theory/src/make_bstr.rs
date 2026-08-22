@@ -19,17 +19,17 @@ impl Arbitrary for BString {
 /// Create a [`BString`] generator.
 #[cfg_attr(docsrs, doc(cfg(feature = "bstr")))]
 pub fn bstring(elem: impl Generator<Item = u8>) -> impl Generator<Item = BString> {
-    bstring_with_size(elem, ..)
+    bstring_n(elem, ..)
 }
 
 /// Create a [`BString`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "bstr")))]
-pub fn bstring_with_size(
+pub fn bstring_n(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = BString> {
     // TODO: rework generic string generators so that they can produce non-UTF-8 data and use this mode here.
-    make::vec_with_size(elem, size).map_into_deref()
+    make::vec_n(elem, size).map_into_deref()
 }
 
 #[cfg(test)]
@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn bstring_smoke() {
         check(|src| {
-            prop_smoke(src, "BString", bstring_with_size(make::arbitrary(), ..));
+            prop_smoke(src, "BString", bstring_n(make::arbitrary(), ..));
         });
     }
 }

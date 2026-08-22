@@ -138,14 +138,14 @@ mod tests {
     use super::*;
     use crate::{
         check,
-        make::int_in_range,
+        make::int_in,
         tests::{any_assert_valid_tape, prop_smoke},
     };
 
     #[test]
     fn cell_smoke() {
         check(|src| {
-            let g = int_in_range::<i32>(..);
+            let g = int_in::<i32>(..);
 
             // `prop_smoke` does not work because `UnsafeCell` does not implement `PartialEq`.
             let _ = any_assert_valid_tape(src, "UnsafeCell", unsafe_cell(&g));

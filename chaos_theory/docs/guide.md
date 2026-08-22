@@ -184,14 +184,13 @@ Common categories:
 
 - Core: [`just`][make_just], [`one_of`][make_one_of], [`mix_of`][make_mix_of],
   [`option`][make_option], [`result`][make_result]
-- Numbers: [`int_in_range`][make_int_in_range], [`float_in_range`][make_float_in_range]
-- Strings and chars: [`string`][make_string], [`string_with_size`][make_string_with_size],
+- Numbers: [`int_in`][make_int_in], [`float_in`][make_float_in]
+- Strings and chars: [`string`][make_string], [`string_n`][make_string_n],
   [`char_ascii`][make_char_ascii], [`byte_ascii`][make_byte_ascii]
-- Collections: [`vec`][make_vec], [`vec_with_size`][make_vec_with_size],
+- Collections: [`vec`][make_vec], [`vec_n`][make_vec_n],
   [`btree_map`][make_btree_map], [`hash_map`][make_hash_map],
   [`btree_set`][make_btree_set], [`hash_set`][make_hash_set]
-- Time: [`duration_in_range`][make_duration_in_range],
-  [`system_time_in_range`][make_system_time_in_range]
+- Time: [`duration_in`][make_duration_in], [`system_time_in`][make_system_time_in]
 - Sync and cells: [`mutex`][make_mutex], [`rw_lock`][make_rw_lock],
   [`once_lock`][make_once_lock], [`cell`][make_cell], [`ref_cell`][make_ref_cell]
 - Regex (feature-gated): [`string_matching`][make_string_matching],
@@ -563,20 +562,20 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [make_one_of]: crate::make::one_of
 [make_option]: crate::make::option
 [make_result]: crate::make::result
-[make_int_in_range]: crate::make::int_in_range
-[make_float_in_range]: crate::make::float_in_range
+[make_int_in]: crate::make::int_in
+[make_float_in]: crate::make::float_in
 [make_string]: crate::make::string
-[make_string_with_size]: crate::make::string_with_size
+[make_string_n]: crate::make::string_n
 [make_char_ascii]: crate::make::char_ascii
 [make_byte_ascii]: crate::make::byte_ascii
 [make_vec]: crate::make::vec
-[make_vec_with_size]: crate::make::vec_with_size
+[make_vec_n]: crate::make::vec_n
 [make_btree_map]: crate::make::btree_map
 [make_hash_map]: crate::make::hash_map
 [make_btree_set]: crate::make::btree_set
 [make_hash_set]: crate::make::hash_set
-[make_duration_in_range]: crate::make::duration_in_range
-[make_system_time_in_range]: crate::make::system_time_in_range
+[make_duration_in]: crate::make::duration_in
+[make_system_time_in]: crate::make::system_time_in
 [make_mutex]: crate::make::mutex
 [make_rw_lock]: crate::make::rw_lock
 [make_once_lock]: crate::make::once_lock

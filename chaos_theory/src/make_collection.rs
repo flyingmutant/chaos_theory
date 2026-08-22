@@ -221,18 +221,18 @@ pub fn vec<T>(elem: impl Generator<Item = T>) -> impl Generator<Item = Vec<T>>
 where
     T: Debug,
 {
-    vec_with_size::<T>(elem, ..)
+    vec_n::<T>(elem, ..)
 }
 
 /// Create a [`Vec`] generator with a specified size range.
-pub fn vec_with_size<T>(
+pub fn vec_n<T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = Vec<T>>
 where
     T: Debug,
 {
-    slice_with_size(elem, size)
+    slice_n(elem, size)
 }
 
 /// Create an owned slice generator.
@@ -248,7 +248,7 @@ where
     S: From<Vec<T>> + Deref<Target = [T]> + Debug,
     T: Debug,
 {
-    slice_with_size(elem, ..)
+    slice_n(elem, ..)
 }
 
 /// Create an owned slice generator with a specified size range.
@@ -259,7 +259,7 @@ where
 /// - [`Rc<[T]>`](alloc::rc::Rc)
 /// - [`Arc<[T]>`](alloc::sync::Arc)
 /// - [`Cow<'_, [T]>`](alloc::borrow::Cow)
-pub fn slice_with_size<S, T>(
+pub fn slice_n<S, T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = S>
@@ -309,11 +309,11 @@ pub fn btree_set<T>(elem: impl Generator<Item = T>) -> impl Generator<Item = BTr
 where
     T: Debug + Ord,
 {
-    btree_set_with_size::<T>(elem, ..)
+    btree_set_n::<T>(elem, ..)
 }
 
 /// Create a [`BTreeSet`] generator with a specified size range.
-pub fn btree_set_with_size<T>(
+pub fn btree_set_n<T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = BTreeSet<T>>
@@ -370,11 +370,11 @@ where
     K: Debug + Ord,
     V: Debug,
 {
-    btree_map_with_size::<K, V>(key, value, ..)
+    btree_map_n::<K, V>(key, value, ..)
 }
 
 /// Create a [`BTreeMap`] generator with a specified size range.
-pub fn btree_map_with_size<K, V>(
+pub fn btree_map_n<K, V>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
     size: impl RangeBounds<usize>,
@@ -431,12 +431,12 @@ where
     T: Debug + Hash + Eq,
     S: BuildHasher + Default + Debug,
 {
-    hash_set_with_size::<T, S>(elem, ..)
+    hash_set_n::<T, S>(elem, ..)
 }
 
 /// Create a [`HashSet`] generator with a specified size range.
 #[cfg(feature = "std")]
-pub fn hash_set_with_size<T, S>(
+pub fn hash_set_n<T, S>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = HashSet<T, S>>
@@ -508,12 +508,12 @@ where
     V: Debug,
     S: BuildHasher + Default + Debug,
 {
-    hash_map_with_size::<K, V, S>(key, value, ..)
+    hash_map_n::<K, V, S>(key, value, ..)
 }
 
 /// Create a [`HashMap`] generator with a specified size range.
 #[cfg(feature = "std")]
-pub fn hash_map_with_size<K, V, S>(
+pub fn hash_map_n<K, V, S>(
     key: impl Generator<Item = K>,
     value: impl Generator<Item = V>,
     size: impl RangeBounds<usize>,
@@ -566,7 +566,7 @@ mod tests {
             prop_smoke(
                 src,
                 "Vec",
-                make::vec_with_size(make::arbitrary::<i32>(), ..MAX_SIZE),
+                make::vec_n(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
             prop_smoke(
                 src,
@@ -581,12 +581,12 @@ mod tests {
             prop_smoke(
                 src,
                 "BTreeSet",
-                make::btree_set_with_size(make::arbitrary::<i32>(), ..MAX_SIZE),
+                make::btree_set_n(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
             prop_smoke(
                 src,
                 "BTreeMap",
-                make::btree_map_with_size(
+                make::btree_map_n(
                     make::arbitrary::<i32>(),
                     make::arbitrary::<i32>(),
                     ..MAX_SIZE,
@@ -595,12 +595,12 @@ mod tests {
             prop_smoke(
                 src,
                 "HashSet",
-                make::hash_set_with_size::<_, RandomState>(make::arbitrary::<i32>(), ..MAX_SIZE),
+                make::hash_set_n::<_, RandomState>(make::arbitrary::<i32>(), ..MAX_SIZE),
             );
             prop_smoke(
                 src,
                 "HashMap",
-                make::hash_map_with_size::<_, _, RandomState>(
+                make::hash_map_n::<_, _, RandomState>(
                     make::arbitrary::<i32>(),
                     make::arbitrary::<i32>(),
                     ..MAX_SIZE,
@@ -612,14 +612,14 @@ mod tests {
     #[test]
     fn collection_size_limits() {
         check(|src| {
-            let a = src.any_of("a", make::int_in_range(..64usize));
-            let b = src.any_of("b", make::int_in_range(..64usize));
+            let a = src.any_of("a", make::int_in(..64usize));
+            let b = src.any_of("b", make::int_in(..64usize));
             let size = Range::new(a.min(b)..=(a.max(b)));
 
-            let vec = src.any_of("vec", vec_with_size(u8::arbitrary(), size));
+            let vec = src.any_of("vec", vec_n(u8::arbitrary(), size));
             assert!(size.contains(&vec.len()));
 
-            let set = src.any_of("set", btree_set_with_size(u8::arbitrary(), size));
+            let set = src.any_of("set", btree_set_n(u8::arbitrary(), size));
             assert!(size.contains(&set.len()));
             let set_collect = src.any_of(
                 "set_collect",
@@ -627,22 +627,17 @@ mod tests {
             );
             assert!(size.contains(&set_collect.len()));
 
-            let map = src.any_of(
-                "map",
-                btree_map_with_size(u8::arbitrary(), u8::arbitrary(), size),
-            );
+            let map = src.any_of("map", btree_map_n(u8::arbitrary(), u8::arbitrary(), size));
             assert!(size.contains(&map.len()));
 
-            let set: HashSet<u8> = src.any_of("set", hash_set_with_size(u8::arbitrary(), size));
+            let set: HashSet<u8> = src.any_of("set", hash_set_n(u8::arbitrary(), size));
             assert!(size.contains(&set.len()));
             let set_collect =
                 src.any_of("set_collect", u8::arbitrary().collect_n::<HashSet<_>>(size));
             assert!(size.contains(&set_collect.len()));
 
-            let map: HashMap<u8, u8> = src.any_of(
-                "map",
-                hash_map_with_size(u8::arbitrary(), u8::arbitrary(), size),
-            );
+            let map: HashMap<u8, u8> =
+                src.any_of("map", hash_map_n(u8::arbitrary(), u8::arbitrary(), size));
             assert!(size.contains(&map.len()));
         });
     }

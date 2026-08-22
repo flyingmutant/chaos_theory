@@ -1258,9 +1258,7 @@ mod tests {
                 .with_rng_temperature(src.any("temperature"))
                 .with_rng_budget(src.any("budget"))
                 // At least 1 iteration is required, because replay makes one.
-                .with_check_iters(
-                    src.any_of("check_iters", make::int_in_range(1..=CHECK_ITERS_DEFAULT)),
-                )
+                .with_check_iters(src.any_of("check_iters", make::int_in(1..=CHECK_ITERS_DEFAULT)))
                 // Limit the time spent reducing to speed the test up.
                 .with_reduce_time(Duration::from_millis(50))
                 .env(false);

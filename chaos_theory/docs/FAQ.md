@@ -63,7 +63,7 @@ Prefer structured generation, as heavy filtering can lead to slow or failed test
 
 - Check if there is a ready-made generator for your case
   (for example, [`string_matching`][make_string_matching] or
-  [`int_in_range`][make_int_in_range]).
+  [`int_in`][make_int_in]).
 - Consider if you can build values satisfying the constraints directly,
   using tools like [`from_fn`][make_from_fn], [`repeat`][source_repeat],
   [`select`][source_select], or [`Generator`][generator] combinators.
@@ -116,6 +116,6 @@ If you *do* want to see everything, enable `CHAOS_THEORY_LOG_ALWAYS=1`.
 [veprintln]: crate::veprintln
 
 [make_from_fn]: crate::make::from_fn
-[make_int_in_range]: crate::make::int_in_range
+[make_int_in]: crate::make::int_in
 [make_string_matching]: crate::make::string_matching
 [source_observe]: crate::Source::observe

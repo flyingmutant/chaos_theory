@@ -126,12 +126,12 @@ where
     A: Array,
     A::Item: Debug,
 {
-    tiny_vec_with_size(elem, ..)
+    tiny_vec_n(elem, ..)
 }
 
 /// Create a [`TinyVec`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "tinyvec")))]
-pub fn tiny_vec_with_size<A>(
+pub fn tiny_vec_n<A>(
     elem: impl Generator<Item = A::Item>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = TinyVec<A>>
@@ -154,13 +154,13 @@ where
     A: Array,
     A::Item: Debug,
 {
-    array_vec_with_size(elem, 0..=A::CAPACITY)
+    array_vec_n(elem, 0..=A::CAPACITY)
 }
 
 /// Create an [`ArrayVec`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "tinyvec")))]
 #[expect(clippy::missing_panics_doc)]
-pub fn array_vec_with_size<A>(
+pub fn array_vec_n<A>(
     elem: impl Generator<Item = A::Item>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = ArrayVec<A>>
@@ -171,7 +171,7 @@ where
     let size = SizeRange::new(size);
     assert!(
         size.max <= A::CAPACITY,
-        "array_vec_with_size upper bound {} exceeds capacity {}",
+        "array_vec_n upper bound {} exceeds capacity {}",
         size.max,
         A::CAPACITY
     );
@@ -195,7 +195,7 @@ mod tests {
             prop_smoke(
                 src,
                 "ArrayVec<[i32; 4]>",
-                make::tinyvec::array_vec_with_size::<[i32; MAX_INLINE]>(
+                make::tinyvec::array_vec_n::<[i32; MAX_INLINE]>(
                     make::arbitrary::<i32>(),
                     0..=MAX_INLINE,
                 ),
@@ -203,7 +203,7 @@ mod tests {
             prop_smoke(
                 src,
                 "TinyVec<[i32; 4]>",
-                make::tinyvec::tiny_vec_with_size::<[i32; MAX_INLINE]>(
+                make::tinyvec::tiny_vec_n::<[i32; MAX_INLINE]>(
                     make::arbitrary::<i32>(),
                     0..=MAX_SMALL,
                 ),

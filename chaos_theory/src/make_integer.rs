@@ -28,8 +28,7 @@ pub(crate) const BYTE_SPECIAL: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklm
 
 impl Arbitrary for bool {
     fn arbitrary() -> impl Generator<Item = Self> {
-        int_in_range::<u8>(0..=1)
-            .map_reversible(|i| i != 0, |b| Some(MaybeOwned::Owned(u8::from(*b))))
+        int_in::<u8>(0..=1).map_reversible(|i| i != 0, |b| Some(MaybeOwned::Owned(u8::from(*b))))
     }
 }
 
@@ -246,7 +245,7 @@ macro_rules! impl_arbitrary_int {
     ($num: ty, $num_atomic: ty) => {
         impl Arbitrary for $num {
             fn arbitrary() -> impl Generator<Item = Self> {
-                int_in_range::<Self>(..)
+                int_in::<Self>(..)
             }
         }
 
@@ -281,8 +280,8 @@ impl_arbitrary_int_wrappers!(i128);
 ///
 /// If you are generating a size or an index value, prefer
 /// [`make::size`](crate::make::size) or [`make::index`](crate::make::index) instead.
-pub fn int_in_range<I: Int>(r: impl RangeBounds<I>) -> impl Generator<Item = I> {
-    let range = Range::<I>::new(r);
+pub fn int_in<I: Int>(range: impl RangeBounds<I>) -> impl Generator<Item = I> {
+    let range = Range::<I>::new(range);
     let (neg_range, pos_range) = range.zero_split();
     Integer {
         range,
@@ -335,7 +334,7 @@ mod tests {
         fn prop_gen_in_range<I: Int + Arbitrary>(src: &mut Source, label: &'static str) {
             src.scope(label, |src| {
                 let r: Range<I> = src.any("r");
-                let g = int_in_range::<I>(r);
+                let g = int_in::<I>(r);
                 let value = src.any_of("value", &g);
                 assert!(r.contains(&value));
                 prop_smoke(src, label, &g);
@@ -362,7 +361,7 @@ mod tests {
         fn prop_bound_coverage<I: Int + Arbitrary>(src: &mut Source, label: &str) {
             src.scope(label, |src| {
                 let r: Range<I> = src.any("r");
-                let g = int_in_range::<I>(r);
+                let g = int_in::<I>(r);
                 let base_seed: u32 = src.any("base_seed");
                 let (mut got_min, mut got_max, mut got_zero) =
                     (false, false, !r.contains(&I::ZERO));
@@ -414,10 +413,10 @@ mod tests {
     #[test]
     fn integer_examples() {
         let gens = [
-            int_in_range::<i64>(-3..).boxed(),
-            int_in_range::<i64>(..=3).boxed(),
-            int_in_range::<i64>(-1000..=1_000_000).boxed(),
-            int_in_range::<i64>(-3..=7).boxed(),
+            int_in::<i64>(-3..).boxed(),
+            int_in::<i64>(..=3).boxed(),
+            int_in::<i64>(-1000..=1_000_000).boxed(),
+            int_in::<i64>(-3..=7).boxed(),
             i64::arbitrary().boxed(),
         ];
         for g in gens {
@@ -451,7 +450,7 @@ mod benches {
 
     #[bench]
     fn gen_u64_unbounded(b: &mut test::Bencher) {
-        let g = make::int_in_range::<u64>(black_box(..));
+        let g = make::int_in::<u64>(black_box(..));
         bench_gen_next(b, &g);
     }
 

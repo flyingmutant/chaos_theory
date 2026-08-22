@@ -174,18 +174,17 @@ pub mod make {
     pub use crate::make_cell::{cell, once_cell, ref_cell, unsafe_cell};
     pub use crate::make_char::{byte_ascii, char_ascii};
     pub use crate::make_collection::{
-        array, btree_map, btree_map_with_size, btree_set, btree_set_with_size, slice,
-        slice_with_size, vec, vec_with_size,
+        array, btree_map, btree_map_n, btree_set, btree_set_n, slice, slice_n, vec, vec_n,
     };
     #[cfg(feature = "std")]
-    pub use crate::make_collection::{hash_map, hash_map_with_size, hash_set, hash_set_with_size};
+    pub use crate::make_collection::{hash_map, hash_map_n, hash_set, hash_set_n};
     pub use crate::make_combine::{
         from_fn, from_fn_some, from_next, from_next_some, just, mix_of, mix_of_owned, one_of,
         one_of_owned,
     };
     pub use crate::make_core::{err, none, ok, option, result, some};
-    pub use crate::make_float::float_in_range;
-    pub use crate::make_integer::int_in_range;
+    pub use crate::make_float::float_in;
+    pub use crate::make_integer::int_in;
     #[cfg(feature = "regex")]
     pub use crate::make_regex::{
         byte_slice_matching, bytes_matching, cstring_matching, cstring_slice_matching,
@@ -193,14 +192,14 @@ pub mod make {
     };
     pub use crate::make_special::{index, size, token, try_index};
     pub use crate::make_string::{
-        cstring, cstring_slice, cstring_slice_with_size, cstring_with_size, string, string_slice,
-        string_slice_with_size, string_with_size,
+        cstring, cstring_n, cstring_slice, cstring_slice_n, string, string_n, string_slice,
+        string_slice_n,
     };
     #[cfg(feature = "std")]
     pub use crate::make_sync::{barrier, mpsc_sync_channel, mutex, once_lock, rw_lock};
-    pub use crate::make_time::duration_in_range;
+    pub use crate::make_time::duration_in;
     #[cfg(feature = "std")]
-    pub use crate::make_time::system_time_in_range;
+    pub use crate::make_time::system_time_in;
 
     use crate::{Arbitrary, Generator};
 
@@ -214,27 +213,25 @@ pub mod make {
     #[cfg(feature = "bstr")]
     /// [`bstr`](https://docs.rs/bstr) generators.
     pub mod bstr {
-        pub use crate::make_bstr::{bstring, bstring_with_size};
+        pub use crate::make_bstr::{bstring, bstring_n};
     }
 
     #[cfg(feature = "bytes")]
     /// [`bytes`](https://docs.rs/bytes) generators.
     pub mod bytes {
-        pub use crate::make_bytes::{bytes, bytes_mut, bytes_mut_with_size, bytes_with_size};
+        pub use crate::make_bytes::{bytes, bytes_mut, bytes_mut_n, bytes_n};
     }
 
     #[cfg(feature = "hashbrown")]
     /// [`hashbrown`](https://docs.rs/hashbrown) generators.
     pub mod hashbrown {
-        pub use crate::make_hashbrown::{
-            hash_map, hash_map_with_size, hash_set, hash_set_with_size,
-        };
+        pub use crate::make_hashbrown::{hash_map, hash_map_n, hash_set, hash_set_n};
     }
 
     #[cfg(feature = "ecow")]
     /// [`ecow`](https://docs.rs/ecow) generators.
     pub mod ecow {
-        pub use crate::make_ecow::{eco_string, eco_string_with_size, eco_vec, eco_vec_with_size};
+        pub use crate::make_ecow::{eco_string, eco_string_n, eco_vec, eco_vec_n};
     }
 
     #[cfg(feature = "either")]
@@ -246,23 +243,19 @@ pub mod make {
     #[cfg(feature = "indexmap")]
     /// [`indexmap`](https://docs.rs/indexmap) generators.
     pub mod indexmap {
-        pub use crate::make_indexmap::{
-            index_map, index_map_with_size, index_set, index_set_with_size,
-        };
+        pub use crate::make_indexmap::{index_map, index_map_n, index_set, index_set_n};
     }
 
     #[cfg(feature = "jiff")]
     /// [`jiff`](https://docs.rs/jiff) generators.
     pub mod jiff {
-        pub use crate::make_jiff::{signed_duration_in_range, timestamp_in_range};
+        pub use crate::make_jiff::{signed_duration_in, timestamp_in};
     }
 
     #[cfg(feature = "ordermap")]
     /// [`ordermap`](https://docs.rs/ordermap) generators.
     pub mod ordermap {
-        pub use crate::make_ordermap::{
-            order_map, order_map_with_size, order_set, order_set_with_size,
-        };
+        pub use crate::make_ordermap::{order_map, order_map_n, order_set, order_set_n};
     }
 
     #[cfg(feature = "serde_json")]
@@ -274,17 +267,13 @@ pub mod make {
     #[cfg(feature = "ordered_float")]
     /// [`ordered_float`](https://docs.rs/ordered-float) generators.
     pub mod ordered_float {
-        pub use crate::make_ordered_float::{
-            not_nan, not_nan_in_range, ordered_float, ordered_float_in_range,
-        };
+        pub use crate::make_ordered_float::{not_nan, not_nan_in, ordered_float, ordered_float_in};
     }
 
     #[cfg(feature = "tinyvec")]
     /// [`tinyvec`](https://docs.rs/tinyvec) generators.
     pub mod tinyvec {
-        pub use crate::make_tinyvec::{
-            array_vec, array_vec_with_size, tiny_vec, tiny_vec_with_size,
-        };
+        pub use crate::make_tinyvec::{array_vec, array_vec_n, tiny_vec, tiny_vec_n};
     }
 
     #[cfg(feature = "uuid")]

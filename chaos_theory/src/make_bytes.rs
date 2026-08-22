@@ -27,16 +27,16 @@ impl Arbitrary for BytesMut {
 /// Create a [`Bytes`] generator.
 #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
 pub fn bytes(elem: impl Generator<Item = u8>) -> impl Generator<Item = Bytes> {
-    bytes_with_size(elem, ..)
+    bytes_n(elem, ..)
 }
 
 /// Create a [`Bytes`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
-pub fn bytes_with_size(
+pub fn bytes_n(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = Bytes> {
-    make::slice_with_size(elem, size)
+    make::slice_n(elem, size)
 }
 
 #[derive(Debug)]
@@ -68,12 +68,12 @@ impl<G: Generator<Item = u8>> Generator for BytesMut_<G> {
 /// Create a [`BytesMut`] generator.
 #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
 pub fn bytes_mut(elem: impl Generator<Item = u8>) -> impl Generator<Item = BytesMut> {
-    bytes_mut_with_size(elem, ..)
+    bytes_mut_n(elem, ..)
 }
 
 /// Create a [`BytesMut`] generator with a specified size range.
 #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
-pub fn bytes_mut_with_size(
+pub fn bytes_mut_n(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
 ) -> impl Generator<Item = BytesMut> {

@@ -763,8 +763,8 @@ fn make_event(src: &mut SourceEx, example: Option<&Event>) -> Event {
                     _ => None,
                 };
                 let min = src.any("min", example.map(|e| e.1));
-                let max = src.any_of("max", make::int_in_range(min..), example.map(|e| e.2));
-                let size = src.any_of("size", make::int_in_range(min..=max), example.map(|e| e.0));
+                let max = src.any_of("max", make::int_in(min..), example.map(|e| e.2));
+                let size = src.any_of("size", make::int_in(min..=max), example.map(|e| e.0));
                 Event::Size { size, min, max }
             }
             "index" => {
@@ -772,8 +772,8 @@ fn make_event(src: &mut SourceEx, example: Option<&Event>) -> Event {
                     Some(Event::Index { index, max, forced }) => Some((index, max, forced)),
                     _ => None,
                 };
-                let max = src.any_of("max", make::int_in_range(..), example.map(|e| e.1));
-                let index = src.any_of("index", make::int_in_range(..=max), example.map(|e| e.0));
+                let max = src.any_of("max", make::int_in(..), example.map(|e| e.1));
+                let index = src.any_of("index", make::int_in(..=max), example.map(|e| e.0));
                 let forced = src.any("forced", example.map(|e| e.2));
                 Event::Index { index, max, forced }
             }
@@ -783,9 +783,8 @@ fn make_event(src: &mut SourceEx, example: Option<&Event>) -> Event {
                     _ => None,
                 };
                 let min = src.any("min", example.map(|e| e.1));
-                let max = src.any_of("max", make::int_in_range(min..), example.map(|e| e.2));
-                let value =
-                    src.any_of("value", make::int_in_range(min..=max), example.map(|e| e.0));
+                let max = src.any_of("max", make::int_in(min..), example.map(|e| e.2));
+                let value = src.any_of("value", make::int_in(min..=max), example.map(|e| e.0));
                 Event::Value { value, min, max }
             }
             "token" => {

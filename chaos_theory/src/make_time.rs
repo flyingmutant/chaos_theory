@@ -28,14 +28,14 @@ const DURATION_ANCHOR_FROM_EPOCH: Duration = Duration::from_secs(946684800); // 
 
 impl Arbitrary for Duration {
     fn arbitrary() -> impl Generator<Item = Self> {
-        duration_in_range(..)
+        duration_in(..)
     }
 }
 
 #[cfg(feature = "std")]
 impl Arbitrary for SystemTime {
     fn arbitrary() -> impl Generator<Item = Self> {
-        system_time_in_range(..)
+        system_time_in(..)
     }
 }
 
@@ -51,11 +51,7 @@ impl Generator for Duration_ {
                 .copied()
                 .filter(|secs| self.secs.contains(secs));
         }
-        let secs = src.any_of(
-            "<secs>",
-            make::int_in_range(self.secs),
-            example_secs.as_ref(),
-        );
+        let secs = src.any_of("<secs>", make::int_in(self.secs), example_secs.as_ref());
         let (nanos_min, nanos_max) = if secs == self.secs.min && secs == self.secs.max {
             (self.nanos_start, self.nanos_end)
         } else if secs == self.secs.min {
@@ -75,7 +71,7 @@ impl Generator for Duration_ {
         }
         let nanos = src.any_of(
             "<nanos>",
-            make::int_in_range(nanos_min..=nanos_max),
+            make::int_in(nanos_min..=nanos_max),
             example_nanos.as_ref(),
         );
         Duration::new(secs, nanos)
@@ -114,8 +110,8 @@ impl Ranged for Duration {
 }
 
 /// Create a generator of [`Duration`] in range.
-pub fn duration_in_range(r: impl RangeBounds<Duration>) -> impl Generator<Item = Duration> {
-    let range = Range::new(r);
+pub fn duration_in(range: impl RangeBounds<Duration>) -> impl Generator<Item = Duration> {
+    let range = Range::new(range);
     Duration_ {
         range,
         secs: Range::new_raw(range.min.as_secs(), range.max.as_secs()),
@@ -158,7 +154,7 @@ impl Generator for SystemTime_ {
             .choose_index(2, example_before.map(usize::from), Tweak::None);
         let r = if ix == 0 { &self.after } else { &self.before };
         let r = r.expect("internal error: range not set");
-        let d = duration_in_range(r).next(src, example.as_ref());
+        let d = duration_in(r).next(src, example.as_ref());
         time_since_epoch(d)
     }
 }
@@ -185,15 +181,15 @@ impl Debug for SystemTime_ {
 /// Left range bound defaults to [`UNIX_EPOCH`], right range bound defaults to 500 years since [`UNIX_EPOCH`].
 #[expect(clippy::missing_panics_doc)]
 #[cfg(feature = "std")]
-pub fn system_time_in_range(r: impl RangeBounds<SystemTime>) -> impl Generator<Item = SystemTime> {
-    let min = match r.start_bound() {
+pub fn system_time_in(range: impl RangeBounds<SystemTime>) -> impl Generator<Item = SystemTime> {
+    let min = match range.start_bound() {
         Bound::Unbounded => UNIX_EPOCH,
         Bound::Included(&n) => n,
         Bound::Excluded(&n) => n
             .checked_add(DURATION_SMALLEST_SYSTEM_TIME)
             .expect("invalid start bound"),
     };
-    let max = match r.end_bound() {
+    let max = match range.end_bound() {
         Bound::Unbounded => time_since_epoch(DURATION_MAX_FROM_EPOCH),
         Bound::Included(&n) => n,
         Bound::Excluded(&n) => n
@@ -242,7 +238,7 @@ mod tests {
     fn duration_gen_in_range() {
         check(|src| {
             let r: Range<Duration> = src.any("r");
-            let g = make::duration_in_range(r);
+            let g = make::duration_in(r);
             let value = src.any_of("value", &g);
             assert!(r.contains(&value));
             prop_smoke(src, "", &g);
@@ -277,7 +273,7 @@ mod tests {
         check(|src| {
             let (a, b): (SystemTime, SystemTime) = src.any("a, b");
             let r = a.min(b)..=a.max(b);
-            let g = make::system_time_in_range(r.clone());
+            let g = make::system_time_in(r.clone());
             let value = src.any_of("value", &g);
             assert!(r.contains(&value));
             prop_smoke(src, "", &g);
