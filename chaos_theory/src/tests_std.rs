@@ -31,7 +31,7 @@ pub(crate) fn print_debug_examples<G: Generator>(
     let mut items = Vec::with_capacity(NUM_EXAMPLES);
     let mut env = Env::new();
     for _ in 0..NUM_EXAMPLES {
-        let v = env.example_of(&g, like);
+        let v = env.generate_with_example(&g, like);
         items.push(v);
     }
     items.sort_by(cmp);
@@ -90,7 +90,7 @@ pub(crate) fn prop_smoke_by<G: Generator>(
         // Ensure that after discarding noop data, we generate the same value.
         let tape_ = tape.discard_noop();
         let mut env = src.as_ex().derived_oneshot_env(tape_);
-        let example_ = env.example_of(g, None);
+        let example_ = env.generate_with(g);
         assert!(
             same(&example_, &value),
             "discarding noop data changed value: {example_:?} != {value:?}"
@@ -300,7 +300,7 @@ fn print_crossover_examples<G: Generator<Item: Ord>>(
         );
         for cross in [cross1, cross2] {
             let mut env = Env::custom().with_rng_tape(cross).env(false);
-            let example = env.example_of(&g, None);
+            let example = env.generate_with(&g);
             all_examples.push(example);
         }
     }

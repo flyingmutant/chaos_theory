@@ -151,7 +151,7 @@ struct EnvSlow {
     reduce_time: Duration,
     pretty_print: bool,
     replay_verbose: bool,
-    first_example: bool,
+    first_generation: bool,
     tape_replay_inactive: Vec<Tape>,
     mut_cache: MutationCache,
     #[cfg(feature = "std")]
@@ -179,31 +179,36 @@ impl Env {
         Config::default()
     }
 
-    /// Obtain an example value of `T`.
-    ///
-    /// If the `like` reference is provided, example will probably resemble it.
-    pub fn example<T: Arbitrary>(&mut self, like: Option<&T>) -> T {
-        self.example_of(T::arbitrary(), like)
+    // TODO: prevent generation methods being callable from `check`
+
+    /// Generate a value of `T`.
+    pub fn generate<T: Arbitrary>(&mut self) -> T {
+        self.generate_with(T::arbitrary())
     }
 
-    /// Obtain an example value from the generator.
-    ///
-    /// If the `like` reference is provided, example will probably resemble it.
-    // TODO: prevent this being callable from `check`
-    #[expect(clippy::missing_panics_doc)]
-    pub fn example_of<G: Generator>(&mut self, g: G, like: Option<&G::Item>) -> G::Item {
-        const EXAMPLE_LABEL: &str = "<example>";
-        // The same logic as in `check` iterations: only the first example inherits the `Env` configuration.
-        let (seed, tape_replay) = if self.slow.first_example {
-            self.slow.first_example = false;
+    /// Generate a value using the provided generator.
+    pub fn generate_with<G: Generator>(&mut self, g: G) -> G::Item {
+        self.generate_with_example(g, None)
+    }
+
+    pub(crate) fn generate_with_example<G: Generator>(
+        &mut self,
+        g: G,
+        example: Option<&G::Item>,
+    ) -> G::Item {
+        const GENERATE_LABEL: &str = "<generate>";
+        // The same logic as in `check` iterations: only the first generated value
+        // inherits the `Env` configuration.
+        let (seed, tape_replay) = if self.slow.first_generation {
+            self.slow.first_generation = false;
             (self.seed, take(&mut self.tape_replay))
         } else {
             (self.rng.next() as u32, Tape::default())
         };
-        let tape = if let Some(like) = like {
+        let tape = if let Some(example) = example {
             let mut tape_like =
                 Self::produce_tape(seed, self.temperature, self.slow.budget, |src| {
-                    let _ = src.as_ex().any_of(EXAMPLE_LABEL, &g, Some(like));
+                    let _ = src.as_ex().any_of(GENERATE_LABEL, &g, Some(example));
                 })
                 .expect("generator failed to produce seed tape for the provided value");
             let mut rng = DefaultRand::new(u64::from(seed));
@@ -223,7 +228,7 @@ impl Env {
         let mut src = self.start_from_tape(seed, tape, self.slow.log_depth_silent);
         let _debug_output_guard = DebugOutputGuard::new(src.as_ref().should_log());
         // TODO: use a version of `filter` here that rolls several times to try to get valid value?
-        src.any_of(EXAMPLE_LABEL, g)
+        src.any_of(GENERATE_LABEL, g)
     }
 
     fn call_prop<T>(prop: impl FnOnce(&mut Source) -> T, src: &mut Source) -> T {
@@ -355,7 +360,7 @@ impl Env {
                 pretty_print,
                 replay_verbose,
                 check_determinism,
-                first_example: true,
+                first_generation: true,
                 tape_replay_inactive: Vec::default(),
                 mut_cache: MutationCache::default(),
                 #[cfg(feature = "std")]
@@ -1385,7 +1390,7 @@ mod benches {
         let mut m = black_box(Map::default());
         let mut keys = black_box(Vec::new());
         for i in 0..100 {
-            let s: Arc<str> = env.example(None);
+            let s: Arc<str> = env.generate();
             keys.push(Arc::clone(&s));
             m.insert(s, i);
         }
@@ -1403,7 +1408,7 @@ mod benches {
         let mut env = Env::new();
         let mut keys = black_box(Vec::new());
         for _ in 0..100 {
-            let s: String = env.example(None);
+            let s: String = env.generate();
             keys.push(s);
         }
 

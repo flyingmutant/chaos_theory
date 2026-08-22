@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Replace `Env::{example, example_of}` with `Env::{generate, generate_with}`.
 - Rename `*_with_size` to `*_n` and `*_in_range` to `*_in`.
 - Rename `SourceRaw` to `SourceEx`.
 - Report likely hanging check iterations and their seeds, as well as hanging replay/reduction runs.

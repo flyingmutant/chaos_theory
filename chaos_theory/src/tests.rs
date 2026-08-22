@@ -27,7 +27,7 @@ mod derive_nostd_smoke {
     #[allow(dead_code)]
     fn smoke_via_env() {
         let mut env = Env::new();
-        let _value: Sample = env.example(None);
+        let _value: Sample = env.generate();
     }
 
     #[allow(dead_code)]
