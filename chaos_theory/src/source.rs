@@ -121,10 +121,9 @@ impl<'env> Source<'env> {
         self.as_ex().choose_mut_where(label, None, values, pred)
     }
 
-    /// Try to generate `Some` value.
+    /// Find a `Some` value using `func`.
     ///
-    /// `find` is similar to [`Generator::try_filter`]: it will return `None`
-    /// if unable to generate `Some` in some number of tries.
+    /// `find` is similar to [`Generator::try_filter`]: it returns `None` if unable to find a value.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
     pub fn find<T: Debug>(
@@ -431,10 +430,9 @@ impl SourceEx<'_> {
         src.log_return(ix.flatten())
     }
 
-    /// Try to generate `Some` value.
+    /// Find a `Some` value using `func`.
     ///
-    /// `find` is similar to [`Generator::try_filter`]: it will return `None`
-    /// if unable to generate `Some` in some number of tries.
+    /// `find` is similar to [`Generator::try_filter`]: it returns `None` if unable to find a value.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
     pub fn find<T: Debug>(

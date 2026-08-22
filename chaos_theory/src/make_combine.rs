@@ -9,7 +9,7 @@ use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
 use crate::{Generator, OptionExt as _, Source, SourceEx, env::Tweak};
 
-const FROM_NEXT_SOME_TOO_MUCH: &str = "from_next_some function produced too many None values";
+const FROM_NEXT_FIND_FAILED: &str = "from_next_find function failed to find an item";
 
 struct FromNext<F, T> {
     next: F,
@@ -40,24 +40,24 @@ where
     }
 }
 
-struct FromNextSome<F, T> {
+struct FromNextFind<F, T> {
     next: F,
     _marker: PhantomData<T>,
 }
 
-impl<F, T> Debug for FromNextSome<F, T>
+impl<F, T> Debug for FromNextFind<F, T>
 where
     F: Fn(&mut SourceEx, Option<&T>) -> Option<T>,
     T: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_tuple("FromNextSome")
+        f.debug_tuple("FromNextFind")
             .field(&core::any::type_name::<T>())
             .finish()
     }
 }
 
-impl<F, T> Generator for FromNextSome<F, T>
+impl<F, T> Generator for FromNextFind<F, T>
 where
     F: Fn(&mut SourceEx, Option<&T>) -> Option<T>,
     T: Debug,
@@ -65,8 +65,8 @@ where
     type Item = T;
 
     fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
-        let v = src.find("<from-next-some>", example, &self.next);
-        v.assume_some_msg(FROM_NEXT_SOME_TOO_MUCH)
+        let v = src.find("<from-next-find>", example, &self.next);
+        v.assume_some_msg(FROM_NEXT_FIND_FAILED)
     }
 }
 
@@ -169,13 +169,13 @@ pub fn from_fn<T: Debug>(func: impl Fn(&mut Source) -> T) -> impl Generator<Item
     })
 }
 
-/// Create a generator that retries the closure until it constructs a `Some` item.
+/// Create a generator that uses the provided closure to find `Some` items.
 ///
 /// If the closure returns `None` too often, the whole test case is marked invalid.
 ///
-/// Consider [`from_next_some`] if you want to support example-guided generation.
-pub fn from_fn_some<T: Debug>(func: impl Fn(&mut Source) -> Option<T>) -> impl Generator<Item = T> {
-    from_next_some(move |src, _example| {
+/// Consider [`from_next_find`] if you want to support example-guided generation.
+pub fn from_fn_find<T: Debug>(func: impl Fn(&mut Source) -> Option<T>) -> impl Generator<Item = T> {
+    from_next_find(move |src, _example| {
         let mut src = Source::new(src.as_mut());
         func(&mut src)
     })
@@ -193,19 +193,18 @@ pub fn from_next<T: Debug>(
     }
 }
 
-/// Create a generator that retries the closure until it constructs a `Some` item,
-/// taking examples into account.
+/// Create a generator that uses the provided closure to find `Some` items, taking examples into account.
 ///
 /// If the closure returns `None` too often, the whole test case is marked invalid.
 ///
 /// Don't forget to filter the examples according to the same predicate you use to construct `Some`.
 ///
-/// Prefer [`from_fn_some`] if you don't need to support example-guided generation.
+/// Prefer [`from_fn_find`] if you don't need to support example-guided generation.
 // TODO: do we really want/need to filter examples?
-pub fn from_next_some<T: Debug>(
+pub fn from_next_find<T: Debug>(
     next: impl Fn(&mut SourceEx, Option<&T>) -> Option<T>,
 ) -> impl Generator<Item = T> {
-    FromNextSome {
+    FromNextFind {
         next,
         _marker: PhantomData,
     }

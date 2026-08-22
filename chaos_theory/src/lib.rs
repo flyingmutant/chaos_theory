@@ -179,7 +179,7 @@ pub mod make {
     #[cfg(feature = "std")]
     pub use crate::make_collection::{hash_map, hash_map_n, hash_set, hash_set_n};
     pub use crate::make_combine::{
-        from_fn, from_fn_some, from_next, from_next_some, just, mix_of, mix_of_owned, one_of,
+        from_fn, from_fn_find, from_next, from_next_find, just, mix_of, mix_of_owned, one_of,
         one_of_owned,
     };
     pub use crate::make_core::{err, none, ok, option, result, some};
