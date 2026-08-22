@@ -497,7 +497,7 @@ where
     }
 }
 
-/// Create a generator of [`CString`] values whose contents match the given regular expression.
+/// Create a generator of [`CString`] values that match the given regular expression.
 ///
 /// Matching excludes the terminating NUL byte. Matches containing interior NUL bytes are
 /// discarded. Unlike [`string_matching`], this generator supports regular expressions that match
@@ -516,7 +516,7 @@ pub fn cstring_matching(expr: &str, fullmatch: bool) -> impl Generator<Item = CS
     cstring_slice_matching(expr, fullmatch)
 }
 
-/// Create a generator of owned C string slice values whose contents match the given regular
+/// Create a generator of owned C string slice values that match the given regular
 /// expression.
 ///
 /// Matching excludes the terminating NUL byte. Matches containing interior NUL bytes are
