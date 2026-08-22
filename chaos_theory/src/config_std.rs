@@ -123,12 +123,6 @@ pub(crate) fn reproduce_inform(
     );
 }
 
-pub(crate) fn non_determinism_inform(msg: impl Display) {
-    eprintln!(
-        "[chaos_theory] warning: determinism self-replay diverged ({msg}); enable `{CHECK_DETERMINISM_VAR}=true` to fail on replay divergence"
-    );
-}
-
 pub(super) fn warn_unknown_env_vars(use_env_vars: bool) {
     static CHECK_ENV_ONCE: Once = Once::new();
     if use_env_vars {

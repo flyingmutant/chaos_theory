@@ -38,9 +38,6 @@ pub(crate) fn slow_test_enabled() -> bool {
 #[cfg(feature = "std")]
 pub(crate) use std_impl::reproduce_inform;
 
-#[cfg(feature = "std")]
-pub(crate) use std_impl::non_determinism_inform;
-
 fn replay_format(typ: &str, seed: u32, temperature: u8, budget: usize, tape: &Tape) -> String {
     let t = match typ {
         REPLAY_TYPE_CHOICES => tape.save_choices_base64(),

@@ -33,9 +33,6 @@ use crate::{
 };
 
 #[cfg(feature = "std")]
-use crate::non_determinism_inform;
-
-#[cfg(feature = "std")]
 #[path = "check_watchdog_std.rs"]
 mod check_watchdog_std;
 
@@ -566,7 +563,9 @@ impl Env {
                 if !*diverged {
                     *diverged = true;
                     #[cfg(feature = "std")]
-                    non_determinism_inform(msg);
+                    eprintln!(
+                        "[chaos_theory] warning: determinism self-replay diverged ({msg}); enable `CHAOS_THEORY_CHECK_DETERMINISM=true` to fail on replay divergence"
+                    );
                 }
             }
         }
