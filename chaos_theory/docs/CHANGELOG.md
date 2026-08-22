@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Report likely hanging check iterations and their seeds, as well as hanging replay/reduction runs.
 - Add a `filter` generator modifier to `#[derive(Arbitrary)]` for structs/enums/fields.
 - Rename `Generator::{filter_assume, filter}` to `Generator::{filter, try_filter}`.
 - Rename `make::{from_fn_assume, from_next_assume}` to `make::{from_fn_some, from_next_some}`.

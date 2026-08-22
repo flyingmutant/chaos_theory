@@ -14,7 +14,10 @@ use crate::{
     Source, cover::Cover, reduce::reduce_tape, reproduce_inform, tape::Tape, unwind::PanicInfo,
 };
 
-use super::{Effect, Env, ReplayMode};
+use super::{
+    Effect, Env, ReplayMode,
+    check_watchdog_std::{CheckWatchdog, HangInfo, WatchGuard},
+};
 
 #[path = "fuzz_std.rs"]
 mod fuzz_std;
@@ -166,6 +169,8 @@ impl Env {
     ///
     /// `check` panics when the property does, or when not enough valid test cases can be generated.
     pub fn check(mut self, prop: impl Fn(&mut Source)) {
+        // Use check time for the watchdog timeout for simplicity.
+        self.slow.check_watchdog = CheckWatchdog::new(self.slow.check_time);
         let res = self.check_silent(&prop);
         if let Err(err) = res.ret {
             reproduce_inform(
@@ -178,6 +183,8 @@ impl Env {
                 false,
             );
             // Panic for real, unless the test is flaky.
+            let _watchdog =
+                self.watch_hang(HangInfo::new("final failing test case replay", None, None));
             let _ = self.run_prop(
                 self.seed,
                 res.tape,
@@ -225,6 +232,8 @@ impl Env {
             eprintln!(
                 "[chaos_theory] only generated {valid} valid tests from {total} total ({elapsed:?})"
             );
+            let _watchdog =
+                self.watch_hang(HangInfo::new("last invalid test case replay", None, None));
             let mut src = self.start_from_tape(self.seed, res.tape, self.slow.log_depth_default);
             // Panic with last invalid data (to help debug the issue), unless the test is flaky.
             Self::call_prop(prop, &mut src);
@@ -262,11 +271,12 @@ impl Env {
                         "[chaos_theory/iters/{i}] starting check iteration (seed: {seed:08x}, done: {valid} valid, {invalid} invalid)"
                     );
                 }
-                let replay_mode = self.shadow_replay_mode(false, Some(res.valid));
+                let _watchdog =
+                    self.watch_hang(HangInfo::new("check iteration", Some(i), Some(seed)));
                 let r = self.run_prop(
                     seed,
                     Tape::default(),
-                    replay_mode,
+                    self.shadow_replay_mode(false, Some(res.valid)),
                     self.slow.log_depth_silent,
                     true,
                     &mut prop,
@@ -289,11 +299,11 @@ impl Env {
         } else {
             res.replay = true;
             let tape = take(&mut self.tape_replay);
-            let replay_mode = self.shadow_replay_mode(true, None);
+            let _watchdog = self.watch_hang(HangInfo::new("replayed test case", None, None));
             let r = self.run_prop(
                 self.seed,
                 tape,
-                replay_mode,
+                self.shadow_replay_mode(true, None),
                 self.slow.log_depth_silent,
                 true,
                 &mut prop,
@@ -313,19 +323,20 @@ impl Env {
                         eprintln!(
                             "[chaos_theory/trials/{trials}] starting test case reduction trial"
                         );
-                        trials += 1;
                     }
-                    let replay_mode = self.shadow_replay_mode(true, None);
+                    let _watchdog =
+                        self.watch_hang(HangInfo::new("reduction trial", Some(trials), None));
                     let info = self
                         .run_prop(
                             self.seed,
                             candidate_tape,
-                            replay_mode,
+                            self.shadow_replay_mode(true, None),
                             self.slow.log_depth_silent,
                             true,
                             &mut prop,
                         )
                         .err();
+                    trials += 1;
                     (replace(&mut self.tape_out, Tape::new(true)), info)
                 });
             res.tape = tape;
@@ -333,6 +344,13 @@ impl Env {
         }
         debug_assert!(res.tape.has_meta());
         res
+    }
+
+    fn watch_hang(&self, info: HangInfo) -> Option<WatchGuard> {
+        self.slow
+            .check_watchdog
+            .as_ref()
+            .map(|watchdog| watchdog.start(info))
     }
 }
 

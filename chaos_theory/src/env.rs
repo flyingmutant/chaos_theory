@@ -36,6 +36,10 @@ use crate::{
 use crate::non_determinism_inform;
 
 #[cfg(feature = "std")]
+#[path = "check_watchdog_std.rs"]
+mod check_watchdog_std;
+
+#[cfg(feature = "std")]
 #[path = "env_std.rs"]
 mod std_impl;
 
@@ -152,6 +156,8 @@ struct EnvSlow {
     first_example: bool,
     tape_replay_inactive: Vec<Tape>,
     mut_cache: MutationCache,
+    #[cfg(feature = "std")]
+    check_watchdog: Option<check_watchdog_std::CheckWatchdog>,
 }
 
 impl Default for Env {
@@ -354,6 +360,8 @@ impl Env {
                 first_example: true,
                 tape_replay_inactive: Vec::default(),
                 mut_cache: MutationCache::default(),
+                #[cfg(feature = "std")]
+                check_watchdog: None,
             }),
         };
         env.tape_out.reserve_for_replay(&env.tape_replay);

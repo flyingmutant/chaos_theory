@@ -26,8 +26,6 @@
 
 ## features
 
-- print out potentially-hanging seed (how?)
-  - maybe support detecting hangs with some kind of signal magic?
 - consider `reflecting` as a feature (not just a seed)
 - consider runs with forced boundary conditions
   - can swarming with choice = free-gen vs boundary-gen give this for free?
