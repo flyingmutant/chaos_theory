@@ -20,7 +20,38 @@ use syn::{
 
 const ATTR_NAMESPACE: &str = "chaos_theory";
 
-/// Derive `chaos_theory::Arbitrary`.
+/// Derives an implementation of `chaos_theory::Arbitrary`.
+///
+/// The derive supports structs and non-empty enums; unions are not supported. By default, it
+/// generates every field with that field type's `Arbitrary` implementation.
+///
+/// The derived type must implement `Debug` (usually by deriving it alongside `Arbitrary`). Type
+/// parameters used by default-generated fields receive an `Arbitrary` bound automatically. A
+/// type parameter used only by fields with a custom generator does not receive that bound.
+///
+/// # Generator modifiers
+///
+/// `#[chaos_theory(...)]` accepts two modifiers:
+///
+/// - `generator = EXPR` replaces a field's default generator. The expression must implement
+///   `Generator` with the field's type as its item. This modifier is only supported on fields.
+/// - `filter = EXPR` filters generated values with a predicate of the form `Fn(&T) -> bool`. It
+///   can be applied to a field or to the derived struct or enum, but not to an enum variant.
+///
+/// Put `generator` and `filter` in separate attributes when using both on one field. The custom
+/// generator is applied before the filter, regardless of attribute order. Filters that reject
+/// too many values can make generation fail after exhausting its retries.
+///
+/// ```ignore
+/// #[derive(Debug, chaos_theory::Arbitrary)]
+/// #[chaos_theory(filter = |header| header.length >= header.alignment)]
+/// struct Header {
+///     length: u16,
+///     #[chaos_theory(generator = chaos_theory::make::int_in(1..=255))]
+///     #[chaos_theory(filter = |alignment| alignment.is_power_of_two())]
+///     alignment: u16,
+/// }
+/// ```
 #[proc_macro_derive(Arbitrary, attributes(chaos_theory))]
 pub fn derive_arbitrary(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

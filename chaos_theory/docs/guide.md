@@ -265,54 +265,8 @@ struct Point {
 }
 ```
 
-Derive-generated implementations follow the same rules as hand-written ones:
-variant choices are structural (`select`) and `example` is threaded through fields.
-
-The derive supports two generator modifiers:
-
-- `generator = ...` replaces a field's default generator.
-- `filter = ...` filters generated field or complete-type values.
-
-`generator` is only supported on fields. To combine it with `filter`, use separate attributes;
-the generator is replaced before the filter is applied, regardless of attribute order.
-
-```rust
-# #[cfg(feature = "derive")]
-# mod derive {
-use chaos_theory::{Generator, make};
-
-fn odd_u8() -> impl Generator<Item = u8> {
-    make::from_next(|src, example| src.any::<u8>("base", example) | 1)
-}
-
-#[derive(Debug, chaos_theory::Arbitrary)]
-enum Op {
-    Reset,
-    Set(
-        #[chaos_theory(generator = odd_u8())]
-        #[chaos_theory(filter = |value| *value != u8::MAX)]
-        u8,
-    ),
-    Shift {
-        #[chaos_theory(filter = |by| *by != 0)]
-        by: i16,
-    },
-}
-
-#[derive(Debug, chaos_theory::Arbitrary)]
-#[chaos_theory(filter = Self::is_valid)]
-struct Segment {
-    start: i32,
-    end: i32,
-}
-
-impl Segment {
-    fn is_valid(&self) -> bool {
-        self.start <= self.end
-    }
-}
-# }
-```
+See the [`Arbitrary` derive macro][arbitrary_derive] documentation for details, including
+the supported `generator` and `filter` modifiers.
 
 ### Writing Custom Generators
 
@@ -536,6 +490,7 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [effect_noop]: crate::Effect::Noop
 
 [arbitrary]: crate::Arbitrary
+[arbitrary_derive]: macro@crate::Arbitrary
 [generator]: crate::Generator
 [generator_filter]: crate::Generator::filter
 [generator_try_filter]: crate::Generator::try_filter

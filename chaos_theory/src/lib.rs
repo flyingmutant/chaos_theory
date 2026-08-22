@@ -72,6 +72,7 @@ extern crate self as chaos_theory;
 extern crate test;
 
 #[cfg(feature = "derive")]
+#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use chaos_theory_derive::Arbitrary;
 
 mod base64;
