@@ -2,6 +2,7 @@
 
 ## docs
 
+- advertise structural generation without testing
 - better guide text
   - section about how logging works
   - section about common `CHAOS_THEORY_` variables
@@ -13,9 +14,7 @@
 
 ## API
 
-- consider `make::string` + `make::string_of`
-  - dot works better + type inference is simpler + python is simpler
-  - what to do with `int*` and `float*`?
+- decide if bool args for `fullmatch` & `mutate_seeds` are OK
 
 ## generators
 
