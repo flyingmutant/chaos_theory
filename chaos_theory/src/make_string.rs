@@ -584,9 +584,10 @@ pub fn cstring(elem: impl Generator<Item = u8>) -> impl Generator<Item = CString
     cstring_slice(elem)
 }
 
-/// Create a [`CString`] generator with the specified content size in bytes, excluding the terminating NUL.
+/// Create a [`CString`] generator with the specified content size in bytes.
 ///
-/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+/// The size excludes the terminating NUL. NUL bytes produced by `elem` are mapped to ASCII
+/// spaces.
 pub fn cstring_n(
     elem: impl Generator<Item = u8>,
     size: impl RangeBounds<usize>,
@@ -611,10 +612,10 @@ where
     cstring_slice_n(elem, ..)
 }
 
-/// Create an owned C string slice generator with the specified content size in bytes,
-/// excluding the terminating NUL.
+/// Create an owned C string slice generator with the specified content size in bytes.
 ///
-/// NUL bytes produced by `elem` are mapped to ASCII spaces.
+/// The size excludes the terminating NUL. NUL bytes produced by `elem` are mapped to ASCII
+/// spaces.
 ///
 /// Examples of standard owned C string slices:
 ///

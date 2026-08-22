@@ -181,7 +181,7 @@ pub fn from_fn_find<T: Debug>(func: impl Fn(&mut Source) -> Option<T>) -> impl G
     })
 }
 
-/// Create a generator that uses the provided closure to construct items, taking examples into account.
+/// Create a generator that uses the provided closure to construct items.
 ///
 /// Prefer [`from_fn`] if you don't need to support example-guided generation.
 pub fn from_next<T: Debug>(
@@ -193,7 +193,7 @@ pub fn from_next<T: Debug>(
     }
 }
 
-/// Create a generator that uses the provided closure to find `Some` items, taking examples into account.
+/// Create a generator that uses the provided closure to find `Some` items.
 ///
 /// If the closure returns `None` too often, the whole test case is marked invalid.
 ///
