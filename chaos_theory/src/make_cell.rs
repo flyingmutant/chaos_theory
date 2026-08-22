@@ -9,7 +9,7 @@ use core::{
     fmt::Debug,
 };
 
-use crate::{Arbitrary, Generator};
+use crate::{Arbitrary, Generator, SourceRaw};
 
 impl<T: Arbitrary> Arbitrary for UnsafeCell<T> {
     fn arbitrary() -> impl Generator<Item = Self> {
@@ -43,7 +43,7 @@ struct UnsafeCell_<G> {
 impl<G: Generator> Generator for UnsafeCell_<G> {
     type Item = UnsafeCell<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
         // `UnsafeCell` read access is unsafe, so we can't look inside the example.
         let v = self.elem.next(src, None);
         UnsafeCell::new(v)
@@ -58,7 +58,7 @@ struct Cell_<G> {
 impl<G: Generator<Item: Copy>> Generator for Cell_<G> {
     type Item = Cell<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let example = example.map(Cell::get);
         let v = self.elem.next(src, example.as_ref());
         Cell::new(v)
@@ -73,7 +73,7 @@ struct RefCell_<G> {
 impl<G: Generator> Generator for RefCell_<G> {
     type Item = RefCell<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let v = if let Some(example) = example.and_then(|e| e.try_borrow().ok()) {
             self.elem.next(src, Some(&*example))
         } else {
@@ -91,7 +91,7 @@ struct OnceCell_<G> {
 impl<G: Generator> Generator for OnceCell_<G> {
     type Item = OnceCell<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let example = example.and_then(OnceCell::get);
         let v = self.elem.next(src, example);
         let c = OnceCell::new();

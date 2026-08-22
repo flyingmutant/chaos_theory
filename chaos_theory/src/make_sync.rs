@@ -8,7 +8,7 @@ use core::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 use std::sync::{Barrier, Condvar, Mutex, Once, OnceLock, RwLock, mpsc};
 
 use crate::{
-    Arbitrary, Generator,
+    Arbitrary, Generator, SourceRaw,
     make::{from_fn, size},
     range::SizeRange,
 };
@@ -69,7 +69,7 @@ struct OnceLock_<G> {
 impl<G: Generator> Generator for OnceLock_<G> {
     type Item = OnceLock<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let example = example.and_then(OnceLock::get);
         let v = self.elem.next(src, example);
         let c = OnceLock::new();
@@ -86,7 +86,7 @@ struct Barrier_ {
 impl Generator for Barrier_ {
     type Item = Barrier;
 
-    fn next(&self, src: &mut crate::SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
         let n = size(self.n).next(src, None); // can't get num threads from a barrier
         Barrier::new(n)
     }
@@ -100,7 +100,7 @@ struct Mutex_<G> {
 impl<G: Generator> Generator for Mutex_<G> {
     type Item = Mutex<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let v = if let Some(example) = example.and_then(|e| e.try_lock().ok()) {
             self.elem.next(src, Some(&*example))
         } else {
@@ -118,7 +118,7 @@ struct RwLock_<G> {
 impl<G: Generator> Generator for RwLock_<G> {
     type Item = RwLock<G::Item>;
 
-    fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
         let v = if let Some(example) = example.and_then(|e| e.try_read().ok()) {
             self.elem.next(src, Some(&*example))
         } else {
@@ -144,7 +144,7 @@ impl<T> Debug for MpscSyncChannel_<T> {
 impl<T> Generator for MpscSyncChannel_<T> {
     type Item = (mpsc::SyncSender<T>, mpsc::Receiver<T>);
 
-    fn next(&self, src: &mut crate::SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
         let n = size(self.bound).next(src, None); // can't get bound from a sender or receiver
         mpsc::sync_channel(n)
     }

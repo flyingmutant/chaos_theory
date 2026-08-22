@@ -237,7 +237,7 @@ pub fn byte_ascii() -> impl Generator<Item = u8> {
 pub(crate) mod regex {
     use super::Char;
     use crate::{
-        Generator, Tweak,
+        Generator, SourceRaw, Tweak,
         make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB, from_next_some},
     };
     use core::cmp::Ordering;
@@ -272,7 +272,7 @@ pub(crate) mod regex {
     }
 
     fn next_char_unicode(
-        src: &mut crate::SourceRaw,
+        src: &mut SourceRaw,
         example: Option<&char>,
         class: &ClassUnicode,
     ) -> Option<char> {
@@ -308,7 +308,7 @@ pub(crate) mod regex {
     impl Generator for CharClassBytes<'_> {
         type Item = u8;
 
-        fn next(&self, src: &mut crate::SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
             let mut example = example.copied();
             if example.is_none() {
                 example = src
