@@ -367,7 +367,7 @@ mod tests {
                     (false, false, !r.contains(&I::ZERO));
                 for s in 0..64 {
                     let seed = base_seed.wrapping_add(s);
-                    let mut env = Env::custom().with_rng_seed(seed).env(false);
+                    let mut env = Env::builder().with_rng_seed(seed).build();
                     let mut src = Source::new(&mut env);
                     for _ in 0..64 {
                         let i = g.next(src.as_ex(), None);

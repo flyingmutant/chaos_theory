@@ -469,7 +469,7 @@ chaos_theory = { version = "0.4", default-features = false, features = ["no_std"
 
 In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceEx`,
 `Env::generate`, `make::*` core/alloc generators), while `check` and fuzzing APIs remain `std`-only.
-`Config::env(true)` does not read environment variables in `no_std`.
+`Config::with_env_vars` has no effect in `no_std`.
 Default seeding is deterministic there and can be advanced with `jump_seed_sequence`.
 
 [source]: crate::Source

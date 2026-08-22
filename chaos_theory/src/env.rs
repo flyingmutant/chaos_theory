@@ -114,7 +114,7 @@ pub(crate) enum ReplayMode {
     Strict,
 }
 
-/// Environment and settings for `chaos_theory` magic.
+/// Structural pseudo-random generation and property-checking environment.
 #[derive(Debug)]
 pub struct Env {
     log_depth: usize,
@@ -165,17 +165,17 @@ impl Default for Env {
 }
 
 impl Env {
-    /// Create a new, default, environment with a fresh random seed.
+    /// Create a default environment.
     ///
-    /// See [`Config::env`] for a list of environment variables that affect
-    /// the created environment.
+    /// This does not read environment variables. Use [`Env::builder`] with
+    /// [`Config::with_env_vars`] to enable them.
     #[must_use]
     pub fn new() -> Self {
-        Self::custom().env(true)
+        Self::builder().build()
     }
 
-    /// Create a config for environment customization.
-    pub fn custom() -> Config {
+    /// Create a builder for a customized environment.
+    pub fn builder() -> Config {
         Config::default()
     }
 
@@ -949,11 +949,11 @@ impl Env {
         budget: usize,
         prop: impl Fn(&mut Source),
     ) -> Option<Tape> {
-        let mut env = Self::custom()
+        let mut env = Self::builder()
             .with_rng_seed(seed)
             .with_rng_temperature(temperature)
             .with_rng_budget(budget)
-            .env(false);
+            .build();
         let mut src = env.start_from_seed(seed, 0);
         // TODO: use a version of `filter` here that rolls several times to try to get valid tape?
         let r = Self::call_prop_silent(prop, &mut src, true);
@@ -1250,7 +1250,7 @@ mod tests {
 
     #[test]
     fn forced_index_ignores_exhausted_budget() {
-        let mut env = Env::custom().with_rng_budget(0).env(false);
+        let mut env = Env::builder().with_rng_budget(0).build();
         env.mark_next_choice_forced();
         assert_eq!(env.choose_index(2, Some(1), Tweak::None), 1);
     }
@@ -1258,7 +1258,7 @@ mod tests {
     #[test]
     fn check_replay_e2e() {
         check(|src| {
-            let mut e = Env::custom()
+            let mut e = Env::builder()
                 .with_rng_seed(src.any("seed"))
                 .with_rng_temperature(src.any("temperature"))
                 .with_rng_budget(src.any("budget"))
@@ -1266,7 +1266,7 @@ mod tests {
                 .with_check_iters(src.any_of("check_iters", make::int_in(1..=CHECK_ITERS_DEFAULT)))
                 // Limit the time spent reducing to speed the test up.
                 .with_reduce_time(Duration::from_millis(50))
-                .env(false);
+                .build();
             let mut e_state = RgbState::default();
             let e_result = e.check_silent(|src| {
                 e_state = RgbState::default();
@@ -1282,14 +1282,14 @@ mod tests {
             );
 
             vprintln!("replaying...");
-            let mut f = Env::custom()
+            let mut f = Env::builder()
                 .with_rng_seed(src.any("replay seed"))
                 .with_rng_temperature(src.any("replay temperature"))
                 .with_rng_budget(e.slow.budget)
                 .with_rng_choices(e_result.tape.as_choices().to_vec())
                 .with_check_iters(1)
                 .with_reduce_time(Duration::ZERO)
-                .env(false);
+                .build();
             let mut f_state = RgbState::default();
             let f_result = f.check_silent(|src| {
                 f_state = RgbState::default();
@@ -1337,7 +1337,7 @@ mod benches {
     fn check_overhead(b: &mut test::Bencher) {
         b.iter(|| {
             let i = black_box(AtomicUsize::new(0));
-            Env::custom().with_check_iters(1).env(false).check(|_s| {
+            Env::builder().with_check_iters(1).build().check(|_s| {
                 i.fetch_add(black_box(1), Ordering::SeqCst);
             });
             i
@@ -1346,7 +1346,7 @@ mod benches {
 
     #[bench]
     fn choice_new_swarm(b: &mut test::Bencher) {
-        let mut env = Env::custom().env(false);
+        let mut env = Env::builder().build();
         b.iter(|| env.choice_new_swarm(black_box(10), black_box(Tweak::None)));
     }
 
@@ -1364,7 +1364,7 @@ mod benches {
 
     #[bench]
     fn scope_new_raw(b: &mut test::Bencher) {
-        let mut env = Env::custom().with_rng_budget(usize::MAX).env(false);
+        let mut env = Env::builder().with_rng_budget(usize::MAX).build();
         let mut src = Source::new(&mut env);
         b.iter(|| {
             let _scope = Scope::new_raw(

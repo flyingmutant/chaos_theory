@@ -366,10 +366,10 @@ mod tests {
             static TOGGLE: Cell<bool> = const { Cell::new(false) };
         }
 
-        Env::custom()
+        Env::builder()
             .with_check_iters(1)
             .with_reduce_time(Duration::ZERO)
-            .env(false)
+            .build()
             .check(|src| {
                 let value = TOGGLE.with(|toggle| {
                     let value = u64::from(toggle.get());
@@ -387,11 +387,11 @@ mod tests {
             static TOGGLE: Cell<bool> = const { Cell::new(false) };
         }
 
-        Env::custom()
+        Env::builder()
             .with_check_determinism(true)
             .with_check_iters(1)
             .with_reduce_time(Duration::ZERO)
-            .env(false)
+            .build()
             .check(|src| {
                 let value = TOGGLE.with(|toggle| {
                     let value = u64::from(toggle.get());
@@ -409,11 +409,11 @@ mod tests {
             static COUNTER: Cell<u32> = const { Cell::new(0) };
         }
 
-        Env::custom()
+        Env::builder()
             .with_check_determinism(true)
             .with_check_iters(1)
             .with_reduce_time(Duration::ZERO)
-            .env(false)
+            .build()
             .check(|src| {
                 let value = COUNTER.with(|counter| {
                     let next = counter.get();
@@ -432,11 +432,11 @@ mod tests {
         }
 
         CALLS.with(|calls| calls.set(0));
-        Env::custom()
+        Env::builder()
             .with_check_determinism(true)
             .with_check_iters(1)
             .with_reduce_time(Duration::ZERO)
-            .env(false)
+            .build()
             .check(|_src| {
                 let call = CALLS.with(|calls| {
                     let call = calls.get() + 1;

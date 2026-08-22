@@ -369,7 +369,7 @@ mod tests {
     }
 
     fn next_like<F: Float>(g: &impl Generator<Item = F>, example: F) -> F {
-        let mut env = Env::custom().with_rng_budget(usize::MAX).env(false);
+        let mut env = Env::builder().with_rng_budget(usize::MAX).build();
         let mut src = Source::new(&mut env);
         g.next(src.as_ex(), Some(&example))
     }
@@ -456,7 +456,7 @@ mod tests {
                     (false, false, !r.contains(&F::ZERO));
                 for s in 0..64 {
                     let seed = base_seed.wrapping_add(s);
-                    let mut env = Env::custom().with_rng_seed(seed).env(false);
+                    let mut env = Env::builder().with_rng_seed(seed).build();
                     let mut src = Source::new(&mut env);
                     for _ in 0..64 {
                         let f = g.next(src.as_ex(), None);

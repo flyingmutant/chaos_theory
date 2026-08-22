@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Replace `Env::custom` and `Config::env` with `Env::builder`,
+  `Config::with_env_vars`, and `Config::build`; `Env::new` no longer reads environment variables.
 - Replace `Env::{example, example_of}` with `Env::{generate, generate_with}`.
 - Rename `*_with_size` to `*_n` and `*_in_range` to `*_in`.
 - Rename `SourceRaw` to `SourceEx`.

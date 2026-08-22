@@ -286,11 +286,11 @@ pub mod make {
 
 /// Check that property holds (does not panic).
 ///
-/// To customize the `check` behavior, use [`Env::custom`] and [`Env::check`]
-/// (or specify environment variables mentioned in [`Config::env`](crate::Config::env) documentation).
+/// To customize the `check` behavior, use [`Env::builder`] and [`Env::check`].
+/// Environment variables described in [`Config::build`] are used as configuration fallbacks.
 #[cfg(feature = "std")]
 pub fn check(prop: impl Fn(&mut Source)) {
-    Env::new().check(prop);
+    Env::builder().with_env_vars().build().check(prop);
 }
 
 /// Advance the deterministic `no_std` seed sequence by `steps`.

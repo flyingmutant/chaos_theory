@@ -40,9 +40,10 @@ macro_rules! fuzz_target_libfuzzer {
                                         max_size: usize,
                                         seed: u32| {
             _CHAOS_THEORY_FUZZ_STATE.with_borrow_mut(|state| {
-                $crate::Env::new().fuzz_mutate(
-                    state, data, size, max_size, seed, true, None,
-                )
+                $crate::Env::builder()
+                    .with_env_vars()
+                    .build()
+                    .fuzz_mutate(state, data, size, max_size, seed, true, None)
             })
         });
 
@@ -51,7 +52,9 @@ macro_rules! fuzz_target_libfuzzer {
                                           out: &mut [u8],
                                           seed: u32| {
             _CHAOS_THEORY_FUZZ_STATE.with_borrow_mut(|state| {
-                $crate::Env::new()
+                $crate::Env::builder()
+                    .with_env_vars()
+                    .build()
                     .fuzz_mutate_crossover(state, input, other, out, seed, true)
             })
         });
@@ -67,7 +70,11 @@ macro_rules! fuzz_target_libfuzzer {
             },
             |input: &[u8]| -> ::libfuzzer_sys::Corpus {
                 let interesting = _CHAOS_THEORY_FUZZ_STATE.with_borrow_mut(|state| {
-                    $crate::Env::new().fuzz_check(state, input, $prop).is_some()
+                    $crate::Env::builder()
+                        .with_env_vars()
+                        .build()
+                        .fuzz_check(state, input, $prop)
+                        .is_some()
                 });
                 if interesting {
                     ::libfuzzer_sys::Corpus::Keep

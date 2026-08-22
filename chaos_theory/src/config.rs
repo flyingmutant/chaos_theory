@@ -74,12 +74,13 @@ fn replay_parse(
     Ok((seed, t, budget, tape))
 }
 
-/// Custom configuration for [`Env`].
+/// Builder for a customized [`Env`].
 ///
-/// Create new config instance with [`Env::custom`].
+/// Create a new builder with [`Env::builder`].
 #[must_use]
 #[derive(Debug, Default)]
 pub struct Config {
+    env_vars: bool,
     replay_verbose: Option<bool>,
     cover_depth: Option<usize>,
     cover_require: Option<bool>,
@@ -98,6 +99,15 @@ pub struct Config {
 }
 
 impl Config {
+    /// Use `CHAOS_THEORY_*` environment variables as configuration fallbacks.
+    ///
+    /// Values specified through other `Config` methods take precedence regardless of call order.
+    /// In `no_std`, this has no effect.
+    pub fn with_env_vars(mut self) -> Self {
+        self.env_vars = true;
+        self
+    }
+
     /// Override replay data (random seed, temperature, budget and choices).
     ///
     /// `replay` should be in format used by `CHAOS_THEORY_REPLAY` environment variable.
@@ -210,14 +220,14 @@ impl Config {
         self
     }
 
-    /// Construct an [`Env`] with this config.
+    /// Build an [`Env`] with this configuration.
     ///
     /// To determine the `Env` parameters:
     /// - any values specified explicitly by `Config` method calls are used as-is,
-    /// - otherwise, in `std`, if `use_env_vars` is true, replay data (seed, temperature, budget and
-    ///   choices) encoded in `CHAOS_THEORY_REPLAY` environment variable is used,
-    /// - otherwise, in `std`, if `use_env_vars` is true, values from the following environment
-    ///   variables are used:
+    /// - otherwise, in `std`, if [`Config::with_env_vars`] was called, replay data (seed,
+    ///   temperature, budget and choices) encoded in `CHAOS_THEORY_REPLAY` is used,
+    /// - otherwise, in `std`, if [`Config::with_env_vars`] was called, values from the following
+    ///   environment variables are used:
     ///   - `CHAOS_THEORY_COVER_DEPTH`,
     ///   - `CHAOS_THEORY_COVER_REQUIRE`,
     ///   - `CHAOS_THEORY_CHECK_ITERS`,
@@ -235,14 +245,13 @@ impl Config {
     ///   - `CHAOS_THEORY_REPLAY_VERBOSE`,
     /// - otherwise, default parameter values are used.
     ///
-    /// In `no_std`, `use_env_vars` is ignored and only explicit values plus defaults are used.
-    ///
     /// The random seed defaults to a platform-random value in `std`, and to the deterministic
     /// `no_std` seed sequence otherwise.
     #[must_use]
-    pub fn env(self, use_env_vars: bool) -> Env {
+    pub fn build(self) -> Env {
         #[cfg(feature = "std")]
         {
+            let use_env_vars = self.env_vars;
             let mut config = self;
             std_impl::warn_unknown_env_vars(use_env_vars);
 
@@ -322,7 +331,7 @@ impl Config {
 
         #[cfg(not(feature = "std"))]
         {
-            let _ = use_env_vars;
+            let _ = self.env_vars;
             Env::with_params(
                 self.seed.unwrap_or_else(random_seed_32),
                 self.temperature.unwrap_or(crate::env::TEMPERATURE_DEFAULT),

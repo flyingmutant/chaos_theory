@@ -706,11 +706,11 @@ impl SourceEx<'_> {
     #[cfg(test)]
     pub(crate) fn derived_oneshot_env(&self, tape: Tape) -> Env {
         // Note: the seed is randomized.
-        Env::custom()
+        Env::builder()
             .with_rng_budget(self.env.budget())
             .with_rng_tape(tape)
             .with_check_iters(1)
             .with_reduce_time(Duration::ZERO)
-            .env(false)
+            .build()
     }
 }

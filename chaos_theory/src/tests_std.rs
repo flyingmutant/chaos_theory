@@ -100,7 +100,10 @@ pub(crate) fn prop_smoke_by<G: Generator>(
 
 #[cfg(feature = "_bench")]
 pub(crate) fn bench_gen_next(b: &mut test::Bencher, g: &impl Generator) {
-    let mut env = Env::custom().with_rng_budget(usize::MAX).env(true);
+    let mut env = Env::builder()
+        .with_rng_budget(usize::MAX)
+        .with_env_vars()
+        .build();
     let mut src = env.__start_from_nothing(true);
     let g = core::hint::black_box(g);
     let src = core::hint::black_box(src.as_ex());
@@ -299,7 +302,7 @@ fn print_crossover_examples<G: Generator<Item: Ord>>(
             &mut cache,
         );
         for cross in [cross1, cross2] {
-            let mut env = Env::custom().with_rng_tape(cross).env(false);
+            let mut env = Env::builder().with_rng_tape(cross).build();
             let example = env.generate_with(&g);
             all_examples.push(example);
         }
@@ -339,10 +342,10 @@ fn crossover_examples_vec_u32() {
 #[test]
 #[should_panic(expected = "assertion failed")]
 fn generate_same() {
-    Env::custom()
+    Env::builder()
         .with_rng_seed(0)
         .with_check_iters(2048)
-        .env(false)
+        .build()
         .check(|src| {
             let mut objs = Set::default();
             src.repeat("step", |src| {
@@ -561,9 +564,10 @@ fn fail_crackaddr() {
 
     let g = u8::arbitrary().seeded(b"<>()", false).collect::<Vec<_>>();
 
-    Env::custom()
+    Env::builder()
         .with_check_iters(1024 * 1024)
-        .env(true)
+        .with_env_vars()
+        .build()
         .check(|src| {
             let input: Vec<u8> = src.any_of("input", &g);
             let mut buf = vec![0; 16]; // originally 64

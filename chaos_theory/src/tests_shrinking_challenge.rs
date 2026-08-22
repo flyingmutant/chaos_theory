@@ -81,9 +81,10 @@ fn fail_length_list() {
 #[should_panic(expected = "assertion failed")]
 // https://github.com/jlink/shrinking-challenge/blob/main/challenges/difference.md
 fn fail_difference_not_zero() {
-    Env::custom()
+    Env::builder()
         .with_check_iters(64 * 256)
-        .env(true)
+        .with_env_vars()
+        .build()
         .check(|src| {
             let a: i32 = src.any("a");
             let b: i32 = src.any("b");
@@ -95,9 +96,10 @@ fn fail_difference_not_zero() {
 #[should_panic(expected = "assertion failed")]
 // https://github.com/jlink/shrinking-challenge/blob/main/challenges/difference.md
 fn fail_difference_small() {
-    Env::custom()
+    Env::builder()
         .with_check_iters(64 * 256)
-        .env(true)
+        .with_env_vars()
+        .build()
         .check(|src| {
             let a: i32 = src.any("a");
             let b: i32 = src.any("b");
@@ -110,9 +112,10 @@ fn fail_difference_small() {
 #[should_panic(expected = "assertion failed")]
 // https://github.com/jlink/shrinking-challenge/blob/main/challenges/difference.md
 fn fail_difference_not_one() {
-    Env::custom()
+    Env::builder()
         .with_check_iters(256 * 256)
-        .env(true)
+        .with_env_vars()
+        .build()
         .check(|src| {
             let a: i32 = src.any("a");
             let b: i32 = src.any("b");
