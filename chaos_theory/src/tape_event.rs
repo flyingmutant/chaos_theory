@@ -7,7 +7,7 @@
 use alloc::{string::String, sync::Arc, vec::Vec};
 use core::{fmt::Debug, fmt::Display, num::NonZero};
 
-use crate::{Arbitrary, Effect, Generator, SourceRaw, make, tape::TapeMeta, varint};
+use crate::{Arbitrary, Effect, Generator, SourceEx, make, tape::TapeMeta, varint};
 
 const BUFFER_TOO_SHORT: &str = "buffer too short";
 const INVALID_UTF_8: &str = "invalid UTF-8 data";
@@ -651,7 +651,7 @@ impl Arbitrary for Event {
 
 // TODO(meta): use (fill during generation) an optional mutable TapeMeta to generate valid-in-context events
 #[expect(clippy::too_many_lines)]
-fn make_event(src: &mut SourceRaw, example: Option<&Event>) -> Event {
+fn make_event(src: &mut SourceEx, example: Option<&Event>) -> Event {
     let example_index = example.map(|e| match e {
         Event::ScopeStart { .. } => 0,
         Event::ScopeEnd => 1,

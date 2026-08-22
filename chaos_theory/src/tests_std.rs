@@ -41,10 +41,10 @@ pub(crate) fn any_assert_valid_tape<G: Generator>(
     label: &'static str,
     g: G,
 ) -> G::Item {
-    let chk = src.as_raw().as_mut().tape_checkpoint();
+    let chk = src.as_ex().as_mut().tape_checkpoint();
     let v = src.any_of(label, g);
     let tape = src
-        .as_raw()
+        .as_ex()
         .as_mut()
         .tape_copy_from_checkpoint(chk, true, true);
     tape.debug_assert_valid();
@@ -67,17 +67,17 @@ pub(crate) fn prop_smoke_by<G: Generator>(
     same: impl Fn(&G::Item, &G::Item) -> bool,
 ) {
     src.scope(label, |src| {
-        let chk = src.as_raw().as_mut().tape_checkpoint();
+        let chk = src.as_ex().as_mut().tape_checkpoint();
         // Ensure that the generation works, in general.
         let example = src.any_of("example", &g);
         let tape = src
-            .as_raw()
+            .as_ex()
             .as_mut()
             .tape_copy_from_checkpoint(chk, true, true);
 
         // Ensure the generator tape is valid.
         tape.debug_assert_valid();
-        let value = src.as_raw().any_of("value", &g, Some(&example));
+        let value = src.as_ex().any_of("value", &g, Some(&example));
 
         // Ensure generator can reconstruct examples.
         assert!(
@@ -87,7 +87,7 @@ pub(crate) fn prop_smoke_by<G: Generator>(
 
         // Ensure that after discarding noop data, we generate the same value.
         let tape_ = tape.discard_noop();
-        let mut env = src.as_raw().derived_oneshot_env(tape_);
+        let mut env = src.as_ex().derived_oneshot_env(tape_);
         let example_ = env.example_of(g, None);
         assert!(
             same(&example_, &value),
@@ -101,7 +101,7 @@ pub(crate) fn bench_gen_next(b: &mut test::Bencher, g: &impl Generator) {
     let mut env = Env::custom().with_rng_budget(usize::MAX).env(true);
     let mut src = env.__start_from_nothing(true);
     let g = core::hint::black_box(g);
-    let src = core::hint::black_box(src.as_raw());
+    let src = core::hint::black_box(src.as_ex());
     let example = core::hint::black_box(None);
     b.iter(|| g.next(src, example));
 }
@@ -230,7 +230,7 @@ impl RgbState {
         fill_choices: bool,
         copy_meta: bool,
     ) -> Tape {
-        let chk = src.as_raw().as_mut().tape_checkpoint();
+        let chk = src.as_ex().as_mut().tape_checkpoint();
         let r = unwind::catch_silent(
             &mut |src| {
                 self.prop_fill(src);
@@ -243,7 +243,7 @@ impl RgbState {
             assume!(!e.invalid_data);
         }
         let tape = src
-            .as_raw()
+            .as_ex()
             .as_mut()
             .tape_copy_from_checkpoint(chk, fill_choices, copy_meta);
         tape.debug_assert_valid();
@@ -253,7 +253,7 @@ impl RgbState {
     #[track_caller]
     pub(crate) fn prop_replay_from_tape(&mut self, src: &mut Source, tape: Tape) {
         tape.debug_assert_valid();
-        let mut env = src.as_raw().derived_oneshot_env(tape);
+        let mut env = src.as_ex().derived_oneshot_env(tape);
         let _ = env.check_silent(|src| {
             *self = Self::default();
             self.prop_fill(src);
@@ -268,11 +268,11 @@ fn print_crossover_examples<G: Generator<Item: Ord>>(
     example2: &G::Item,
 ) {
     let tape1 = Env::produce_tape(0, TEMPERATURE_DEFAULT, BUDGET_DEFAULT, |src| {
-        let _ = src.as_raw().any_of("example", &g, Some(example1));
+        let _ = src.as_ex().any_of("example", &g, Some(example1));
     })
     .unwrap();
     let tape2 = Env::produce_tape(0, TEMPERATURE_DEFAULT, BUDGET_DEFAULT, |src| {
-        let _ = src.as_raw().any_of("example", &g, Some(example2));
+        let _ = src.as_ex().any_of("example", &g, Some(example2));
     })
     .unwrap();
 

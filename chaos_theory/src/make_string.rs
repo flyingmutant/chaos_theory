@@ -32,7 +32,7 @@ use std::{
 };
 
 use crate::{
-    Arbitrary, Effect, Generator, MaybeOwned, SourceRaw, make_collection::next_vec_impl,
+    Arbitrary, Effect, Generator, MaybeOwned, SourceEx, make_collection::next_vec_impl,
     math::percent, range::SizeRange,
 };
 
@@ -263,7 +263,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut bytes = Vec::new();
         let example = example.map(|s| s.to_bytes()).or_else(|| {
             src.as_mut()
@@ -312,7 +312,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut bytes = Vec::new();
         let example = example.map(|s| s.as_ref().as_bytes()).or_else(|| {
             src.as_mut()
@@ -362,7 +362,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut wide = Vec::new();
         let example = example
             .map(|s| s.as_ref().encode_wide().collect::<Vec<_>>())
@@ -435,7 +435,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut s = String::new();
         next_string_impl(
             src,
@@ -538,7 +538,7 @@ impl ExactSizeIterator for CharIterator<'_> {
 // a new trait that would need to be implemented for both `IntoIterator<IntoIter: ExactSizeIterator>`
 // types (like most collections) and String, which is impossible due to the coherence rules.
 pub(crate) fn next_string_impl(
-    src: &mut SourceRaw,
+    src: &mut SourceEx,
     mut example: Option<&[u8]>,
     s: &mut impl CharBuf,
     elem: impl Generator<Item = char>,
@@ -782,7 +782,7 @@ mod tests {
                     .collect_n::<Vec<_>>(..64),
             );
             let example = String::from_iter(example);
-            let s = src.as_raw().any("s", Some(&example));
+            let s = src.as_ex().any("s", Some(&example));
             assert_eq!(s, example);
         });
     }

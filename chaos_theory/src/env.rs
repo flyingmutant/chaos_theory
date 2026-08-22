@@ -15,7 +15,7 @@ use core::{
 #[cfg(test)]
 use crate::tape::TapeCheckpoint;
 use crate::{
-    Arbitrary, Config, DETERMINISM_FAILED_PREFIX, Generator, Source, SourceRaw, Unsigned as _,
+    Arbitrary, Config, DETERMINISM_FAILED_PREFIX, Generator, Source, SourceEx, Unsigned as _,
     cover::Cover,
     distrib::Biased,
     hash::hash_str,
@@ -202,7 +202,7 @@ impl Env {
         let tape = if let Some(like) = like {
             let mut tape_like =
                 Self::produce_tape(seed, self.temperature, self.slow.budget, |src| {
-                    let _ = src.as_raw().any_of(EXAMPLE_LABEL, &g, Some(like));
+                    let _ = src.as_ex().any_of(EXAMPLE_LABEL, &g, Some(like));
                 })
                 .expect("generator failed to produce seed tape for the provided value");
             let mut rng = DefaultRand::new(u64::from(seed));
@@ -651,7 +651,7 @@ impl Env {
     }
 }
 
-/// Result of the [`Source::repeat`] or [`SourceRaw::repeat`](crate::SourceRaw::repeat) step.
+/// Result of the [`Source::repeat`] or [`SourceEx::repeat`](crate::SourceEx::repeat) step.
 ///
 /// Correct `Effect` values make exploration and minimization much more efficient.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -932,7 +932,7 @@ impl Env {
             self.temperature,
             self.budget_remaining,
             |src| {
-                let _ = g.next(src.as_raw(), seed);
+                let _ = g.next(src.as_ex(), seed);
             },
         )
     }
@@ -1207,13 +1207,13 @@ impl<S: AsRef<Env> + AsMut<Env>> Drop for Scope<'_, S> {
 }
 
 pub(crate) struct SeedTapeReplayScope<'source, 'env> {
-    pub(crate) src: &'source mut SourceRaw<'env>,
+    pub(crate) src: &'source mut SourceEx<'env>,
     should_pop: bool,
 }
 
 impl<'source, 'env> SeedTapeReplayScope<'source, 'env> {
     pub(crate) fn new<G: Generator>(
-        src: &'source mut SourceRaw<'env>,
+        src: &'source mut SourceEx<'env>,
         g: &G,
         seeds: &[G::Item],
     ) -> Self {

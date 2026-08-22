@@ -6,7 +6,7 @@
 
 #![expect(clippy::allow_attributes)]
 
-use crate::{Arbitrary, Generator, SourceRaw};
+use crate::{Arbitrary, Generator, SourceEx};
 
 macro_rules! define_tuple_arbitrary {
     ($($params: ident)*, $($ixs: tt)*) => {
@@ -14,7 +14,7 @@ macro_rules! define_tuple_arbitrary {
             type Item = ($($params::Item, )*);
 
             #[allow(unused_variables, clippy::unused_unit)]
-            fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+            fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
                 ($(src.any_of(stringify!($ixs), &self.$ixs, example.map(|e| &e.$ixs)), )*)
             }
         }

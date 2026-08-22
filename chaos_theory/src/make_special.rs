@@ -6,7 +6,7 @@
 
 use core::ops::RangeBounds;
 
-use crate::{Generator, SourceRaw, Tweak, range::SizeRange};
+use crate::{Generator, SourceEx, Tweak, range::SizeRange};
 
 #[derive(Debug)]
 struct Size {
@@ -16,7 +16,7 @@ struct Size {
 impl Generator for Size {
     type Item = usize;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.as_mut().choose_size(self.r, example.copied())
     }
 }
@@ -24,7 +24,7 @@ impl Generator for Size {
 /// Create a generator of valid size values.
 ///
 /// When possible, prefer using [`Source::repeat`][crate::Source::repeat]
-/// or [`SourceRaw::repeat`][crate::SourceRaw::repeat].
+/// or [`SourceEx::repeat`][crate::SourceEx::repeat].
 ///
 /// # Panics
 ///
@@ -43,7 +43,7 @@ struct Index {
 impl Generator for Index {
     type Item = usize;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.as_mut()
             .choose_index(self.n, example.copied(), Tweak::None)
     }
@@ -71,7 +71,7 @@ struct TryIndex {
 impl Generator for TryIndex {
     type Item = Option<usize>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         (self.n != 0).then(|| {
             src.as_mut()
                 .choose_index(self.n, example.copied().flatten(), Tweak::None)
@@ -95,7 +95,7 @@ struct Token;
 impl Generator for Token {
     type Item = u128;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_lo = example.map(|v| *v as u64);
         let example_hi = example.map(|v| (v >> 64) as u64);
         let lo = src.as_mut().choose_token(example_lo);

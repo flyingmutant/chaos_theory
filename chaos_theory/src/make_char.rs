@@ -7,7 +7,7 @@
 use core::cmp::Ordering;
 
 use crate::{
-    Arbitrary, Generator, SourceRaw, Tweak,
+    Arbitrary, Generator, SourceEx, Tweak,
     make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB},
     math::percent,
 };
@@ -156,7 +156,7 @@ fn char_range_index(c: char, cat: &[(char, char)]) -> usize {
 impl Generator for Char {
     type Item = char;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut example = example.copied();
         if example.is_none() {
             example = src
@@ -205,7 +205,7 @@ struct Ascii {}
 impl Generator for Ascii {
     type Item = u8;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         const ASCII_MASK: u8 = 0x7f;
         let mut example = example.copied();
         if example.is_none() {
@@ -237,7 +237,7 @@ pub fn byte_ascii() -> impl Generator<Item = u8> {
 pub(crate) mod regex {
     use super::Char;
     use crate::{
-        Generator, SourceRaw, Tweak,
+        Generator, SourceEx, Tweak,
         make::{BYTE_SPECIAL, BYTE_SPECIAL_PROB, from_next_some},
     };
     use core::cmp::Ordering;
@@ -272,7 +272,7 @@ pub(crate) mod regex {
     }
 
     fn next_char_unicode(
-        src: &mut SourceRaw,
+        src: &mut SourceEx,
         example: Option<&char>,
         class: &ClassUnicode,
     ) -> Option<char> {
@@ -308,7 +308,7 @@ pub(crate) mod regex {
     impl Generator for CharClassBytes<'_> {
         type Item = u8;
 
-        fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+        fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
             let mut example = example.copied();
             if example.is_none() {
                 example = src
@@ -413,7 +413,7 @@ mod tests {
                     .filter(|u| !SURROGATE_RANGE.contains(u))
                     .map(|u| char::from_u32(u).unwrap()),
             );
-            let c = src.as_raw().any("c", Some(&example));
+            let c = src.as_ex().any("c", Some(&example));
             assert_eq!(c, example);
         });
     }

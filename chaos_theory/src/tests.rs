@@ -34,6 +34,6 @@ mod derive_nostd_smoke {
     fn smoke_via_source_raw() {
         let mut env = Env::custom().env(false);
         let mut src = env.__start_from_nothing(true);
-        let _value: Sample = src.as_raw().any("sample", None);
+        let _value: Sample = src.as_ex().any("sample", None);
     }
 }

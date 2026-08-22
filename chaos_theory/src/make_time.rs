@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(feature = "std")]
 use crate::Tweak;
-use crate::{Arbitrary, Generator, Ranged, SourceRaw, make, math::percent, range::Range};
+use crate::{Arbitrary, Generator, Ranged, SourceEx, make, math::percent, range::Range};
 
 // In an ideal world, integer generation itself would be smart enough that we wouldn't need this.
 const DURATION_SPECIAL_PROB: f64 = percent(15);
@@ -42,7 +42,7 @@ impl Arbitrary for SystemTime {
 impl Generator for Duration_ {
     type Item = Duration;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut example_secs = example.map(Duration::as_secs);
         if example_secs.is_none() {
             example_secs = src
@@ -141,7 +141,7 @@ fn time_since_epoch(d: Duration) -> SystemTime {
 impl Generator for SystemTime_ {
     type Item = SystemTime;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example = example.map(|t| duration_since_epoch(*t));
         let example_before = example.map(|d| d < DURATION_ANCHOR_FROM_EPOCH);
         let (example_before, forced) = match (self.before, self.after) {
@@ -253,7 +253,7 @@ mod tests {
     fn duration_gen_example() {
         check(|src| {
             let example: Duration = src.any("example");
-            let d = src.as_raw().any("d", Some(&example));
+            let d = src.as_ex().any("d", Some(&example));
             assert_eq!(d, example);
         });
     }
@@ -289,7 +289,7 @@ mod tests {
     fn system_time_gen_example() {
         check(|src| {
             let example: SystemTime = src.any("example");
-            let d = src.as_raw().any("d", Some(&example));
+            let d = src.as_ex().any("d", Some(&example));
             assert_eq!(d, example);
         });
     }

@@ -16,7 +16,7 @@ use core::{
 use std::sync::{LazyLock, RwLock};
 
 use crate::{
-    Effect, Generator, MaybeOwned, OptionExt as _, Scope, SourceRaw,
+    Effect, Generator, MaybeOwned, OptionExt as _, Scope, SourceEx,
     make::{self, CharBuf as _, next_string_impl, next_vec_impl},
     make_char::regex::{
         byte_any, byte_any_non_crlf, byte_any_non_lf, byte_class, char_class, char_non_crlf,
@@ -174,7 +174,7 @@ fn classify_bytes(class: &ClassBytes) -> Option<CharSpecialCases> {
     }
 }
 
-fn next_hir_match(src: &mut SourceRaw, buf: &mut Vec<u8>, hir: &Hir) {
+fn next_hir_match(src: &mut SourceEx, buf: &mut Vec<u8>, hir: &Hir) {
     match hir.kind() {
         HirKind::Empty | HirKind::Look(_) => {
             // Do nothing. In case of `Look`, hope that filtering is enough.
@@ -252,9 +252,9 @@ fn append_pad(
     anchor: PrefixSuffix,
     utf8: bool,
     buf: &mut Vec<u8>,
-    src: &mut SourceRaw,
+    src: &mut SourceEx,
 ) {
-    fn do_append_pad(utf8: bool, buf: &mut Vec<u8>, src: &mut SourceRaw) {
+    fn do_append_pad(utf8: bool, buf: &mut Vec<u8>, src: &mut SourceEx) {
         let pad_size = SizeRange::new(..);
         if utf8 {
             next_string_impl(src, None, buf, make::arbitrary(), pad_size);
@@ -298,7 +298,7 @@ fn append_pad(
 }
 
 fn next_regex_impl(
-    src: &mut SourceRaw,
+    src: &mut SourceEx,
     _example: Option<&[u8]>, // TODO: examples support
     hi: &HirInfo,
     utf8: bool,
@@ -347,7 +347,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let hi = self.compiled.as_ref();
         let v = src.find("<regex>", example, |src, example| {
             let example = example.filter(|e| is_match(self.fullmatch, &hi.re, e.as_bytes()));
@@ -430,7 +430,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let hi = self.compiled.as_ref();
         let v = src.find("<regex>", example, |src, example| {
             let example = example.filter(|e| is_match(self.fullmatch, &hi.re, e));

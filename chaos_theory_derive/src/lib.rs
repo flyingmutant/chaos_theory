@@ -56,7 +56,7 @@ fn expand_derive_arbitrary(input: DeriveInput) -> syn::Result<TokenStream> {
         &container_config,
         quote! {
             ::chaos_theory::make::from_next(
-                |src: &mut ::chaos_theory::SourceRaw, example: Option<&Self>| {
+                |src: &mut ::chaos_theory::SourceEx, example: Option<&Self>| {
                     #body
                 },
             )

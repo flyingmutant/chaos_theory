@@ -24,7 +24,7 @@
 - lean maximally into LLM-friendly "this is just a smart PRNG you use to do random choices" design
   - can you infer scopes from the source code when doing minimization somehow?
   - make the thing as forward-mode-generation-only as possible, simplest possible mental model wins
-- unite Source/SourceRaw, make examples entirely optional
+- unite Source/SourceEx, make examples entirely optional
 - generator is a bad/wrong abstraction -- people *don't* want to write generators
   - but people *do* want convenient data generation helpers
 

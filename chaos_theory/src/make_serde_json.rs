@@ -10,7 +10,7 @@ use core::num::NonZero;
 use serde_json::{Map, Number, Value};
 
 use crate::{
-    Arbitrary, Effect, Generator, OptionExt as _, SourceRaw, UNABLE_GENERATE_UNIQUE, make,
+    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE, make,
     range::SizeRange,
 };
 
@@ -70,7 +70,7 @@ struct Object_<GK, GV> {
 impl<GK: Generator<Item = String>, GV: Generator<Item = Value>> Generator for Object_<GK, GV> {
     type Item = Map<String, Value>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<object>",
@@ -100,7 +100,7 @@ struct Number_ {}
 impl Generator for Number_ {
     type Item = Number;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.and_then(|e| {
             if e.is_u64() {
                 Some(0)
@@ -151,7 +151,7 @@ struct Value_ {}
 impl Generator for Value_ {
     type Item = Value;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|e| match e {
             Value::Null => 0,
             Value::Bool(_) => 1,

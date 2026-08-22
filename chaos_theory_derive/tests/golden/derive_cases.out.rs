@@ -6,7 +6,7 @@
 impl ::chaos_theory::Arbitrary for Point {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self {
@@ -21,7 +21,7 @@ impl ::chaos_theory::Arbitrary for Point {
 impl ::chaos_theory::Arbitrary for Triple {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self(
@@ -37,7 +37,7 @@ impl ::chaos_theory::Arbitrary for Triple {
 impl ::chaos_theory::Arbitrary for Marker {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         { Self })
     }
@@ -47,7 +47,7 @@ impl ::chaos_theory::Arbitrary for Marker {
 impl ::chaos_theory::Arbitrary for Imported {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self {
@@ -61,7 +61,7 @@ impl ::chaos_theory::Arbitrary for Imported {
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Wrapper<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self {
@@ -75,7 +75,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Wrapper<T> {
 impl ::chaos_theory::Arbitrary for CustomPoint {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self {
@@ -104,7 +104,7 @@ impl ::chaos_theory::Arbitrary for FilteredPoint {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::Generator::filter(
             ::chaos_theory::make::from_next(|
-                src: &mut ::chaos_theory::SourceRaw,
+                src: &mut ::chaos_theory::SourceEx,
                 example: Option<&Self>|
             {
                 Self {
@@ -121,7 +121,7 @@ impl ::chaos_theory::Arbitrary for FilteredPoint {
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             let example_index = example
@@ -175,7 +175,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for Action<T> {
 impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for CustomAction<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             let example_index = example
@@ -243,7 +243,7 @@ impl<T: ::chaos_theory::Arbitrary> ::chaos_theory::Arbitrary for CustomAction<T>
 impl<T: core::fmt::Debug> ::chaos_theory::Arbitrary for CustomWrapper<T> {
     fn arbitrary() -> impl ::chaos_theory::Generator<Item = Self> {
         ::chaos_theory::make::from_next(|
-            src: &mut ::chaos_theory::SourceRaw,
+            src: &mut ::chaos_theory::SourceEx,
             example: Option<&Self>|
         {
             Self {

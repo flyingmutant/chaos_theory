@@ -7,7 +7,7 @@
 use alloc::vec::Vec;
 use core::{fmt::Debug, marker::PhantomData, num::NonZero};
 
-use crate::{Generator, OptionExt as _, Source, SourceRaw, Tweak};
+use crate::{Generator, OptionExt as _, Source, SourceEx, Tweak};
 
 const FROM_NEXT_SOME_TOO_MUCH: &str = "from_next_some function produced too many None values";
 
@@ -18,7 +18,7 @@ struct FromNext<F, T> {
 
 impl<F, T> Debug for FromNext<F, T>
 where
-    F: Fn(&mut SourceRaw, Option<&T>) -> T,
+    F: Fn(&mut SourceEx, Option<&T>) -> T,
     T: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -30,12 +30,12 @@ where
 
 impl<F, T> Generator for FromNext<F, T>
 where
-    F: Fn(&mut SourceRaw, Option<&T>) -> T,
+    F: Fn(&mut SourceEx, Option<&T>) -> T,
     T: Debug,
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         (self.next)(src, example)
     }
 }
@@ -47,7 +47,7 @@ struct FromNextSome<F, T> {
 
 impl<F, T> Debug for FromNextSome<F, T>
 where
-    F: Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
+    F: Fn(&mut SourceEx, Option<&T>) -> Option<T>,
     T: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -59,12 +59,12 @@ where
 
 impl<F, T> Generator for FromNextSome<F, T>
 where
-    F: Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
+    F: Fn(&mut SourceEx, Option<&T>) -> Option<T>,
     T: Debug,
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let v = src.find("<from-next-some>", example, &self.next);
         v.assume_some_msg(FROM_NEXT_SOME_TOO_MUCH)
     }
@@ -78,7 +78,7 @@ struct Just<T> {
 impl<T: Debug + Clone> Generator for Just<T> {
     type Item = T;
 
-    fn next(&self, _src: &mut SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, _src: &mut SourceEx, _example: Option<&Self::Item>) -> Self::Item {
         self.value.clone()
     }
 }
@@ -91,7 +91,7 @@ struct OneOfOwned<T> {
 impl<T: Debug + Clone> Generator for OneOfOwned<T> {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         OneOf {
             elements: &self.elements,
         }
@@ -107,7 +107,7 @@ struct OneOf<'elems, T> {
 impl<T: Debug + Clone> Generator for OneOf<'_, T> {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, _example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, _example: Option<&Self::Item>) -> Self::Item {
         // TODO: search for an example in the elements?
         let e_ix = src
             .as_mut()
@@ -125,7 +125,7 @@ struct MixOfOwned<G> {
 impl<G: Generator> Generator for MixOfOwned<G> {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         MixOf {
             gens: &self.gens,
             n: self.n,
@@ -143,7 +143,7 @@ struct MixOf<'gens, G> {
 impl<G: Generator> Generator for MixOf<'_, G> {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.select(
             "<mixof-gen>",
             None,
@@ -185,7 +185,7 @@ pub fn from_fn_some<T: Debug>(func: impl Fn(&mut Source) -> Option<T>) -> impl G
 ///
 /// Prefer [`from_fn`] if you don't need to support example-guided generation.
 pub fn from_next<T: Debug>(
-    next: impl Fn(&mut SourceRaw, Option<&T>) -> T,
+    next: impl Fn(&mut SourceEx, Option<&T>) -> T,
 ) -> impl Generator<Item = T> {
     FromNext {
         next,
@@ -203,7 +203,7 @@ pub fn from_next<T: Debug>(
 /// Prefer [`from_fn_some`] if you don't need to support example-guided generation.
 // TODO: do we really want/need to filter examples?
 pub fn from_next_some<T: Debug>(
-    next: impl Fn(&mut SourceRaw, Option<&T>) -> Option<T>,
+    next: impl Fn(&mut SourceEx, Option<&T>) -> Option<T>,
 ) -> impl Generator<Item = T> {
     FromNextSome {
         next,

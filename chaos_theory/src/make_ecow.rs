@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::make_string::{CharBuf, next_string_impl};
-use crate::{Arbitrary, Effect, Generator, SourceRaw, range::SizeRange};
+use crate::{Arbitrary, Effect, Generator, SourceEx, range::SizeRange};
 use core::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 use ecow::{EcoString, EcoVec};
 
@@ -50,7 +50,7 @@ where
 {
     type Item = EcoString;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut s = EcoString::new();
         next_string_impl(
             src,
@@ -95,7 +95,7 @@ where
 {
     type Item = EcoVec<T>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.as_slice().iter());
         let res = src.repeat(
             "<ecovec>",

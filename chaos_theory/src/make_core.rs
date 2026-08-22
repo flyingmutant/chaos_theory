@@ -14,7 +14,7 @@ use core::{
     result::Result,
 };
 
-use crate::{Arbitrary, Generator, MaybeOwned, SourceRaw, Tweak, make};
+use crate::{Arbitrary, Generator, MaybeOwned, SourceEx, Tweak, make};
 
 impl<T: ?Sized> Arbitrary for PhantomData<T> {
     fn arbitrary() -> impl Generator<Item = Self> {
@@ -39,7 +39,7 @@ impl<T> Arbitrary for MaybeUninit<T> {
 
 impl Arbitrary for Ordering {
     fn arbitrary() -> impl Generator<Item = Self> {
-        fn make_ordering(src: &mut SourceRaw, example: Option<&Ordering>) -> Ordering {
+        fn make_ordering(src: &mut SourceEx, example: Option<&Ordering>) -> Ordering {
             let variants = [Ordering::Less, Ordering::Equal, Ordering::Greater];
             let example_index = example.map(|e| {
                 variants
@@ -66,7 +66,7 @@ struct Range_<GS, GE> {
 impl<GS: Generator, GE: Generator<Item = GS::Item>> Generator for Range_<GS, GE> {
     type Item = Range<GS::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let start = src.any_of("start", &self.start, example.map(|r| &r.start));
         let end = src.any_of("end", &self.end, example.map(|r| &r.end));
         Range { start, end }
@@ -106,7 +106,7 @@ struct RangeInclusive_<GS, GE> {
 impl<GS: Generator, GE: Generator<Item = GS::Item>> Generator for RangeInclusive_<GS, GE> {
     type Item = RangeInclusive<GS::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let start = src.any_of("start", &self.start, example.map(RangeInclusive::start));
         let end = src.any_of("end", &self.end, example.map(RangeInclusive::end));
         RangeInclusive::new(start, end)
@@ -142,7 +142,7 @@ struct Bound_<G> {
 impl<G: Generator> Generator for Bound_<G> {
     type Item = Bound<G::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|e| match e {
             Bound::Included(_) => 0,
             Bound::Excluded(_) => 1,
@@ -194,7 +194,7 @@ struct Option_<G> {
 impl<G: Generator> Generator for Option_<G> {
     type Item = Option<G::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.maybe("<option>", example.map(Option::is_some), |src| {
             self.elem.next(src, example.and_then(|e| e.as_ref()))
         })
@@ -231,7 +231,7 @@ struct Result_<GT, GE> {
 impl<GT: Generator, GE: Generator> Generator for Result_<GT, GE> {
     type Item = Result<GT::Item, GE::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|e| match e {
             Ok(_) => 0,
             Err(_) => 1,

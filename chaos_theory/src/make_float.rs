@@ -7,7 +7,7 @@
 use core::{fmt::Debug, ops::RangeBounds};
 
 use crate::{
-    Arbitrary, Float, Generator, SourceRaw, Tweak, Unsigned as _,
+    Arbitrary, Float, Generator, SourceEx, Tweak, Unsigned as _,
     make::int_in_range,
     math::{self, percent},
     range::Range,
@@ -91,7 +91,7 @@ impl<F: Float> Floating<F> {
 impl<F: Float> Generator for Floating<F> {
     type Item = F;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut example = example.copied();
         if example.is_none() {
             // TODO: generate other interesting values as well
@@ -185,7 +185,7 @@ pub fn float_in_range<F: Float>(r: impl RangeBounds<F>) -> impl Generator<Item =
     Floating::new(neg, pos)
 }
 
-fn gen_unsigned_float<F: Float>(src: &mut SourceRaw, r: Range<u64>, example: Option<u64>) -> u64 {
+fn gen_unsigned_float<F: Float>(src: &mut SourceEx, r: Range<u64>, example: Option<u64>) -> u64 {
     let r = &FloatRange::new::<F>(r, example);
     let e = choose_exp(src, r);
     let si = choose_sig_int::<F>(src, e, r);
@@ -222,11 +222,11 @@ fn compose_float<F: Float>(exp: i32, sig_int: u64, sig_frac: u64) -> u64 {
     e | s
 }
 
-fn choose_exp(src: &mut SourceRaw, r: &FloatRange) -> i32 {
+fn choose_exp(src: &mut SourceEx, r: &FloatRange) -> i32 {
     int_in_range(r.exp_min..=r.exp_max).next(src, r.example.map(|e| e.0).as_ref())
 }
 
-fn choose_sig_int<F: Float>(src: &mut SourceRaw, exp: i32, r: &FloatRange) -> u64 {
+fn choose_sig_int<F: Float>(src: &mut SourceEx, exp: i32, r: &FloatRange) -> u64 {
     let (min, max) = if r.exp_min == r.exp_max {
         (r.sig_int_min, r.sig_int_max)
     } else if exp == r.exp_min {
@@ -244,7 +244,7 @@ fn choose_sig_int<F: Float>(src: &mut SourceRaw, exp: i32, r: &FloatRange) -> u6
         .choose_value(range, r.example.map(|e| e.1), false)
 }
 
-fn choose_sig_frac<F: Float>(src: &mut SourceRaw, exp: i32, sig_int: u64, r: &FloatRange) -> u64 {
+fn choose_sig_frac<F: Float>(src: &mut SourceEx, exp: i32, sig_int: u64, r: &FloatRange) -> u64 {
     let (min, max) = if r.exp_min == r.exp_max && r.sig_int_min == r.sig_int_max {
         (r.sig_frac_min, r.sig_frac_max)
     } else if exp == r.exp_min && sig_int == r.sig_int_min {
@@ -370,7 +370,7 @@ mod tests {
     fn next_like<F: Float>(g: &impl Generator<Item = F>, example: F) -> F {
         let mut env = Env::custom().with_rng_budget(usize::MAX).env(false);
         let mut src = Source::new(&mut env);
-        g.next(src.as_raw(), Some(&example))
+        g.next(src.as_ex(), Some(&example))
     }
 
     #[test]
@@ -458,7 +458,7 @@ mod tests {
                     let mut env = Env::custom().with_rng_seed(seed).env(false);
                     let mut src = Source::new(&mut env);
                     for _ in 0..64 {
-                        let f = g.next(src.as_raw(), None);
+                        let f = g.next(src.as_ex(), None);
                         got_max = got_max || f == r.max;
                         got_min = got_min || f == r.min;
                         got_zero = got_zero || f == F::ZERO;

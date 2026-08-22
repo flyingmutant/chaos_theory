@@ -17,7 +17,7 @@ use core::{
 };
 
 use crate::{
-    Arbitrary, Generator, Int, MaybeOwned, SourceRaw, Tweak, Unsigned as _, math::percent,
+    Arbitrary, Generator, Int, MaybeOwned, SourceEx, Tweak, Unsigned as _, math::percent,
     range::Range,
 };
 
@@ -58,7 +58,7 @@ impl<I: Int> Debug for Integer<I> {
 impl<I: Int> Generator for Integer<I> {
     type Item = I;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut example = example.copied();
         if example.is_none() {
             // Without custom seeds for bytes, we focus too heavy on the ASCII-unprintable range (0-31).
@@ -181,7 +181,7 @@ impl<I: Int128> Debug for Integer128<I> {
 impl<I: Int128> Generator for Integer128<I> {
     type Item = I;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut example = example.copied();
         if example.is_none() {
             example = src
@@ -371,7 +371,7 @@ mod tests {
                     let mut env = Env::custom().with_rng_seed(seed).env(false);
                     let mut src = Source::new(&mut env);
                     for _ in 0..64 {
-                        let i = g.next(src.as_raw(), None);
+                        let i = g.next(src.as_ex(), None);
                         got_min = got_min || i == r.min;
                         got_max = got_max || i == r.max;
                         got_zero = got_zero || i == I::ZERO;

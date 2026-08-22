@@ -330,7 +330,7 @@ models, but it is still useful for domain-specific logic.
 The pattern is "generate fields, then build the struct". Always pass field examples when present.
 
 ```rust
-use chaos_theory::{Generator, SourceRaw};
+use chaos_theory::{Generator, SourceEx};
 
 #[derive(Debug)]
 struct Point {
@@ -344,7 +344,7 @@ struct PointGen;
 impl Generator for PointGen {
     type Item = Point;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Point>) -> Point {
+    fn next(&self, src: &mut SourceEx, example: Option<&Point>) -> Point {
         let x = src.any("x", example.map(|e| &e.x));
         let y = src.any("y", example.map(|e| &e.y));
         Point { x, y }
@@ -354,11 +354,11 @@ impl Generator for PointGen {
 
 #### Enum-Like Types
 
-Use [`select`][sourceraw_select] to choose a variant with a stable label:
+Use [`select`][sourceex_select] to choose a variant with a stable label:
 
 ```rust
 use core::num::NonZero;
-use chaos_theory::{Generator, SourceRaw};
+use chaos_theory::{Generator, SourceEx};
 
 #[derive(Debug)]
 enum Op {
@@ -372,7 +372,7 @@ struct OpGen;
 impl Generator for OpGen {
     type Item = Op;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Op>) -> Op {
+    fn next(&self, src: &mut SourceEx, example: Option<&Op>) -> Op {
         let example_ix = example.map(|e| match e {
             Op::Add(_) => 0,
             Op::Reset => 1,
@@ -401,10 +401,10 @@ impl Generator for OpGen {
 
 #### Collection-Like Types
 
-Use [`repeat`][sourceraw_repeat] to build the collection:
+Use [`repeat`][sourceex_repeat] to build the collection:
 
 ```rust
-use chaos_theory::{Arbitrary, Effect, Generator, SourceRaw};
+use chaos_theory::{Arbitrary, Effect, Generator, SourceEx};
 
 #[derive(Debug)]
 struct BytesGen;
@@ -412,7 +412,7 @@ struct BytesGen;
 impl Generator for BytesGen {
     type Item = Vec<u8>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Vec<u8>>) -> Vec<u8> {
+    fn next(&self, src: &mut SourceEx, example: Option<&Vec<u8>>) -> Vec<u8> {
         let res = src.repeat(
             "<bytes>",
             example.map(IntoIterator::into_iter),
@@ -514,7 +514,7 @@ chaos_theory enables `std` by default. To use it in `no_std + alloc`, disable de
 chaos_theory = { version = "0.4", default-features = false, features = ["no_std", "derive"] }
 ```
 
-In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceRaw`,
+In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceEx`,
 `Env::example`, `make::*` core/alloc generators), while `check` and fuzzing APIs remain `std`-only.
 `Config::env(true)` does not read environment variables in `no_std`.
 Default seeding is deterministic there and can be advanced with `jump_seed_sequence`.
@@ -528,8 +528,8 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [source_maybe]: crate::Source::maybe
 [source_find]: crate::Source::find
 [should_log]: crate::should_log
-[sourceraw_select]: crate::SourceRaw::select
-[sourceraw_repeat]: crate::SourceRaw::repeat
+[sourceex_select]: crate::SourceEx::select
+[sourceex_repeat]: crate::SourceEx::repeat
 
 [effect]: crate::Effect
 [effect_success]: crate::Effect::Success

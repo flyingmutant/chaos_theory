@@ -5,7 +5,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::{Arbitrary, Generator, range::SizeRange};
-use crate::{Effect, OptionExt as _, SourceRaw, UNABLE_GENERATE_UNIQUE};
+use crate::{Effect, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE};
 use core::fmt::Debug;
 use core::hash::{BuildHasher, Hash};
 use core::marker::PhantomData;
@@ -49,7 +49,7 @@ where
 {
     type Item = IndexSet<G::Item, S>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<indexset>",
@@ -109,7 +109,7 @@ where
 {
     type Item = IndexMap<GK::Item, GV::Item, S>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<indexmap>",

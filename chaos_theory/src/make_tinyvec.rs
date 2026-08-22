@@ -11,7 +11,7 @@ use core::{
 };
 use tinyvec::{Array, ArrayVec, TinyVec};
 
-use crate::{Arbitrary, Effect, Generator, SourceRaw, range::SizeRange};
+use crate::{Arbitrary, Effect, Generator, SourceEx, range::SizeRange};
 
 #[cfg_attr(docsrs, doc(cfg(feature = "tinyvec")))]
 impl<A> Arbitrary for TinyVec<A>
@@ -58,7 +58,7 @@ where
 {
     type Item = TinyVec<A>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<tinyvec>",
@@ -98,7 +98,7 @@ where
 {
     type Item = ArrayVec<A>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<arrayvec>",

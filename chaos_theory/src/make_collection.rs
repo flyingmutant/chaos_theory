@@ -23,7 +23,7 @@ use core::{
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    Arbitrary, Effect, Generator, OptionExt as _, SourceRaw, UNABLE_GENERATE_UNIQUE,
+    Arbitrary, Effect, Generator, OptionExt as _, SourceEx, UNABLE_GENERATE_UNIQUE,
     range::SizeRange,
 };
 
@@ -142,7 +142,7 @@ struct Array<G, const N: usize> {
 impl<G: Generator, const N: usize> Generator for Array<G, N> {
     type Item = [G::Item; N];
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         // Avoid `MaybeUninit` because it requires `unsafe`.
         let mut i = 0;
         [(); N].map(|()| {
@@ -178,7 +178,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let mut v = Vec::new();
         next_vec_impl(
             src,
@@ -192,7 +192,7 @@ where
 }
 
 pub(crate) fn next_vec_impl<G: Generator>(
-    src: &mut SourceRaw,
+    src: &mut SourceEx,
     example: Option<&[G::Item]>,
     v: &mut Vec<G::Item>,
     elem: G,
@@ -287,7 +287,7 @@ where
 {
     type Item = BTreeSet<G::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<btreeset>",
@@ -337,7 +337,7 @@ where
 {
     type Item = BTreeMap<GK::Item, GV::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<btreemap>",
@@ -403,7 +403,7 @@ where
 {
     type Item = HashSet<G::Item, S>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| {
             let mut items: Vec<_> = e.iter().collect();
             items.sort_unstable_by_key(|value| value_fingerprint(*value));
@@ -469,7 +469,7 @@ where
 {
     type Item = HashMap<GK::Item, GV::Item, S>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| {
             let mut items: Vec<_> = e.iter().collect();
             items.sort_unstable_by_key(|(key, _)| value_fingerprint(*key));

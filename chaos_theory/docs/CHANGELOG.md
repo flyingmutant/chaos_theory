@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rename `SourceRaw` to `SourceEx`.
 - Report likely hanging check iterations and their seeds, as well as hanging replay/reduction runs.
 - Add a `filter` generator modifier to `#[derive(Arbitrary)]` for structs/enums/fields.
 - Rename `Generator::{filter_assume, filter}` to `Generator::{filter, try_filter}`.

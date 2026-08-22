@@ -3,7 +3,7 @@
 ## Baseline Context
 
 - Current core is Env orchestrating runs with seed/budget/temperature plus replay/mutation/reduction and optional coverage.
-- Source/SourceRaw provide scoped random-choice APIs (any, choose, repeat, select, maybe, find) and log structured events.
+- Source/SourceEx provide scoped random-choice APIs (any, choose, repeat, select, maybe, find) and log structured events.
 - Generator trait and make::* helpers compose generation; example-guided generation is supported.
 - Tape is the trace: choice stream + event stream, with scope metadata and tree-based reduction/mutation.
 
@@ -11,7 +11,7 @@
 
 - Language-agnostic, dependency-free core.
 - Coherent frontend surface that can power property testing, fuzzing, observability, structural data generation, and composable specs.
-- “Smart PRNG” mental model; forward-mode generation; unify Source/SourceRaw; examples optional.
+- “Smart PRNG” mental model; forward-mode generation; unify Source/SourceEx; examples optional.
 - Faithful representation of control flow and data flow including recursion and concurrency.
 - Explicit state-space exploration, coverage, feedback, and “interesting trace” signaling.
 - Compose/decompose symmetry: generation from trace and example-to-trace.

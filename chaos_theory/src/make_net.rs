@@ -9,7 +9,7 @@ use core::{
     num::NonZero,
 };
 
-use crate::{Arbitrary, Generator, SourceRaw, make, range::Range};
+use crate::{Arbitrary, Generator, SourceEx, make, range::Range};
 
 const IPV4_SEEDS: &[Ipv4Addr] = &[
     Ipv4Addr::UNSPECIFIED,         // unspecified address
@@ -70,7 +70,7 @@ struct UniformOctet;
 impl Generator for UniformOctet {
     type Item = u8;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.as_mut().choose_value(
             Range::new_raw(0, u64::from(u8::MAX)),
             example.copied().map(u64::from),
@@ -87,7 +87,7 @@ struct Ipv4Addr_<G> {
 impl<G: Generator<Item = [u8; 4]>> Generator for Ipv4Addr_<G> {
     type Item = Ipv4Addr;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example = example.map(Ipv4Addr::octets);
         let octets = self.octets.next(src, example.as_ref());
         Ipv4Addr::from(octets)
@@ -111,7 +111,7 @@ struct Ipv6Addr_<G> {
 impl<G: Generator<Item = [u8; 16]>> Generator for Ipv6Addr_<G> {
     type Item = Ipv6Addr;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example = example.map(Ipv6Addr::octets);
         let octets = self.octets.next(src, example.as_ref());
         Ipv6Addr::from(octets)
@@ -136,7 +136,7 @@ struct IpAddr_<G4, G6> {
 impl<G4: Generator<Item = Ipv4Addr>, G6: Generator<Item = Ipv6Addr>> Generator for IpAddr_<G4, G6> {
     type Item = IpAddr;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|addr| match addr {
             IpAddr::V4(_) => 0,
             IpAddr::V6(_) => 1,
@@ -193,7 +193,7 @@ impl<GI: Generator<Item = Ipv4Addr>, GP: Generator<Item = u16>> Generator
 {
     type Item = SocketAddrV4;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_port = example.map(SocketAddrV4::port);
         let ip = src.any_of("ip", &self.ip, example.map(SocketAddrV4::ip));
         let port = src.any_of("port", &self.port, example_port.as_ref());
@@ -227,7 +227,7 @@ where
 {
     type Item = SocketAddrV6;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_port = example.map(SocketAddrV6::port);
         let example_flowinfo = example.map(SocketAddrV6::flowinfo);
         let example_scope_id = example.map(SocketAddrV6::scope_id);
@@ -261,7 +261,7 @@ impl<G4: Generator<Item = SocketAddrV4>, G6: Generator<Item = SocketAddrV6>> Gen
 {
     type Item = SocketAddr;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|addr| match addr {
             SocketAddr::V4(_) => 0,
             SocketAddr::V6(_) => 1,

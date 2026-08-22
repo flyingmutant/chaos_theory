@@ -17,7 +17,7 @@ use jiff::{
 };
 
 use crate::{
-    Arbitrary, Generator, Ranged, SourceRaw, Tweak, make, math::percent, range::Range,
+    Arbitrary, Generator, Ranged, SourceEx, Tweak, make, math::percent, range::Range,
     time_zone_names::TIME_ZONE_NAMES_WITH_UNKNOWN,
 };
 
@@ -113,7 +113,7 @@ impl SecNanosRange {
 }
 
 fn sec_nanos_next(
-    src: &mut SourceRaw,
+    src: &mut SourceEx,
     range: SecNanosRange,
     example: Option<(i64, i32)>,
 ) -> (i64, i32) {
@@ -178,7 +178,7 @@ fn signed_duration_sec_nanos(range: Range<SignedDuration>) -> SecNanosRange {
 impl Generator for SignedDuration_ {
     type Item = SignedDuration;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example = example.copied().map(signed_duration_parts);
         let (secs, nanos) = sec_nanos_next(src, self.sec_nanos, example);
         SignedDuration::new(secs, nanos)
@@ -235,7 +235,7 @@ fn timestamp_sec_nanos(range: Range<Timestamp>) -> SecNanosRange {
 impl Generator for Timestamp_ {
     type Item = Timestamp;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_before = example.map(|timestamp| *timestamp < TIMESTAMP_ANCHOR);
         let (example_before, forced) = match (self.before, self.after) {
             (Some(_), Some(_)) => (example_before, false),
@@ -319,7 +319,7 @@ impl TimeZone_ {
         Self { db: tz::db() }
     }
 
-    fn fixed(src: &mut SourceRaw, example_offset: Option<Offset>) -> TimeZone {
+    fn fixed(src: &mut SourceEx, example_offset: Option<Offset>) -> TimeZone {
         let mut example_seconds = example_offset.map(Offset::seconds);
         if example_seconds.is_none() {
             example_seconds = src
@@ -341,7 +341,7 @@ impl TimeZone_ {
 impl Generator for TimeZone_ {
     type Item = TimeZone;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let names = TIME_ZONE_NAMES_WITH_UNKNOWN;
         let example_name_index = example.and_then(|time_zone| {
             if time_zone.is_unknown() {
@@ -405,7 +405,7 @@ struct Zoned_ {
 impl Generator for Zoned_ {
     type Item = Zoned;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_timestamp = example.map(Zoned::timestamp);
         let timestamp = src.any_of(
             "<timestamp>",
@@ -461,7 +461,7 @@ mod tests {
     fn signed_duration_gen_example() {
         check(|src| {
             let example: SignedDuration = src.any("example");
-            let value = src.as_raw().any("value", Some(&example));
+            let value = src.as_ex().any("value", Some(&example));
             assert_eq!(value, example);
         });
     }
@@ -493,7 +493,7 @@ mod tests {
     fn timestamp_gen_example() {
         check(|src| {
             let example: Timestamp = src.any("example");
-            let value = src.as_raw().any("value", Some(&example));
+            let value = src.as_ex().any("value", Some(&example));
             assert_eq!(value, example);
         });
     }
@@ -533,7 +533,7 @@ mod tests {
     fn zoned_gen_example() {
         check(|src| {
             let example: Zoned = src.any("example");
-            let value = src.as_raw().any("value", Some(&example));
+            let value = src.as_ex().any("value", Some(&example));
             assert_eq!(value.timestamp(), example.timestamp());
             assert_eq!(value.time_zone(), example.time_zone());
         });

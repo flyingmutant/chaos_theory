@@ -8,7 +8,7 @@ use core::ops::RangeBounds;
 
 use bytes::{BufMut as _, Bytes, BytesMut};
 
-use crate::{Arbitrary, Effect, Generator, SourceRaw, make, range::SizeRange};
+use crate::{Arbitrary, Effect, Generator, SourceEx, make, range::SizeRange};
 
 #[cfg_attr(docsrs, doc(cfg(feature = "bytes")))]
 impl Arbitrary for Bytes {
@@ -48,7 +48,7 @@ struct BytesMut_<G> {
 impl<G: Generator<Item = u8>> Generator for BytesMut_<G> {
     type Item = BytesMut;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(|e| e.iter());
         let res = src.repeat(
             "<bytes_mut>",

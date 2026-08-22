@@ -20,7 +20,7 @@ where
     T: chaos_theory::Arbitrary + core::fmt::Debug + PartialEq,
 {
     let example: T = src.any(example_label);
-    let value = src.as_raw().any(value_label, Some(&example));
+    let value = src.as_ex().any(value_label, Some(&example));
     assert_eq!(value, example);
 }
 

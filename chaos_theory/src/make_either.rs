@@ -8,7 +8,7 @@ use core::{fmt::Debug, num::NonZero};
 
 use either::Either;
 
-use crate::{Arbitrary, Generator, MaybeOwned, SourceRaw};
+use crate::{Arbitrary, Generator, MaybeOwned, SourceEx};
 
 #[cfg_attr(docsrs, doc(cfg(feature = "either")))]
 impl<L: Arbitrary, R: Arbitrary> Arbitrary for Either<L, R> {
@@ -26,7 +26,7 @@ struct Either_<GL, GR> {
 impl<GL: Generator, GR: Generator> Generator for Either_<GL, GR> {
     type Item = Either<GL::Item, GR::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_index = example.map(|e| match e {
             Either::Left(_) => 0,
             Either::Right(_) => 1,

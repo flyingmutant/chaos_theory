@@ -34,25 +34,25 @@ const UNABLE_PERFORM_MINIMUM_REPEAT: &str =
 /// it makes exploration and minimization much more efficient.
 #[derive(Debug)]
 pub struct Source<'env> {
-    raw: SourceRaw<'env>,
+    ex: SourceEx<'env>,
 }
 
 impl AsRef<Env> for Source<'_> {
     fn as_ref(&self) -> &Env {
-        self.raw.env
+        self.ex.env
     }
 }
 
 impl AsMut<Env> for Source<'_> {
     fn as_mut(&mut self) -> &mut Env {
-        self.raw.env
+        self.ex.env
     }
 }
 
 impl<'env> Source<'env> {
     pub(crate) fn new(env: &'env mut Env) -> Self {
         Self {
-            raw: SourceRaw { env },
+            ex: SourceEx { env },
         }
     }
 
@@ -63,7 +63,7 @@ impl<'env> Source<'env> {
 
     /// Create an instance of type, using the supplied generator.
     pub fn any_of<G: Generator>(&mut self, label: &str, g: G) -> G::Item {
-        self.as_raw().any_of(label, g, None)
+        self.as_ex().any_of(label, g, None)
     }
 
     /// Choose an element from a slice.
@@ -74,7 +74,7 @@ impl<'env> Source<'env> {
         label: &str,
         values: &'values [T],
     ) -> Option<(&'values T, usize)> {
-        self.as_raw().choose(label, None, values)
+        self.as_ex().choose(label, None, values)
     }
 
     /// Choose an element that satisfies the predicate from a slice.
@@ -89,7 +89,7 @@ impl<'env> Source<'env> {
         values: &'values [T],
         pred: impl Fn(&T) -> bool,
     ) -> Option<(&'values T, usize)> {
-        self.as_raw().choose_where(label, None, values, pred)
+        self.as_ex().choose_where(label, None, values, pred)
     }
 
     /// Choose a mutable element from a slice.
@@ -100,7 +100,7 @@ impl<'env> Source<'env> {
         label: &str,
         values: &'values mut [T],
     ) -> Option<(&'values mut T, usize)> {
-        self.as_raw().choose_mut(label, None, values)
+        self.as_ex().choose_mut(label, None, values)
     }
 
     /// Choose a mutable element that satisfies the predicate from a slice.
@@ -115,7 +115,7 @@ impl<'env> Source<'env> {
         values: &'values mut [T],
         pred: impl Fn(&T) -> bool,
     ) -> Option<(&'values mut T, usize)> {
-        self.as_raw().choose_mut_where(label, None, values, pred)
+        self.as_ex().choose_mut_where(label, None, values, pred)
     }
 
     /// Try to generate `Some` value.
@@ -129,7 +129,7 @@ impl<'env> Source<'env> {
         label: &str,
         func: impl Fn(&mut Self) -> Option<T>,
     ) -> Option<T> {
-        let res = SourceRaw::find_impl(self, label, None, |src, _example| func(src));
+        let res = SourceEx::find_impl(self, label, None, |src, _example| func(src));
         self.log_value(label, &res);
         res
     }
@@ -143,7 +143,7 @@ impl<'env> Source<'env> {
 
     /// Maybe proceed.
     pub fn maybe<T>(&mut self, label: &str, body: impl FnOnce(&mut Self) -> T) -> Option<T> {
-        SourceRaw::maybe_impl(self, label, None, body)
+        SourceEx::maybe_impl(self, label, None, body)
     }
 
     /// Select a variant to proceed, where all variants are applicable.
@@ -157,7 +157,7 @@ impl<'env> Source<'env> {
         variants: &[&'static str],
         body: impl FnOnce(&mut Self, &str, usize) -> T,
     ) -> T {
-        SourceRaw::select_impl(self, label, None, variants.len(), |ix| variants[ix], body)
+        SourceEx::select_impl(self, label, None, variants.len(), |ix| variants[ix], body)
     }
 
     /// Repeat `step` a number of times.
@@ -172,7 +172,7 @@ impl<'env> Source<'env> {
         n: impl RangeBounds<usize>,
         mut step: impl FnMut(&mut Self) -> Effect,
     ) {
-        let res = SourceRaw::repeat_impl(
+        let res = SourceEx::repeat_impl(
             self,
             label,
             Option::<core::iter::Empty<()>>::None,
@@ -212,7 +212,7 @@ impl<'env> Source<'env> {
         variants: &[&'static str],
         step: impl FnMut(&mut Self, &str, usize) -> Effect,
     ) {
-        let ok = SourceRaw::repeat_select_impl(
+        let ok = SourceEx::repeat_select_impl(
             self,
             label,
             Option::<core::iter::Empty<usize>>::None,
@@ -262,9 +262,9 @@ impl<'env> Source<'env> {
         self.as_mut().cover_any(conditions);
     }
 
-    /// Get a reference to [`SourceRaw`].
-    pub fn as_raw(&mut self) -> &mut SourceRaw<'env> {
-        &mut self.raw
+    /// Get access to the lower-level [`SourceEx`] interface.
+    pub fn as_ex(&mut self) -> &mut SourceEx<'env> {
+        &mut self.ex
     }
 }
 
@@ -275,25 +275,27 @@ impl<'env> Source<'env> {
     }
 }
 
-/// Lower-level variant of [`Source`], primarily for use in [`Generator`] implementations.
+/// Lower-level variant of [`Source`] with explicit example threading and structural control.
+///
+/// This is useful for custom [`Generator`] implementations and other advanced generation code.
 #[derive(Debug)]
-pub struct SourceRaw<'env> {
+pub struct SourceEx<'env> {
     env: &'env mut Env,
 }
 
-impl AsRef<Env> for SourceRaw<'_> {
+impl AsRef<Env> for SourceEx<'_> {
     fn as_ref(&self) -> &Env {
         self.env
     }
 }
 
-impl AsMut<Env> for SourceRaw<'_> {
+impl AsMut<Env> for SourceEx<'_> {
     fn as_mut(&mut self) -> &mut Env {
         self.env
     }
 }
 
-impl SourceRaw<'_> {
+impl SourceEx<'_> {
     /// Create an instance of `T`, using its [`Arbitrary`] implementation.
     pub fn any<T: Arbitrary>(&mut self, label: &str, example: Option<&T>) -> T {
         self.any_of(label, T::arbitrary(), example)

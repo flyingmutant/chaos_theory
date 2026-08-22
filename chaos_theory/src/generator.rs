@@ -15,7 +15,7 @@ use core::{
 };
 
 use crate::{
-    Effect, MaybeOwned, OptionExt as _, SeedTapeReplayScope, SourceRaw, USE_SEED_PROB,
+    Effect, MaybeOwned, OptionExt as _, SeedTapeReplayScope, SourceEx, USE_SEED_PROB,
     range::SizeRange,
 };
 
@@ -32,8 +32,8 @@ pub trait Generator: Debug {
     /// Generate a new item, optionally using the provided example.
     ///
     /// **Important**: `next` should not be called directly, as that can violate internal `chaos_theory` invariants.
-    /// [`Source::any_of`](crate::Source::any_of) or [`SourceRaw::any_of`] methods should be used instead.
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item;
+    /// [`Source::any_of`](crate::Source::any_of) or [`SourceEx::any_of`] methods should be used instead.
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item;
 
     /// Create a generator which uses the seeds to bias the generated items.
     ///
@@ -258,7 +258,7 @@ pub trait Generator: Debug {
 impl<G: Generator + ?Sized> Generator for &G {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         (**self).next(src, example)
     }
 }
@@ -287,7 +287,7 @@ impl<T> Clone for Gen<'_, T> {
 impl<T: Debug> Generator for Gen<'_, T> {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&T>) -> T {
+    fn next(&self, src: &mut SourceEx, example: Option<&T>) -> T {
         self.0.next(src, example)
     }
 
@@ -317,7 +317,7 @@ impl<T> Clone for GenShared<'_, T> {
 impl<T: Debug> Generator for GenShared<'_, T> {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&T>) -> T {
+    fn next(&self, src: &mut SourceEx, example: Option<&T>) -> T {
         self.0.next(src, example)
     }
 
@@ -347,7 +347,7 @@ impl<G: Generator> Debug for SeededOwned<G> {
 impl<G: Generator> Generator for SeededOwned<G> {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         Seeded {
             gen_: &self.gen_,
             seeds: &self.seeds,
@@ -375,7 +375,7 @@ impl<G: Generator> Debug for Seeded<'_, G> {
 impl<G: Generator> Generator for Seeded<'_, G> {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         if example.is_some() {
             // When example is provided, we ignore the seeds completely and try to reconstruct the example.
             self.gen_.next(src, example)
@@ -412,7 +412,7 @@ where
 {
     type Item = Option<G::Item>;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         src.find(
             "<try-filter>",
             example.and_then(Option::as_ref),
@@ -447,7 +447,7 @@ where
 {
     type Item = G::Item;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let v = src.find("<filter>", example, |src, example| {
             let example = example.filter(|e| (self.pred)(e));
             let v = self.gen_.next(src, example);
@@ -487,7 +487,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         // TODO: we can't go in reverse from &T to &Wrapper(T) (like &Option<T>) without cloning
         let example = example.and_then(|e| (self.rev)(e));
         let arg = self.gen_.next(src, example.as_deref());
@@ -524,7 +524,7 @@ where
 {
     type Item = T;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let arg = src.any_of("<flatmap-arg>", &self.gen_, None);
         let (label, gen_) = (self.func)(arg);
         src.any_of(label, gen_, example)
@@ -563,7 +563,7 @@ where
 {
     type Item = C;
 
-    fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+    fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
         let example_seq = example.map(IntoIterator::into_iter);
         let res = src.repeat(
             "<collect>",
@@ -603,7 +603,7 @@ macro_rules! define_or {
         impl<T: Debug, $($params: Generator<Item = T>, )+> Generator for $name<$($params, )+> {
             type Item = T;
 
-            fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+            fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
                 let n = NonZero::new($n).expect("internal error: zero-sized Or tuple");
                 src.select("<or>", None, n, |_| "", |src, _variant, ix| {
                     match ix {
@@ -641,7 +641,7 @@ macro_rules! define_or_last {
             // but should be good enough: more than 12-long `or` chains
             // should be extremely unlikely in practice.
 
-            fn next(&self, src: &mut SourceRaw, example: Option<&Self::Item>) -> Self::Item {
+            fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
                 let n = NonZero::new($n).expect("internal error: zero-sized Or tuple");
                 src.select("<or>", None, n, |_| "", |src, _variant, ix| {
                     match ix {
