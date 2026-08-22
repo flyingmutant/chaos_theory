@@ -16,7 +16,6 @@
 - consider `make::string` + `make::string_of`
   - dot works better + type inference is simpler + python is simpler
   - what to do with `int*` and `float*`?
-- expose generator types?
 
 ## generators
 
