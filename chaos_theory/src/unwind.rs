@@ -26,6 +26,7 @@ pub fn panic_assume(msg: &str) -> ! {
     panic!("{ASSUME_FAILED_PREFIX}{msg}");
 }
 
+#[track_caller]
 pub(crate) fn panic_determinism(msg: impl Display) -> ! {
     panic!("{DETERMINISM_FAILED_PREFIX}{msg}");
 }

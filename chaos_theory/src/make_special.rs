@@ -57,7 +57,6 @@ impl Generator for Index {
 /// # Panics
 ///
 /// `index` panics when `n` is zero.
-#[track_caller]
 pub fn index(n: usize) -> impl Generator<Item = usize> {
     assert!(n != 0, "index range is empty");
     Index { n }
