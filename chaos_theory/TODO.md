@@ -21,14 +21,13 @@
 - permutation/shuffle/subsequence/random chunking
 - recursive
 
-## features
-
-- consider `reflecting` as a feature (not just a seed)
-- consider runs with forced boundary conditions
-  - can swarming with choice = free-gen vs boundary-gen give this for free?
-
 ## internals
 
+- improve the sorting pass (order, sort predicate, swap-around-mid)
+  - consider pairs-around-midpoint for main reduction pass as well
+- add pair-lowering pass (up to fixed distance, to avoid O(N^2))
+- consider runs with forced boundary conditions
+  - can swarming with choice = free-gen vs boundary-gen give this for free?
 - fuzz smoke in CI
 - consider using `core::range::Range` (requires 1.96)
 - consider using `assert_matches!` (requires 1.96)
