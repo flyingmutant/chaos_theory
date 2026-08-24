@@ -2,6 +2,7 @@
 
 ## docs
 
+- README: `regex` feature required for the main example
 - advertise structural generation without testing
 - better guide text
   - section about how logging works
@@ -29,5 +30,7 @@
 - consider runs with forced boundary conditions
   - can swarming with choice = free-gen vs boundary-gen give this for free?
 - fuzz smoke in CI
+- consider limiting/resetting the caches more during fuzzing for lower memory usage
+- consider some lightweight `CHAOS_THEORY_REPLAY` persistence
 - consider using `core::range::Range` (requires 1.96)
 - consider using `assert_matches!` (requires 1.96)
