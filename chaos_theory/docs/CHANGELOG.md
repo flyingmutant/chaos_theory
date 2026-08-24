@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-08-24)
 
 - Replace `Env::custom` and `Config::env` with `Env::builder`,
   `Config::with_env_vars`, and `Config::build`; `Env::new` no longer reads environment variables.

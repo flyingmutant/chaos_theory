@@ -251,7 +251,7 @@ Enable derive support:
 
 ```toml
 [dev-dependencies]
-chaos_theory = { version = "0.4", features = ["derive"] }
+chaos_theory = { version = "0.5", features = ["derive"] }
 ```
 
 Then derive:
@@ -428,7 +428,7 @@ dependency name:
 ```toml
 [dependencies]
 libfuzzer-sys = { package = "chaos_theory_libfuzzer", version = "0.4.13" }
-chaos_theory = "0.4"
+chaos_theory = "0.5"
 my_crate = { path = ".." }
 ```
 
@@ -464,7 +464,7 @@ chaos_theory enables `std` by default. To use it in `no_std + alloc`, disable de
 
 ```toml
 [dependencies]
-chaos_theory = { version = "0.4", default-features = false, features = ["no_std", "derive"] }
+chaos_theory = { version = "0.5", default-features = false, features = ["no_std", "derive"] }
 ```
 
 In `no_std`, generation APIs are available (`Arbitrary`, `Generator`, `Source`, `SourceEx`,
