@@ -58,9 +58,20 @@ macro_rules! assume {
 /// [`dbg`] wrapper that only outputs values for visible test case runs.
 ///
 /// In `no_std`, this macro produces no output.
-#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! vdbg {
+    () => {
+        $crate::__vdbg_impl!()
+    };
+    ($val:expr $(,)?) => {
+        $crate::__vdbg_impl!($val)
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "std")]
+#[macro_export]
+macro_rules! __vdbg_impl {
     () => {
         if $crate::should_log() {
             ::std::dbg!()
@@ -77,12 +88,10 @@ macro_rules! vdbg {
     };
 }
 
-/// [`dbg`] wrapper that only outputs values for visible test case runs.
-///
-/// In `no_std`, this macro produces no output.
+#[doc(hidden)]
 #[cfg(not(feature = "std"))]
 #[macro_export]
-macro_rules! vdbg {
+macro_rules! __vdbg_impl {
     () => {
         ()
     };
@@ -94,9 +103,17 @@ macro_rules! vdbg {
 /// [`println`] wrapper that only outputs values for visible test case runs.
 ///
 /// In `no_std`, this macro produces no output.
-#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! vprintln {
+    ($($arg:tt)*) => {
+        $crate::__vprintln_impl!($($arg)*)
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "std")]
+#[macro_export]
+macro_rules! __vprintln_impl {
     ($($arg:tt)*) => {
         if $crate::should_log() {
             ::std::println!($($arg)*);
@@ -104,12 +121,10 @@ macro_rules! vprintln {
     };
 }
 
-/// [`println`] wrapper that only outputs values for visible test case runs.
-///
-/// In `no_std`, this macro produces no output.
+#[doc(hidden)]
 #[cfg(not(feature = "std"))]
 #[macro_export]
-macro_rules! vprintln {
+macro_rules! __vprintln_impl {
     ($($arg:tt)*) => {
         if false {
             let _ = ::core::format_args!($($arg)*);
@@ -120,9 +135,17 @@ macro_rules! vprintln {
 /// [`eprintln`] wrapper that only outputs values for visible test case runs.
 ///
 /// In `no_std`, this macro produces no output.
-#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! veprintln {
+    ($($arg:tt)*) => {
+        $crate::__veprintln_impl!($($arg)*)
+    };
+}
+
+#[doc(hidden)]
+#[cfg(feature = "std")]
+#[macro_export]
+macro_rules! __veprintln_impl {
     ($($arg:tt)*) => {
         if $crate::should_log() {
             ::std::eprintln!($($arg)*);
@@ -130,12 +153,10 @@ macro_rules! veprintln {
     };
 }
 
-/// [`eprintln`] wrapper that only outputs values for visible test case runs.
-///
-/// In `no_std`, this macro produces no output.
+#[doc(hidden)]
 #[cfg(not(feature = "std"))]
 #[macro_export]
-macro_rules! veprintln {
+macro_rules! __veprintln_impl {
     ($($arg:tt)*) => {
         if false {
             let _ = ::core::format_args!($($arg)*);
