@@ -1,3 +1,5 @@
+
+
 # chaos_theory
 
 chaos_theory is a modern Rust property-based testing and structure-aware fuzzing library.
@@ -45,6 +47,7 @@ you can use to reproduce the case.
   - built-in swarm testing
 - Macro-free, imperative API (with optional derive macro for `Arbitrary`)
 - Zero unsafe code, zero required dependencies and `no_std`-compatible
+- Minimum supported Rust version 1.88
 
 ## Documentation
 
