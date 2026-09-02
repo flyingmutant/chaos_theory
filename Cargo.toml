@@ -83,7 +83,7 @@ proc-macro2 = "1.0"
 quote = "1.0"
 regex = { version = "1.13.1", default-features = false }
 regex-syntax = { version = "0.8.11", default-features = false }
-serde_json = { version = "1.0.149", default-features = false }
+serde_json = { version = "1.0.151", default-features = false }
 syn = { version = "2.0", default-features = false }
 tinyvec = { version = "1.10.0", default-features = false }
 xshell = "0.2.6"
