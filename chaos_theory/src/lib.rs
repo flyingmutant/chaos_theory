@@ -232,7 +232,9 @@ pub mod make {
     #[cfg(feature = "ecow")]
     /// [`ecow`](https://docs.rs/ecow) generators.
     pub mod ecow {
-        pub use crate::make_ecow::{eco_string, eco_string_n, eco_vec, eco_vec_n};
+        pub use crate::make_ecow::{
+            eco_bytes, eco_bytes_n, eco_string, eco_string_n, eco_vec, eco_vec_n,
+        };
     }
 
     #[cfg(feature = "either")]

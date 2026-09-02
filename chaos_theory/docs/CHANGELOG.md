@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Support `ecow::EcoBytes`.
+
 ## 0.5.0 (2026-08-24)
 
 - Replace `Env::custom` and `Config::env` with `Env::builder`,

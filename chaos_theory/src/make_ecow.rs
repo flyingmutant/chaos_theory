@@ -5,9 +5,16 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::make_string::{CharBuf, next_string_impl};
-use crate::{Arbitrary, Effect, Generator, SourceEx, range::SizeRange};
+use crate::{Arbitrary, Effect, Generator, SourceEx, make, range::SizeRange};
 use core::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
-use ecow::{EcoString, EcoVec};
+use ecow::{EcoBytes, EcoString, EcoVec};
+
+#[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
+impl Arbitrary for EcoBytes {
+    fn arbitrary() -> impl Generator<Item = Self> {
+        eco_bytes(<u8 as Arbitrary>::arbitrary())
+    }
+}
 
 #[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
 impl Arbitrary for EcoString {
@@ -24,6 +31,21 @@ where
     fn arbitrary() -> impl Generator<Item = Self> {
         eco_vec(T::arbitrary())
     }
+}
+
+/// Create an [`EcoBytes`] generator.
+#[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
+pub fn eco_bytes(elem: impl Generator<Item = u8>) -> impl Generator<Item = EcoBytes> {
+    eco_bytes_n(elem, ..)
+}
+
+/// Create an [`EcoBytes`] generator with the specified size range.
+#[cfg_attr(docsrs, doc(cfg(feature = "ecow")))]
+pub fn eco_bytes_n(
+    elem: impl Generator<Item = u8>,
+    size: impl RangeBounds<usize>,
+) -> impl Generator<Item = EcoBytes> {
+    make::slice_n(elem, size)
 }
 
 impl CharBuf for EcoString {
@@ -147,6 +169,11 @@ mod tests {
         const MAX_SIZE: usize = 8;
 
         check(|src| {
+            prop_smoke(
+                src,
+                "EcoBytes",
+                make::ecow::eco_bytes_n(make::arbitrary::<u8>(), ..MAX_SIZE),
+            );
             prop_smoke(
                 src,
                 "EcoString",
