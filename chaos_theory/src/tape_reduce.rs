@@ -234,10 +234,7 @@ impl TTree {
             early_exit = self.try_reorder(node_id, ix, begin, &original, &sorted, accept);
             !early_exit
         });
-        if early_exit {
-            return true;
-        }
-        false
+        early_exit
     }
 
     fn repeat_elements(&self, node_id: usize, ix: usize) -> &[TRepeatElement] {
