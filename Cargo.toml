@@ -62,13 +62,13 @@ clippy.test_attr_in_doctest = { level = "allow", priority = 2 }     # we do want
 clippy.unreadable_literal = { level = "allow", priority = 2 }       # easier to cross-reference magic constants
 
 [workspace.dependencies]
-anyhow = "1.0.98"
+anyhow = "1.0.104"
 bstr = { version = "1.13.1", default-features = false }
 bytes = { version = "1.12.1", default-features = false }
-clap = "4.5.37"
+clap = "4.6.6"
 ecow = { version = "0.2.6", default-features = false }
 either = { version = "1.18.0", default-features = false }
-env_logger = "0.11.8"
+env_logger = "0.11.11"
 hashbrown = { version = "0.17.1", default-features = false }
 indexmap = { version = "2.14.1", default-features = false }
 jiff = { version = "0.2.35", default-features = false }
@@ -86,7 +86,7 @@ regex-syntax = { version = "0.8.11", default-features = false }
 serde_json = { version = "1.0.151", default-features = false }
 syn = { version = "2.0", default-features = false }
 tinyvec = { version = "1.12.0", default-features = false }
-xshell = "0.2.6"
+xshell = "0.2.7"
 uuid = { version = "1.26.0", default-features = false }
 
 chaos_theory_core = { path = "experimental/chaos_theory_core" }
