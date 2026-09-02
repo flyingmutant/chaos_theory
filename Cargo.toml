@@ -70,14 +70,14 @@ ecow = { version = "0.2.6", default-features = false }
 either = { version = "1.17.0", default-features = false }
 env_logger = "0.11.8"
 hashbrown = { version = "0.17.1", default-features = false }
-indexmap = { version = "2.11.4", default-features = false }
+indexmap = { version = "2.14.1", default-features = false }
 jiff = { version = "0.2.35", default-features = false }
 jiff-tzdb = "=0.1.8"
 libfuzzer-sys = { package = "chaos_theory_libfuzzer", version = "0.4.13" }
 libm = "0.2.16"
 log = "0.4.27"
 ordered-float = { version = "5.1.0", default-features = false }
-ordermap = { version = "1.2.0", default-features = false }
+ordermap = { version = "1.2.1", default-features = false }
 prettyplease = "0.2"
 proc-macro2 = "1.0"
 quote = "1.0"
