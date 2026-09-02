@@ -2,7 +2,6 @@
 
 ## docs
 
-- README: `regex` feature required for the main example
 - advertise structural generation without testing
 - better guide text
   - section about how logging works

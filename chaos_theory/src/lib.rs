@@ -14,27 +14,16 @@ are automatically minimized.
 # Quickstart
 
 ```rust
-# #[cfg(feature = "regex")]
-# {
-use chaos_theory::{check, make::string_matching};
+use chaos_theory::check;
 
 #[test]
-fn slug_and_id_roundtrip() {
+fn sort_strings() {
     check(|src| {
-        let slug = src.any_of("slug", string_matching("[a-z0-9]+(-[a-z0-9]+)*", true));
-        let id: u32 = src.any("id");
-
-        let s = format!("{slug}-{id}");
-        let (slug_parsed, id_parsed) = s
-            .rsplit_once('-')
-            .map(|(s, i)| (s, i.parse::<u32>().unwrap()))
-            .unwrap();
-
-        assert_eq!(slug_parsed, slug);
-        assert_eq!(id_parsed, id);
+        let mut strings: Vec<String> = src.any("strings");
+        strings.sort();
+        assert!(strings.is_sorted(), "unsorted after sort: {strings:?}");
     });
 }
-# }
 ```
 
 When a failure happens, `chaos_theory` prints a `CHAOS_THEORY_REPLAY=...` string
