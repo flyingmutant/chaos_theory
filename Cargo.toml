@@ -78,13 +78,13 @@ libm = "0.2.16"
 log = "0.4.27"
 ordered-float = { version = "5.5.0", default-features = false }
 ordermap = { version = "1.2.1", default-features = false }
-prettyplease = "0.2"
+prettyplease = "0.3"
 proc-macro2 = "1.0"
 quote = "1.0"
 regex = { version = "1.13.1", default-features = false }
 regex-syntax = { version = "0.8.11", default-features = false }
 serde_json = { version = "1.0.151", default-features = false }
-syn = { version = "2.0", default-features = false }
+syn = { version = "3.0", default-features = false }
 tinyvec = { version = "1.12.0", default-features = false }
 xshell = "0.2.7"
 uuid = { version = "1.26.0", default-features = false }

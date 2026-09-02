@@ -586,6 +586,7 @@ mod tests {
                 .unwrap_or_else(|err| panic!("failed to parse expanded item for '{name}': {err}"));
             let pretty = prettyplease::unparse(&syn::File {
                 shebang: None,
+                frontmatter: None,
                 attrs: Vec::new(),
                 items: vec![item],
             });
