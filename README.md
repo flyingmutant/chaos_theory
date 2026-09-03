@@ -35,7 +35,7 @@ you can use to reproduce the case.
   - structural mutations and crossover
   - example-guided generation
   - built-in swarm testing
-- Macro-free, imperative API (with optional derive macro for `Arbitrary`)
+- Macro-free, immediate-mode API: generate values and control flow as the test runs
 - Zero unsafe code, zero required dependencies and `no_std`-compatible
 
 ## Documentation

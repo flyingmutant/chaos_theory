@@ -18,7 +18,7 @@ quite a few design ideas left over after implementing rapid. Thus chaos_theory w
 
 ## How is it different from `proptest`?
 
-chaos_theory is built around a simple macro-free imperative API, supports
+chaos_theory is built around a simple macro-free immediate-mode API, supports
 coverage-guided structural fuzzing, and can explore more efficiently thanks to
 built-in swarm testing and example-guided data generation.
 
