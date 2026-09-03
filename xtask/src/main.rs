@@ -126,7 +126,6 @@ fn main() -> Result<()> {
 fn root_dirs(all: bool) -> &'static [&'static str] {
     if all {
         &[
-            "chaos_theory_example",
             "chaos_theory_example_fuzz",
             "chaos_theory_example_fuzz/fuzz",
             "", // last to be the last in the terminal output

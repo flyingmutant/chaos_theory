@@ -26,6 +26,11 @@ fn sort_strings() {
 }
 ```
 
+More complete examples:
+
+- [`parse_date` function test](crate::_examples::parse_date)
+- [`Queue` state machine test](crate::_examples::queue)
+
 When a failure happens, `chaos_theory` prints a `CHAOS_THEORY_REPLAY=...` string
 you can use to reproduce the case.
 
@@ -38,7 +43,7 @@ you can use to reproduce the case.
   - example-guided generation
   - built-in swarm testing
 - Macro-free, immediate-mode API: generate values and control flow as the test runs
-- Zero unsafe code and zero required dependencies
+- Zero unsafe code, zero required dependencies and `no_std`-compatible
 
 # Documentation
 
@@ -99,6 +104,8 @@ mod varint;
 
 #[cfg(doc)]
 pub mod _docs;
+#[cfg(doc)]
+pub mod _examples;
 
 #[cfg(feature = "bstr")]
 mod make_bstr;

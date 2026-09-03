@@ -6,7 +6,7 @@ members = [
   "experimental/chaos_theory_v2",
   "xtask",
 ]
-exclude = ["chaos_theory_example", "chaos_theory_example_fuzz"]
+exclude = ["chaos_theory_example_fuzz"]
 resolver = "2"
 
 [profile.dev]
@@ -54,12 +54,13 @@ clippy.unwrap_used = "warn"
 clippy.use_self = "warn"
 clippy.all = { level = "warn", priority = 0 }
 clippy.pedantic = { level = "warn", priority = 0 }
-clippy.cast_possible_truncation = { level = "allow", priority = 2 } # mostly noise
-clippy.cast_possible_wrap = { level = "allow", priority = 2 }       # mostly noise
-clippy.cast_precision_loss = { level = "allow", priority = 2 }      # mostly noise
-clippy.cast_sign_loss = { level = "allow", priority = 2 }           # mostly noise
-clippy.test_attr_in_doctest = { level = "allow", priority = 2 }     # we do want to show tests in doc comments
-clippy.unreadable_literal = { level = "allow", priority = 2 }       # easier to cross-reference magic constants
+clippy.cast_possible_truncation = { level = "allow", priority = 2 }     # mostly noise
+clippy.cast_possible_wrap = { level = "allow", priority = 2 }           # mostly noise
+clippy.cast_precision_loss = { level = "allow", priority = 2 }          # mostly noise
+clippy.cast_sign_loss = { level = "allow", priority = 2 }               # mostly noise
+clippy.should_panic_without_expect = { level = "allow", priority = 2 }  # for public examples
+clippy.test_attr_in_doctest = { level = "allow", priority = 2 }         # we do want to show tests in doc comments
+clippy.unreadable_literal = { level = "allow", priority = 2 }           # easier to cross-reference magic constants
 
 [workspace.dependencies]
 anyhow = "1.0.104"

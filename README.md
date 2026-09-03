@@ -24,6 +24,11 @@ fn sort_strings() {
 }
 ```
 
+More complete examples:
+
+- [`parse_date` function test](./chaos_theory/tests/parse_date.rs)
+- [`Queue` state machine test](./chaos_theory/tests/queue.rs)
+
 When a failure happens, chaos_theory prints a `CHAOS_THEORY_REPLAY=...` string
 you can use to reproduce the case.
 

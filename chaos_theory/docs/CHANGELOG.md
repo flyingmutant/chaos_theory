@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Documentation improvements.
+
 ## 0.5.1 (2026-09-02)
 
 - Support `ecow::EcoBytes`.
