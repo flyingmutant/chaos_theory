@@ -130,6 +130,11 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
         {
             let t_best = if t_out.has_discardable() {
                 let t_disc = t_out.discard_noop();
+                // Verification accepts t_disc or falls back to t_out.
+                // Since discarding only removes choices, neither can help if t_disc isn't smaller.
+                if !t_disc.smaller_choices(&self.tape) {
+                    return Ok(false);
+                }
                 // Try to make sure discarded data did not affect the test result.
                 self.trials += 1;
                 let (t_disc_out, t_disc_info) = (self.trial)(t_disc.clone());
