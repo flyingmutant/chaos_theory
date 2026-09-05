@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Documentation improvements.
+- Fix rare shift overflow in deep data generation.
 
 ## 0.5.1 (2026-09-02)
 

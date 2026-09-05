@@ -716,7 +716,7 @@ impl Env {
         // For recursive data, gradually tighten the size distribution.
         // This is a hacky way to work around recursive data generation for cases
         // where recursion is expressed in terms of size (and not e.g. tree-as-enum).
-        let t = self.temperature >> (depth / 2);
+        let t = self.temperature.unbounded_shr(depth as u32 / 2);
         let q = mul_add(depth as f64, 0.25, 2.0);
         let d = Biased::new_temperature(t, Some(q));
         d.sample(&mut self.rng, n)
