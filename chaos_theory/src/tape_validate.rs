@@ -16,6 +16,7 @@ pub(crate) struct Validator {
     root_state: ValidatorState,
     scopes: Vec<(ValidatorState, Effect)>,
     metadata_valid: bool,
+    recorded: bool,
     next_intern_id: InternId,
     interned: Set<Arc<str>>,
 }
@@ -26,6 +27,8 @@ enum ValidatorState {
     AfterRepeatSizeStart,
     AfterRepeatSizeChoice(usize),
     InRepeat(NonZero<usize>),
+    // Candidates retain the whole element run; recorded effects may change on replay.
+    RepeatCandidate,
     AfterSelectIndexStart,
     AfterSelectIndexChoice,
     InSelect,
@@ -33,11 +36,12 @@ enum ValidatorState {
 }
 
 impl Validator {
-    pub(crate) fn new(metadata_valid: bool) -> Self {
+    pub(crate) fn new(metadata_valid: bool, recorded: bool) -> Self {
         Self {
             root_state: ValidatorState::Default,
             scopes: Vec::new(),
             metadata_valid,
+            recorded,
             next_intern_id: InternId(1),
             interned: Set::default(),
         }
@@ -58,13 +62,26 @@ impl Validator {
     pub(crate) fn accept(&mut self, event: &Event) -> Result<(), &'static str> {
         type VS = ValidatorState;
         event.validate()?;
+        if self.state() == VS::RepeatCandidate
+            && !matches!(
+                event,
+                Event::ScopeStart {
+                    kind: ScopeKind::RepeatElement,
+                    ..
+                } | Event::ScopeEnd
+                    | Event::Meta(..)
+            )
+        {
+            // A repeat owns only its consecutive element scopes.
+            self.set_state(VS::Default);
+        }
         let state = self.state();
         match event {
             Event::ScopeStart {
                 id: _,
                 kind,
                 effect,
-                discardable,
+                discardable: _,
                 meta,
             } => {
                 if let Some(meta) = meta
@@ -77,14 +94,13 @@ impl Validator {
                         return Err("invalid variant intern ID");
                     }
                 }
-                let new_scope_state =
-                    Self::accept_scope_start(state, *kind, *effect, *discardable)?;
+                let new_scope_state = Self::accept_scope_start(state, *kind)?;
                 self.scopes.push((new_scope_state, *effect));
             }
             Event::ScopeEnd => {
                 let (child_state, effect) = self.scopes.pop().ok_or("unbalanced scope end")?;
                 let parent_state = self.state();
-                let new_parent_state = Self::accept_scope_end(child_state, parent_state, effect)?;
+                let new_parent_state = self.accept_scope_end(child_state, parent_state, effect)?;
                 if let Some(state) = new_parent_state {
                     self.set_state(state);
                 }
@@ -130,8 +146,6 @@ impl Validator {
     fn accept_scope_start(
         state: ValidatorState,
         kind: ScopeKind,
-        effect: Effect,
-        discardable: bool,
     ) -> Result<ValidatorState, &'static str> {
         type VS = ValidatorState;
         type SK = ScopeKind;
@@ -147,16 +161,8 @@ impl Validator {
                 _ => Err("repeat size scope start in unexpected state"),
             },
             SK::RepeatElement => match state {
-                VS::InRepeat(_) => Ok(VS::Default),
-                _ => {
-                    if effect == Effect::Noop && discardable {
-                        // During reduction, some discardable noop tape elements can appear
-                        // after the required number of normal elements; ignore them.
-                        Ok(VS::Default)
-                    } else {
-                        Err("repeat element not immediately after repeat size or another element")
-                    }
-                }
+                VS::InRepeat(_) | VS::RepeatCandidate => Ok(VS::Default),
+                _ => Err("repeat element not immediately after repeat size or another element"),
             },
             SK::SelectIndex => match state {
                 VS::Default | VS::InRepeat(_) => Ok(VS::AfterSelectIndexStart),
@@ -170,13 +176,14 @@ impl Validator {
     }
 
     fn accept_scope_end(
+        &self,
         child_state: ValidatorState,
         parent_state: ValidatorState,
         effect: Effect,
     ) -> Result<Option<ValidatorState>, &'static str> {
         type VS = ValidatorState;
         match child_state {
-            VS::Default => match parent_state {
+            VS::Default | VS::RepeatCandidate => match parent_state {
                 VS::InRepeat(n) => match effect {
                     Effect::Noop | Effect::Change => Ok(None),
                     Effect::Success => {
@@ -188,7 +195,7 @@ impl Validator {
                     }
                 },
                 VS::InSelect => Ok(Some(VS::Default)),
-                VS::Default => Ok(None),
+                VS::Default | VS::RepeatCandidate => Ok(None),
                 VS::AfterRepeatSizeStart
                 | VS::AfterRepeatSizeChoice(_)
                 | VS::AfterSelectIndexStart
@@ -199,7 +206,9 @@ impl Validator {
             },
             VS::AfterRepeatSizeStart => Err("missing repeat size"),
             VS::AfterRepeatSizeChoice(n) => {
-                if let Ok(n) = n.try_into() {
+                if !self.recorded {
+                    Ok(Some(VS::RepeatCandidate))
+                } else if let Ok(n) = n.try_into() {
                     Ok(Some(VS::InRepeat(n)))
                 } else {
                     Ok(Some(VS::Default))
@@ -219,7 +228,7 @@ impl Validator {
             return Err("unbalanced scope start");
         }
         match self.root_state {
-            VS::Default => Ok(()),
+            VS::Default | VS::RepeatCandidate => Ok(()),
             VS::AfterRepeatSizeStart
             | VS::AfterRepeatSizeChoice(_)
             | VS::AfterSelectIndexStart

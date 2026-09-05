@@ -49,7 +49,7 @@ pub(crate) fn any_assert_valid_tape<G: Generator>(
         .as_ex()
         .as_mut()
         .tape_copy_from_checkpoint(chk, true, true);
-    tape.debug_assert_valid();
+    tape.debug_assert_valid(true);
     v
 }
 
@@ -78,7 +78,7 @@ pub(crate) fn prop_smoke_by<G: Generator>(
             .tape_copy_from_checkpoint(chk, true, true);
 
         // Ensure the generator tape is valid.
-        tape.debug_assert_valid();
+        tape.debug_assert_valid(true);
         let value = src.as_ex().any_of("value", &g, Some(&example));
 
         // Ensure generator can reconstruct examples.
@@ -251,13 +251,13 @@ impl RgbState {
             .as_ex()
             .as_mut()
             .tape_copy_from_checkpoint(chk, fill_choices, copy_meta);
-        tape.debug_assert_valid();
+        tape.debug_assert_valid(true);
         tape
     }
 
     #[track_caller]
     pub(crate) fn prop_replay_from_tape(&mut self, src: &mut Source, tape: Tape) {
-        tape.debug_assert_valid();
+        tape.debug_assert_valid(false);
         let mut env = src.as_ex().derived_oneshot_env(tape);
         let _ = env.check_silent(|src| {
             *self = Self::default();

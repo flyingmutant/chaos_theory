@@ -663,7 +663,8 @@ fn mutate_repeat(
     elements.clear();
     elements.reserve(count);
     let (begin, end) = grab_repeat(events, size_ix, elements);
-    let new_count = mutate_repeat_elements(rng, t, min, max, elements, shrink_only, allow_void)?;
+    mutate_repeat_elements(rng, t, min, max, elements, shrink_only, allow_void)?;
+    let new_count = elements.len();
     let backup = &mut cache.repeat_backup;
     backup.clear();
     backup.extend_from_slice(&events[begin..end]);
@@ -680,13 +681,12 @@ fn mutate_repeat(
             })
             .cloned(),
     );
-    if (min..=max).contains(&(new_count as usize)) {
-        Some(new_count)
+    if (min..=max).contains(&new_count) {
+        Some(new_count as u64)
     } else {
-        // We were dealing with an incomplete tape, and have successfully
-        // mutated it. However, it is still an incomplete one. Let's leave
-        // the old count in place, as an aspirational target (we can't use
-        // the new count, as it is outside the valid range).
+        // Incomplete repeats or non-success steps can put the physical length
+        // outside the size bounds. Keep the old target and let replay choose
+        // how many elements to consume using their actual effects.
         Some(count as u64)
     }
 }
@@ -733,17 +733,18 @@ fn mutate_repeat_elements(
     elements: &mut Vec<Option<(usize, usize)>>,
     shrink_only: bool,
     allow_void: bool,
-) -> Option<u64> {
+) -> Option<()> {
     // Note: the repeat might be from an incomplete tape (elements.len() < min).
     // elements.len() > max is also trivially possible (with Effect::Change steps).
-    for _ in 0..mutation_points(rng, t) {
+    // None leaves the list unchanged; Some means at least one edit was attempted.
+    for i in 0..mutation_points(rng, t) {
         let can_shrink = elements.len() > min;
         let can_reorder = !shrink_only && elements.len() > 1;
         let can_grow = !shrink_only && elements.len() < max && (allow_void || !elements.is_empty());
         let actions = usize::from(can_shrink) + usize::from(can_reorder) + usize::from(can_grow);
         if actions == 0 {
-            // This will return on the first iteration or never.
-            return None;
+            // Retain earlier edits when no further operations are available.
+            return (i > 0).then_some(());
         }
         let mut action = rng.next_below(actions);
         if can_shrink {
@@ -789,7 +790,7 @@ fn mutate_repeat_elements(
         }
         unreachable!("internal error: wrong repeat mutate action choice logic");
     }
-    Some(elements.len() as u64)
+    Some(())
 }
 
 #[cfg(test)]

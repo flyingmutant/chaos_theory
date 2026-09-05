@@ -237,7 +237,7 @@ impl Env {
         // It is in theory possible to produce an invalid tape (by using `catch_unwind` and then continuing,
         // thus using an error tape as a prefix, which results in an invalid tape), but we consider this
         // invalid API usage. Thus, we expect that calling any (normal) prop, the tape passes the validation.
-        src.as_mut().tape_out.debug_assert_valid();
+        src.as_mut().tape_out.debug_assert_valid(true);
         v
     }
 

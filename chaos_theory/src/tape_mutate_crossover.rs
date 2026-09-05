@@ -212,16 +212,15 @@ fn crossover_merge_repeat(
             }
             // If the tape is incomplete, we should stop if we've ran out of elements.
             // Note that `inserted` is still incremented for the full amount above.
-            if *ix >= src.len() {
-                break;
-            }
-            debug_assert!(matches!(
-                src[*ix],
-                Event::ScopeStart {
+            if !matches!(
+                src.get(*ix),
+                Some(Event::ScopeStart {
                     kind: ScopeKind::RepeatElement,
                     ..
-                }
-            ));
+                })
+            ) {
+                break;
+            }
             let ix_after_end = Tape::find_after_scope_end(src, *ix + 1);
             if keep {
                 result.extend_from_slice(&src[*ix..ix_after_end]);
@@ -391,16 +390,6 @@ fn crossover_overwrite_section(
                                 ..
                             } if id == j_id && kind == j_kind
                         )
-                        // Avoid increasing repeat success count without updating repeat size.
-                        && !(kind == ScopeKind::RepeatElement
-                            && effect != Effect::Success
-                            && matches!(
-                                other[j - 1],
-                                Event::ScopeStart {
-                                    effect: Effect::Success,
-                                    ..
-                                }
-                            ))
                     {
                         let j_after_end = Tape::find_after_scope_end(other, j);
                         Some((j - 1, j_after_end))

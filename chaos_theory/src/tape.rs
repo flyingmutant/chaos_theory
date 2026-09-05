@@ -249,7 +249,8 @@ impl Tape {
     }
 
     #[track_caller]
-    pub(crate) fn debug_assert_valid(&self) {
+    pub(crate) fn debug_assert_valid(&self, recorded: bool) {
+        // Recorded executions obey repeat success quotas; replay candidates may have surplus elements.
         if cfg!(fuzzing) {
             // Don't spend valuable fuzzing time on internal consistency checks
             // (debug assertions in dependencies can be disabled for regular builds
@@ -260,13 +261,13 @@ impl Tape {
             // Don't try to validate if we will not assert.
             return;
         }
-        if let Err(err) = self.validate() {
+        if let Err(err) = self.validate(recorded) {
             // Use Display impl for prettier output and easier debugging.
             debug_assert_eq!(err, "", "{self}");
         }
     }
 
-    fn validate(&self) -> Result<(), &'static str> {
+    fn validate(&self, recorded: bool) -> Result<(), &'static str> {
         if !(0..=self.choices.len()).contains(&(self.choice_reuse_ix as usize)) {
             return Err("choice reuse index out of bounds");
         }
@@ -276,7 +277,7 @@ impl Tape {
         if self.void_reuse_depth != 0 {
             return Err("non-zero void reuse");
         }
-        let mut v = Validator::new(self.meta.is_some());
+        let mut v = Validator::new(self.meta.is_some(), recorded);
         for event in &self.events {
             v.accept(event)?;
         }
@@ -750,7 +751,7 @@ impl Tape {
     ) {
         debug_assert!(self.reuse_at_zero());
         if debug_validate {
-            self.debug_assert_valid();
+            self.debug_assert_valid(false);
         }
         self.meta = None;
         mutate_events(
@@ -764,7 +765,7 @@ impl Tape {
         );
         self.choices.clear();
         if debug_validate {
-            self.debug_assert_valid();
+            self.debug_assert_valid(false);
         }
     }
 
@@ -780,8 +781,8 @@ impl Tape {
         debug_assert!(self.reuse_at_zero());
         debug_assert!(other.reuse_at_zero());
         if debug_validate {
-            self.debug_assert_valid();
-            other.debug_assert_valid();
+            self.debug_assert_valid(false);
+            other.debug_assert_valid(false);
         }
         let mut res = Self::default();
         debug_assert!(res.meta.is_none());
@@ -795,7 +796,7 @@ impl Tape {
             cache,
         );
         if debug_validate {
-            res.debug_assert_valid();
+            res.debug_assert_valid(false);
         }
         res
     }
@@ -844,7 +845,7 @@ impl Tape {
             meta.rebuild(&self.events);
         }
         if validate {
-            self.validate()?;
+            self.validate(false)?;
         }
         if build_choices {
             self.choices
@@ -906,7 +907,7 @@ impl Tape {
             self.choices.push(u);
         }
         // Validate unconditionally, because with only choices, the tape must be always valid.
-        self.validate()?;
+        self.validate(false)?;
         Ok(())
     }
 }
