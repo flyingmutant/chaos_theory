@@ -196,6 +196,96 @@ impl TTree {
         }
     }
 
+    pub(crate) fn trivialize_child(
+        &mut self,
+        node_id: usize,
+        ix: usize,
+        accept: &mut impl FnMut(&Self) -> Result<bool, ()>,
+    ) -> Result<(), ()> {
+        let push_nodes = |child: &TTreeChild, pending: &mut Vec<usize>| match child {
+            TTreeChild::Choice(_) => {}
+            TTreeChild::Scope { id } => pending.push(*id),
+            TTreeChild::Repeat { elements, .. } => pending.extend(
+                elements
+                    .iter()
+                    .flatten()
+                    .map(|(id, _effect, _discardable)| *id),
+            ),
+        };
+
+        // Minimize nested structure and scalar choices together in a single candidate.
+        let mut pending = Vec::new();
+        push_nodes(&self.nodes[node_id].children[ix], &mut pending);
+        let mut originals = Vec::new();
+        while let Some(node_id) = pending.pop() {
+            for ix in 0..self.nodes[node_id].children.len() {
+                let minimal = match &self.nodes[node_id].children[ix] {
+                    TTreeChild::Choice(event) => {
+                        if matches!(
+                            event,
+                            Event::Size { .. }
+                                | Event::Value { .. }
+                                | Event::Index { forced: false, .. }
+                        ) && event.unwrap_choice_value() != 0
+                        {
+                            let mut event = event.clone();
+                            event.set_choice_value(0);
+                            Some(TTreeChild::Choice(event))
+                        } else {
+                            None
+                        }
+                    }
+                    TTreeChild::Repeat {
+                        id,
+                        size: Some(Event::Size { size, min, max }),
+                        elements,
+                    } if size != min => {
+                        // Keep the prefix needed for the minimum number of successes, including
+                        // intervening changes/noops. Keep all attempts if there aren't enough successes.
+                        let (mut end, mut successes) = (0, 0);
+                        while end < elements.len() && successes < *min {
+                            successes +=
+                                u64::from(matches!(elements[end], Some((_, Effect::Success, _))));
+                            end += 1;
+                        }
+                        Some(TTreeChild::Repeat {
+                            id: *id,
+                            size: Some(Event::Size {
+                                size: *min,
+                                min: *min,
+                                max: *max,
+                            }),
+                            elements: elements[..end].to_vec(),
+                        })
+                    }
+                    _ => None,
+                };
+                if let Some(minimal) = minimal {
+                    originals.push((node_id, ix, self.child(node_id, ix)));
+                    // Also synchronizes a repeat's size scope, used when emitting the tape.
+                    self.child_replace(node_id, ix, &minimal);
+                }
+                push_nodes(&self.nodes[node_id].children[ix], &mut pending);
+            }
+        }
+
+        if originals.is_empty() {
+            return Ok(());
+        }
+        // A single scalar choice is left to the scalar reducer, where zero is already first.
+        let accepted = if originals.len() == 1 && matches!(originals[0].2, TTreeChild::Choice(_)) {
+            Ok(false)
+        } else {
+            accept(self)
+        };
+        if accepted != Ok(true) {
+            for (id, ix, original) in originals.into_iter().rev() {
+                self.child_replace(id, ix, &original);
+            }
+        }
+        accepted.map(|_| ())
+    }
+
     // TODO: make this work not only on repeat elements (e.g. tuple/struct fields)
     pub(crate) fn sort_child(
         &mut self,

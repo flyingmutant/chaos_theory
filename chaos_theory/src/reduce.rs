@@ -159,16 +159,21 @@ impl<F: FnMut(Tape) -> (Tape, Option<PanicInfo>)> Reducer<F> {
     }
 
     fn pass_reduce_tree(&mut self) -> Result<(), ()> {
-        // Keep repeat deletion and choice minimization fused in the same DF-BW traversal.
-        // Giving either operation global priority loses causal/tree order, which is important
-        // when later draws depend on earlier state or change the shape of the program.
+        // Keep deletion, trivialization and choice minimization fused in the same DF-BW
+        // traversal. At each level, prune repeat elements before simplifying the surviving region.
         let mut tree = self.tape.clone().into_tree();
-        let (_removed, _reduced, early_exit) = reduce_tree(&mut tree, |t| {
-            // Don't ignore noop scopes, as they might affect the result.
+        let mut accept = |t: &TTree| {
             let tape = t.to_tape(false);
             // Note: after incorporating candidate tape, self.tape may be less than next tapes we'll generate.
             // However, we'll not build a new tree from the tape unless we are finishing trying to reduce this one.
-            self.try_incorporate(tape, true).ok()
+            self.try_incorporate(tape, true)
+        };
+        let early_exit = visit_tree(&mut tree, |t, node, ix| {
+            let (child, _removed, _reduced, early_exit) =
+                reduce_tree_child(t, node, ix, |t| accept(t).ok());
+            // Try the surviving region's minimum before descending into its individual choices.
+            let early_exit = early_exit || t.trivialize_child(node, ix, &mut accept).is_err();
+            (child, early_exit)
         });
         if early_exit { Err(()) } else { Ok(()) }
     }
@@ -282,7 +287,7 @@ fn visit_tree<T: Tree>(
     while let Some(node) = queue.pop() {
         let children_num = t.children_num(node);
         for ix_fwd in 0..children_num {
-            // Iterate from the right to the left, with intuition being that we want to try to remove the end of the sequence first.
+            // Try to remove the end of the sequence first.
             let ix = children_num - ix_fwd - 1;
             let (child, early_exit) = visit(t, node, ix);
             if early_exit {
@@ -291,34 +296,28 @@ fn visit_tree<T: Tree>(
             // Push groups in the reverse order.
             level_children.push(child);
         }
-        let children = core::mem::take(&mut level_children);
         // Extend the queue with groups in the normal order.
-        for child in children.into_iter().rev() {
+        for child in level_children.drain(..).rev() {
             child.extend_vec(&mut queue);
         }
     }
     false
 }
 
-fn reduce_tree<T: Tree>(
+fn reduce_tree_child<T: Tree>(
     t: &mut T,
+    node: T::NodeId,
+    ix: usize,
     mut accept: impl FnMut(&T) -> Option<bool>,
-) -> (usize, usize, bool) {
-    let mut removed_total = 0;
-    let mut reduced_total = 0;
-    let early_exit = visit_tree(t, |t, node, ix| {
-        let child = t.child(node, ix);
-        let (child_min, removed, reduced, child_early_exit) = child.reduce(|c| {
-            // Note: we are modifying the tree in-place.
-            t.child_replace(node, ix, c);
-            accept(t)
-        });
-        t.child_replace(node, ix, &child_min);
-        removed_total += removed;
-        reduced_total += reduced;
-        (child_min, child_early_exit)
+) -> (T::Child, usize, usize, bool) {
+    let child = t.child(node, ix);
+    let (child_min, removed, reduced, early_exit) = child.reduce(|candidate| {
+        // Modify the tree in place so `accept` observes the complete candidate.
+        t.child_replace(node, ix, candidate);
+        accept(t)
     });
-    (removed_total, reduced_total, early_exit)
+    t.child_replace(node, ix, &child_min);
+    (child_min, removed, reduced, early_exit)
 }
 
 // Simple homegrown ddmin wannabe.
@@ -436,7 +435,7 @@ fn reduce_num_binsearch(n: u64, mut accept: impl FnMut(u64) -> Option<bool>) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Effect, Map, assume, check, make, vdbg};
+    use crate::{Map, assume, check, make, vdbg};
     use core::num::NonZero;
 
     struct ToyTree {
@@ -449,7 +448,6 @@ mod tests {
     struct ToyChild(Vec<Option<ToyNodeId>>);
 
     struct ToyNode {
-        value: u8,
         children: Vec<ToyChild>,
     }
 
@@ -461,12 +459,11 @@ mod tests {
             }
         }
 
-        fn add_child(&mut self, parent_id: Option<ToyNodeId>, value: u8, new_group: bool) {
+        fn add_child(&mut self, parent_id: Option<ToyNodeId>, new_group: bool) {
             let child_id = self.next_node_id;
             let prev = self.nodes.insert(
                 child_id,
                 ToyNode {
-                    value,
                     children: vec![ToyChild(Vec::new())],
                 },
             );
@@ -482,35 +479,9 @@ mod tests {
         }
     }
 
-    impl Seq for ToyChild {
-        fn mask(&self, begin: usize, end: usize) -> Option<(Self, usize)> {
-            let n = self.0[begin..end].iter().filter(|id| id.is_some()).count();
-            if n == 0 {
-                None
-            } else {
-                let mut v = self.0.clone();
-                v[begin..end].fill(Option::None);
-                Some((Self(v), n))
-            }
-        }
-
-        fn size_min(&self) -> usize {
-            self.size_total() / 2 // something more interesting than just "0"
-        }
-
-        fn size_masked(&self) -> usize {
-            self.0.iter().filter(|c| c.is_none()).count()
-        }
-
-        fn size_total(&self) -> usize {
-            self.0.len()
-        }
-    }
-
     impl TreeNodeChild<ToyNodeId> for ToyChild {
-        fn reduce(self, accept: impl FnMut(&Self) -> Option<bool>) -> (Self, usize, usize, bool) {
-            let (r, removed, early_exit) = reduce_seq(self, accept);
-            (r, removed, 0, early_exit)
+        fn reduce(self, _accept: impl FnMut(&Self) -> Option<bool>) -> (Self, usize, usize, bool) {
+            (self, 0, 0, false)
         }
 
         fn extend_vec(self, v: &mut Vec<ToyNodeId>) {
@@ -550,11 +521,11 @@ mod tests {
     fn visit_toy_tree_order() {
         let mut t = ToyTree::new();
         let id = |n| ToyNodeId::new(n).unwrap();
-        t.add_child(None, 0, false); // 1: root
-        t.add_child(Some(id(1)), 0, false); // 2, 3: first group
-        t.add_child(Some(id(1)), 0, false);
-        t.add_child(Some(id(1)), 0, true); // 4: second group
-        t.add_child(Some(id(4)), 0, false); // 5: nested
+        t.add_child(None, false); // 1: root
+        t.add_child(Some(id(1)), false); // 2, 3: first group
+        t.add_child(Some(id(1)), false);
+        t.add_child(Some(id(1)), true); // 4: second group
+        t.add_child(Some(id(4)), false); // 5: nested
 
         let mut visited = Vec::new();
         let early_exit = visit_tree(&mut t, |t, node, ix| {
@@ -564,61 +535,6 @@ mod tests {
 
         assert!(!early_exit);
         assert_eq!(visited, [(1, 1), (1, 0), (4, 0), (5, 0), (3, 0), (2, 0)]);
-    }
-
-    #[test]
-    fn reduce_toy_tree() {
-        fn accept(t: &ToyTree) -> bool {
-            sum(t) != 0
-        }
-
-        fn sum(t: &ToyTree) -> u64 {
-            fn sum_subtree(t: &ToyTree, n: ToyNodeId) -> u64 {
-                let node = &t.nodes[&n];
-                let mut s = u64::from(node.value);
-                for group in &node.children {
-                    for child in group.0.iter().flatten() {
-                        s += sum_subtree(t, *child);
-                    }
-                }
-                s
-            }
-
-            if let Some(root_id) = t.root() {
-                sum_subtree(t, root_id)
-            } else {
-                0
-            }
-        }
-
-        check(|src| {
-            let mut t = ToyTree::new();
-            src.repeat("add child", |src| {
-                let parent_id = src.any_of("parent_id", make::int_in(..t.next_node_id.get()));
-                let value = src.any("value");
-                let new_group = src.any("new_group");
-                if parent_id == 0 {
-                    if !t.nodes.is_empty() {
-                        return Effect::Noop;
-                    }
-                    t.add_child(None, value, new_group);
-                } else {
-                    let parent_id = ToyNodeId::new(parent_id).unwrap();
-                    t.add_child(Some(parent_id), value, new_group);
-                }
-                Effect::Success
-            });
-            assume!(accept(&t));
-            let sum_before = sum(&t);
-            let (mut removed, mut reduced, mut early_exit) = (1, 1, false);
-            while removed > 0 && reduced > 0 && !early_exit {
-                (removed, reduced, early_exit) = reduce_tree(&mut t, |t| Some(accept(t)));
-            }
-            let sum_after = sum(&t);
-            assert!(accept(&t));
-            assert!(sum_after <= sum_before);
-            vdbg!((sum_before, sum_after));
-        });
     }
 
     struct ToySeq(Vec<u8>, usize);

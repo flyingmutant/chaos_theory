@@ -357,8 +357,78 @@ impl Env {
 
 #[cfg(test)]
 mod tests {
-    use crate::Env;
+    use crate::{Effect, Env, make};
     use core::{cell::Cell, time::Duration};
+
+    #[test]
+    fn check_trivializes_nested_vec_to_minimum() {
+        const N: usize = 1000;
+        let choices = core::iter::once(0)
+            .chain([1, 0, 13, 0, 13, 0, 13].into_iter().cycle().take(7 * N))
+            .collect();
+        let mut actual = Vec::new();
+        let mut calls = 0;
+        let result = Env::builder()
+            .with_rng_choices(choices)
+            .build()
+            .check_silent(|src| {
+                calls += 1;
+                actual = src.any_of(
+                    "v",
+                    make::vec_n(make::vec_n(make::arbitrary::<u64>(), 2..=3), N..=N),
+                );
+                assert!(actual.is_empty());
+            });
+
+        assert!(result.ret.is_err());
+        assert_eq!(actual, vec![vec![0, 0]; N]);
+        assert!(calls <= 8, "trivialization took {calls} property calls");
+    }
+
+    #[test]
+    fn check_reduces_nested_stateful_case() {
+        type Op = Result<(u64, (i64, i64)), (i64, i64)>;
+
+        // `Err` arms the state and `Ok` fires. Keeping fire as the lower variant makes
+        // the minimal failing sequence oppose the reducer's preferred sort order.
+        let mut actual: Vec<Op> = Vec::new();
+        let result = Env::builder()
+            .with_check_iters(1)
+            .build()
+            .check_silent(|src| {
+                actual.clear();
+                let mut armed = false;
+                let mut failed = false;
+                src.repeat_n("ops", 2.., |src| {
+                    src.select("op", &["fire", "arm"], |src, variant, _ix| {
+                        let op = match variant {
+                            "arm" => {
+                                if armed {
+                                    return Effect::Noop;
+                                }
+                                armed = true;
+                                Err(src.any("payload"))
+                            }
+                            "fire" => {
+                                if !armed {
+                                    return Effect::Noop;
+                                }
+                                failed = true;
+                                let power: u64 = src.any("power");
+                                Ok((power.max(1), src.any("payload")))
+                            }
+                            _ => unreachable!(),
+                        };
+                        actual.push(op);
+                        Effect::Success
+                    })
+                });
+                assert!(!failed);
+            });
+
+        assert!(result.ret.is_err());
+        assert_eq!(actual, [Err((0, 0)), Ok((1, (0, 0)))]);
+    }
 
     #[test]
     fn check_determinism_observe_mismatch_is_advisory_by_default() {

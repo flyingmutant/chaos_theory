@@ -434,6 +434,21 @@ fn fail_trivial_vec() {
 }
 
 #[test]
+#[should_panic(expected = "assertion failed: v.is_empty()")]
+fn fail_large_result_vec() {
+    check(|src| {
+        let v = src.any_of(
+            "v",
+            make::vec_n(
+                make::arbitrary::<Result<(i64, i64), (i64, i64)>>(),
+                9000..=9001,
+            ),
+        );
+        assert!(v.is_empty());
+    });
+}
+
+#[test]
 #[should_panic(expected = "assertion `left == right` failed")]
 fn fail_trivial_repeat() {
     check(|src| {
