@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.2 (2026-09-07)
 
 - Documentation improvements.
 - Fix rare shift overflow in deep data generation.
