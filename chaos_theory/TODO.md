@@ -30,3 +30,4 @@
 - consider some lightweight `CHAOS_THEORY_REPLAY` persistence
 - consider using `core::range::Range` (requires 1.96)
 - consider using `assert_matches!` (requires 1.96)
+- add `cargo x release`
