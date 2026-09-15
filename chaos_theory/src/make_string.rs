@@ -267,7 +267,7 @@ where
         let mut bytes = Vec::new();
         let example = example.map(|s| s.to_bytes()).or_else(|| {
             src.as_mut()
-                .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                .choose_example(STRING_SPECIAL_PROB, STRING_SPECIAL)
                 .copied()
                 .map(str::as_bytes)
         });
@@ -316,7 +316,7 @@ where
         let mut bytes = Vec::new();
         let example = example.map(|s| s.as_ref().as_bytes()).or_else(|| {
             src.as_mut()
-                .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                .choose_example(STRING_SPECIAL_PROB, STRING_SPECIAL)
                 .copied()
                 .map(str::as_bytes)
         });
@@ -368,7 +368,7 @@ where
             .map(|s| s.as_ref().encode_wide().collect::<Vec<_>>())
             .or_else(|| {
                 src.as_mut()
-                    .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+                    .choose_example(STRING_SPECIAL_PROB, STRING_SPECIAL)
                     .copied()
                     .map(|s| s.encode_utf16().collect())
             });
@@ -547,7 +547,7 @@ pub(crate) fn next_string_impl(
     if example.is_none() {
         example = src
             .as_mut()
-            .choose_seed(STRING_SPECIAL_PROB, STRING_SPECIAL)
+            .choose_example(STRING_SPECIAL_PROB, STRING_SPECIAL)
             .copied()
             .map(str::as_bytes);
     }

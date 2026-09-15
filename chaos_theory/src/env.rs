@@ -99,7 +99,7 @@ pub(crate) const USE_SEED_AS_IS_PROB: f64 = percent(15);
 #[repr(u64)]
 pub(crate) enum Tweak {
     None = 0,
-    SeedChoice = 1,
+    ExampleChoice = 1,
     IntSign = 2,
     FloatSign = 3,
     CharCategory = 4,
@@ -897,31 +897,28 @@ impl Env {
             })
     }
 
-    pub(crate) fn choose_seed_index(&mut self, prob: f64, seeds: usize) -> Option<usize> {
-        if seeds == 0 {
+    pub(crate) fn choose_example_index(&mut self, prob: f64, n: usize) -> Option<usize> {
+        if n == 0 {
             return None;
         }
         let replay = !self.tape_replay.is_empty();
         if replay && !self.tape_replay.is_void_reuse() {
-            // When we operate in the replay mode, and we are not in void reuse,
-            // we use the provided tape for everything, so any additional seed tapes are out of question.
+            // Preserve recorded choices instead of supplying fresh examples over them.
             return None;
         }
-        let use_seed = self.rng.coinflip(prob);
-        if !use_seed {
+        if !self.rng.coinflip(prob) {
             return None;
         }
-        let seed_ix = self.choice_new_swarm(seeds as u64, Tweak::SeedChoice);
-        Some(seed_ix as usize)
+        Some(self.choice_new_swarm(n as u64, Tweak::ExampleChoice) as usize)
     }
 
-    pub(crate) fn choose_seed<'seeds, T>(
+    pub(crate) fn choose_example<'values, T>(
         &mut self,
         prob: f64,
-        seeds: &'seeds [T],
-    ) -> Option<&'seeds T> {
-        self.choose_seed_index(prob, seeds.len())
-            .map(|seed_ix| &seeds[seed_ix])
+        values: &'values [T],
+    ) -> Option<&'values T> {
+        self.choose_example_index(prob, values.len())
+            .map(|ix| &values[ix])
     }
 
     fn produce_seed_tape<G: Generator>(
@@ -930,7 +927,7 @@ impl Env {
         prob: f64,
         seeds: &[G::Item],
     ) -> Option<Tape> {
-        let seed = self.choose_seed(prob, seeds);
+        let seed = self.choose_example(prob, seeds);
         seed?;
         // Each tape gets its own seed and the same remaining budget.
         Self::produce_tape(

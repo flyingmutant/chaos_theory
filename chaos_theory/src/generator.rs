@@ -385,7 +385,7 @@ impl<G: Generator> Generator for Seeded<'_, G> {
             self.gen_.next(scope.src, None)
         } else {
             // Optimization: no need to create a tape if we will not mutate it.
-            let seed = src.as_mut().choose_seed(USE_SEED_PROB, self.seeds);
+            let seed = src.as_mut().choose_example(USE_SEED_PROB, self.seeds);
             self.gen_.next(src, seed)
         }
     }

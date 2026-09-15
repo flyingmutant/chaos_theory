@@ -69,7 +69,7 @@ impl<I: Int> Generator for Integer<I> {
                 let base = BYTE_SPECIAL.len();
                 example = src
                     .as_mut()
-                    .choose_seed_index(BYTE_SPECIAL_PROB, base + seeds.len())
+                    .choose_example_index(BYTE_SPECIAL_PROB, base + seeds.len())
                     .map(|seed_ix| {
                         if seed_ix >= base {
                             return seeds[seed_ix - base];
@@ -81,7 +81,7 @@ impl<I: Int> Generator for Integer<I> {
             } else {
                 example = src
                     .as_mut()
-                    .choose_seed(INTEGER_BOUND_PROB, &seeds)
+                    .choose_example(INTEGER_BOUND_PROB, &seeds)
                     .copied();
             }
         }
@@ -185,7 +185,7 @@ impl<I: Int128> Generator for Integer128<I> {
         if example.is_none() {
             example = src
                 .as_mut()
-                .choose_seed(INTEGER_BOUND_PROB, &[I::MIN, I::MAX])
+                .choose_example(INTEGER_BOUND_PROB, &[I::MIN, I::MAX])
                 .copied();
         }
 

@@ -162,7 +162,7 @@ impl Generator for Char {
         if example.is_none() {
             example = src
                 .as_mut()
-                .choose_seed(CHAR_SPECIAL_PROB, CHAR_SPECIAL)
+                .choose_example(CHAR_SPECIAL_PROB, CHAR_SPECIAL)
                 .copied();
         }
         let example_cat_ix = example.map(char_category_index);
@@ -212,7 +212,7 @@ impl Generator for Ascii {
         if example.is_none() {
             example = src
                 .as_mut()
-                .choose_seed(BYTE_SPECIAL_PROB, BYTE_SPECIAL)
+                .choose_example(BYTE_SPECIAL_PROB, BYTE_SPECIAL)
                 .copied();
         }
         let example = example.map(|e| usize::from(e & ASCII_MASK));
@@ -316,7 +316,7 @@ pub(crate) mod regex {
             if example.is_none() {
                 example = src
                     .as_mut()
-                    .choose_seed(BYTE_SPECIAL_PROB, BYTE_SPECIAL)
+                    .choose_example(BYTE_SPECIAL_PROB, BYTE_SPECIAL)
                     .copied();
             }
             let whole_range = [ClassBytesRange::new(u8::MIN, u8::MAX)];

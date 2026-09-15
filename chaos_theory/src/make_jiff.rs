@@ -121,7 +121,7 @@ fn sec_nanos_next(
     if example_secs.is_none() {
         example_secs = src
             .as_mut()
-            .choose_seed(DURATION_SPECIAL_PROB, SECOND_SPECIALS)
+            .choose_example(DURATION_SPECIAL_PROB, SECOND_SPECIALS)
             .copied()
             .and_then(|secs| {
                 if range.secs.contains(&secs) {
@@ -140,7 +140,7 @@ fn sec_nanos_next(
     if example_nanos.is_none() {
         example_nanos = src
             .as_mut()
-            .choose_seed(DURATION_SPECIAL_PROB, NANOSECOND_SPECIALS)
+            .choose_example(DURATION_SPECIAL_PROB, NANOSECOND_SPECIALS)
             .copied()
             .and_then(|nanos| {
                 if nanos_range.contains(&nanos) {
@@ -316,7 +316,7 @@ impl TimeZone_ {
         if example_seconds.is_none() {
             example_seconds = src
                 .as_mut()
-                .choose_seed(TIME_ZONE_SPECIAL_PROB, TIME_ZONE_OFFSET_SPECIALS)
+                .choose_example(TIME_ZONE_SPECIAL_PROB, TIME_ZONE_OFFSET_SPECIALS)
                 .copied();
         }
         let seconds = src.any_of(

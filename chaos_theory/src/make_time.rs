@@ -47,7 +47,7 @@ impl Generator for Duration_ {
         if example_secs.is_none() {
             example_secs = src
                 .as_mut()
-                .choose_seed(DURATION_SPECIAL_PROB, &[60, 3600, 86400])
+                .choose_example(DURATION_SPECIAL_PROB, &[60, 3600, 86400])
                 .copied()
                 .filter(|secs| self.secs.contains(secs));
         }
@@ -65,7 +65,7 @@ impl Generator for Duration_ {
         if example_nanos.is_none() {
             example_nanos = src
                 .as_mut()
-                .choose_seed(DURATION_SPECIAL_PROB, &[1000, 1_000_000, 500_000_000])
+                .choose_example(DURATION_SPECIAL_PROB, &[1000, 1_000_000, 500_000_000])
                 .copied()
                 .filter(|nanos| (nanos_min..=nanos_max).contains(nanos));
         }

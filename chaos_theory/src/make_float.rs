@@ -98,7 +98,7 @@ impl<F: Float> Generator for Floating<F> {
             // TODO: generate other interesting values as well
             example = src
                 .as_mut()
-                .choose_seed(
+                .choose_example(
                     FLOAT_BOUND_PROB,
                     &[F::ZERO, F::ZERO.negate(), self.seed_min, self.seed_max],
                 )
