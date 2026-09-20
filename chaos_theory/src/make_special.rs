@@ -6,7 +6,11 @@
 
 use core::ops::RangeBounds;
 
-use crate::{Generator, SourceEx, env::Tweak, range::SizeRange};
+use crate::{
+    Generator, SourceEx,
+    env::{MAX_SIZE, Tweak},
+    range::SizeRange,
+};
 
 #[derive(Debug)]
 struct Size {
@@ -17,7 +21,7 @@ impl Generator for Size {
     type Item = usize;
 
     fn next(&self, src: &mut SourceEx, example: Option<&Self::Item>) -> Self::Item {
-        src.as_mut().choose_size(self.r, example.copied())
+        src.as_mut().choose_size(self.r, example.copied(), MAX_SIZE)
     }
 }
 

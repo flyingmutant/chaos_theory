@@ -29,6 +29,7 @@ The basic operations:
 - [`any`][source_any] / [`any_of`][source_any_of] generate values from [`Arbitrary`][arbitrary]
   or from a generator.
 - [`choose`][source_choose] selects an element from a slice.
+- [`shuffle`][source_shuffle] reorders a slice in place.
 - [`select`][source_select] chooses a labeled variant and runs a branch.
 - [`repeat`][source_repeat] repeats a step, using [`Effect`][effect] to report what happened.
 - [`maybe`][source_maybe] and [`find`][source_find] are for optional steps and recoverable failures.
@@ -192,6 +193,8 @@ Common categories:
 - Collections: [`vec`][make_vec], [`vec_n`][make_vec_n],
   [`btree_map`][make_btree_map], [`hash_map`][make_hash_map],
   [`btree_set`][make_btree_set], [`hash_set`][make_hash_set]
+- Sequence transformations: [`permutation`][make_permutation],
+  [`subsequence`][make_subsequence], [`chunks`][make_chunks]
 - Time: [`duration_in`][make_duration_in], [`system_time_in`][make_system_time_in]
 - Sync and cells: [`mutex`][make_mutex], [`rw_lock`][make_rw_lock],
   [`once_lock`][make_once_lock], [`cell`][make_cell], [`ref_cell`][make_ref_cell]
@@ -478,6 +481,7 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [source_any]: crate::Source::any
 [source_any_of]: crate::Source::any_of
 [source_choose]: crate::Source::choose
+[source_shuffle]: crate::Source::shuffle
 [source_select]: crate::Source::select
 [source_repeat]: crate::Source::repeat
 [source_maybe]: crate::Source::maybe
@@ -527,6 +531,9 @@ Default seeding is deterministic there and can be advanced with `jump_seed_seque
 [make_byte_ascii]: crate::make::byte_ascii
 [make_vec]: crate::make::vec
 [make_vec_n]: crate::make::vec_n
+[make_permutation]: crate::make::permutation
+[make_subsequence]: crate::make::subsequence
+[make_chunks]: crate::make::chunks
 [make_btree_map]: crate::make::btree_map
 [make_hash_map]: crate::make::hash_map
 [make_btree_set]: crate::make::btree_set

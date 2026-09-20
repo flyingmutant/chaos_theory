@@ -18,7 +18,6 @@
 
 ## generators
 
-- permutation/shuffle/subsequence/random chunking
 - recursive
 
 ## internals

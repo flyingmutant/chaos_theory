@@ -135,6 +135,7 @@ mod make_ordered_float;
 mod make_ordermap;
 #[cfg(feature = "regex")]
 mod make_regex;
+mod make_sequence;
 #[cfg(feature = "serde_json")]
 mod make_serde_json;
 mod make_special;
@@ -187,6 +188,7 @@ pub mod make {
         byte_slice_matching, bytes_matching, cstring_matching, cstring_slice_matching,
         string_matching, string_slice_matching,
     };
+    pub use crate::make_sequence::{chunks, chunks_n, permutation, subsequence, subsequence_n};
     pub use crate::make_special::{index, size, token, try_index};
     pub use crate::make_string::{
         cstring, cstring_n, cstring_slice, cstring_slice_n, string, string_n, string_slice,

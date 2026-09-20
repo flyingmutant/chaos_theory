@@ -121,6 +121,14 @@ impl<'env> Source<'env> {
         self.as_ex().choose_mut_where(label, None, values, pred)
     }
 
+    /// Shuffle a slice in place.
+    ///
+    /// Use [`make::permutation`](crate::make::permutation) to generate an order
+    /// that can be applied to several collections.
+    pub fn shuffle<T: Debug>(&mut self, label: &str, values: &mut [T]) {
+        self.as_ex().shuffle(label, None, values);
+    }
+
     /// Find a `Some` value using `func`.
     ///
     /// `find` is similar to [`Generator::try_filter`]: it returns `None` if unable to find a value.
@@ -179,6 +187,7 @@ impl<'env> Source<'env> {
             label,
             Option::<core::iter::Empty<()>>::None,
             n,
+            MAX_SIZE,
             |_| (),
             |_v, src, _e| step(src),
         );
@@ -430,6 +439,15 @@ impl SourceEx<'_> {
         src.log_return(ix.flatten())
     }
 
+    /// Shuffle a slice in place, optionally following an example permutation.
+    pub fn shuffle<T: Debug>(&mut self, label: &str, example: Option<&[usize]>, values: &mut [T]) {
+        {
+            let mut src = Scope::new_plain(self, label, core::any::type_name::<[T]>());
+            crate::make_sequence::shuffle_impl(&mut src, example, values);
+        }
+        self.log_value(label, &values);
+    }
+
     /// Find a `Some` value using `func`.
     ///
     /// `find` is similar to [`Generator::try_filter`]: it returns `None` if unable to find a value.
@@ -458,6 +476,7 @@ impl SourceEx<'_> {
             label,
             example.map(|_| example.into_iter()),
             1..=1,
+            MAX_SIZE,
             |_n| None,
             |v, src, example| {
                 *v = next(src, example);
@@ -490,9 +509,11 @@ impl SourceEx<'_> {
         let go = {
             let mut src = Scope::new(src, label, "<maybe>", true, ScopeKind::RepeatSize, false);
             // TODO: right now this is a shorthand for `repeat_n(0..=1)` and inconsistent with `bool::arbitrary()`
-            let size = src
-                .as_mut()
-                .choose_size(SizeRange::new_raw(0, 1), example.map(usize::from));
+            let size = src.as_mut().choose_size(
+                SizeRange::new_raw(0, 1),
+                example.map(usize::from),
+                MAX_SIZE,
+            );
             let go = size != 0;
             src.log_return(go)
         };
@@ -559,8 +580,21 @@ impl SourceEx<'_> {
         setup: impl FnOnce(usize) -> S,
         step: impl FnMut(&mut S, &mut Self, Option<T>) -> Effect,
     ) -> Option<S> {
-        let res = Self::repeat_impl(self, label, example, n_steps, setup, step);
+        let res = Self::repeat_impl(self, label, example, n_steps, MAX_SIZE, setup, step);
         self.log_value(label, &res); // TODO: do we need this?
+        res
+    }
+
+    pub(crate) fn repeat_finite<S: Debug, T>(
+        &mut self,
+        label: &str,
+        example: Option<impl ExactSizeIterator<Item = T>>,
+        n_steps: SizeRange,
+        setup: impl FnOnce(usize) -> S,
+        step: impl FnMut(&mut S, &mut Self, Option<T>) -> Effect,
+    ) -> Option<S> {
+        let res = Self::repeat_impl(self, label, example, n_steps, usize::MAX, setup, step);
+        self.log_value(label, &res);
         res
     }
 
@@ -570,6 +604,7 @@ impl SourceEx<'_> {
         label: &str,
         mut example: Option<impl ExactSizeIterator<Item = T>>,
         n_steps: impl RangeBounds<usize>,
+        max_extra: usize,
         setup: impl FnOnce(usize) -> S,
         mut step: impl FnMut(&mut S, &mut Src, Option<T>) -> Effect,
     ) -> Option<S> {
@@ -577,9 +612,11 @@ impl SourceEx<'_> {
         let r = SizeRange::new(n_steps);
         let (must, extra) = {
             let mut src = Scope::new(src, label, "<size>", true, ScopeKind::RepeatSize, false);
-            let total = src
-                .as_mut()
-                .choose_size(r, example.as_ref().map(ExactSizeIterator::len));
+            let total = src.as_mut().choose_size(
+                r,
+                example.as_ref().map(ExactSizeIterator::len),
+                max_extra,
+            );
             let (must, extra) = (r.min, total - r.min);
             src.log_return((must as u32, extra as u32))
         };
@@ -677,6 +714,7 @@ impl SourceEx<'_> {
             label,
             example_indices,
             n_steps,
+            MAX_SIZE,
             |_n| (),
             |(), src, example_index| {
                 // TODO: ensure that repeat gives us the right index
