@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update to Unicode 18.
 - Add `make::{permutation, subsequence, subsequence_n, chunks, chunks_n}` and `Source::shuffle`.
 
 ## 0.5.2 (2026-09-07)
