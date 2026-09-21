@@ -217,6 +217,17 @@ pub(crate) fn next_vec_impl<G: Generator>(
 }
 
 /// Create a [`Vec`] generator.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let row = src.any_of("row", make::vec(make::option(make::int_in(0u8..=9))));
+/// });
+/// # }
+/// ```
 pub fn vec<T>(elem: impl Generator<Item = T>) -> impl Generator<Item = Vec<T>>
 where
     T: Debug,
@@ -225,6 +236,18 @@ where
 }
 
 /// Create a [`Vec`] generator with a specified size range.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let packet = src.any_of("packet", make::vec_n(make::byte_ascii(), 1..=64));
+///     assert!(packet.is_ascii() && (1..=64).contains(&packet.len()));
+/// });
+/// # }
+/// ```
 pub fn vec_n<T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
@@ -243,6 +266,18 @@ where
 /// - [`Rc<[T]>`](alloc::rc::Rc)
 /// - [`Arc<[T]>`](alloc::sync::Arc)
 /// - [`Cow<'_, [T]>`](alloc::borrow::Cow)
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+/// use std::sync::Arc;
+///
+/// check(|src| {
+///     let samples: Arc<[i16]> = src.any_of("samples", make::slice(make::int_in(-100..=100)));
+/// });
+/// # }
+/// ```
 pub fn slice<S, T>(elem: impl Generator<Item = T>) -> impl Generator<Item = S>
 where
     S: From<Vec<T>> + Deref<Target = [T]> + Debug,
@@ -313,6 +348,18 @@ where
 }
 
 /// Create a [`BTreeSet`] generator with a specified size range.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let set = src.any_of("set", make::btree_set_n(make::int_in(0u16..=1000), 1..=8));
+///     assert!((1..=8).contains(&set.len()));
+/// });
+/// # }
+/// ```
 pub fn btree_set_n<T>(
     elem: impl Generator<Item = T>,
     size: impl RangeBounds<usize>,
@@ -498,6 +545,21 @@ where
 }
 
 /// Create a [`HashMap`] generator.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+/// use std::collections::HashMap;
+///
+/// check(|src| {
+///     let scores: HashMap<String, u32> = src.any_of(
+///         "scores",
+///         make::hash_map(make::string_n(make::char_ascii(), 1..=8), make::int_in(0..=100)),
+///     );
+/// });
+/// # }
+/// ```
 #[cfg(feature = "std")]
 pub fn hash_map<K, V, S>(
     key: impl Generator<Item = K>,

@@ -7,8 +7,7 @@
   - section about how logging works
   - section about common `CHAOS_THEORY_` variables
   - more common anti-patterns
-- usage examples
-  - update example crates
+- update example crates
 - skill or one-pager for coding agents
   - iteration control, seeds, hangs
 

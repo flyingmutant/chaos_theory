@@ -46,6 +46,20 @@ impl<T> OptionExt<T> for Option<T> {
 ///
 /// When possible, prefer [`Generator::filter`](crate::Generator::filter)
 /// to `assume`, and prefer generators that always produce valid values to `filter`.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{assume, check};
+/// use std::collections::BTreeSet;
+///
+/// check(|src| {
+///     let (a, b): (i32, i32) = src.any("values");
+///     assume!(a != b);
+///     assert_eq!(BTreeSet::from([a, b]).len(), 2);
+/// });
+/// # }
+/// ```
 #[macro_export]
 macro_rules! assume {
     ($cond:expr) => {

@@ -175,6 +175,23 @@ impl Env {
     }
 
     /// Create a builder for a customized environment.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::Env;
+    ///
+    /// Env::builder()
+    ///     .with_env_vars()
+    ///     .with_check_iters(1000)
+    ///     .with_check_determinism(true)
+    ///     .build()
+    ///     .check(|src| {
+    ///         let value: u32 = src.any("value");
+    ///         assert_eq!(u32::from_le_bytes(value.to_le_bytes()), value);
+    ///     });
+    /// # }
+    /// ```
     pub fn builder() -> Config {
         Config::default()
     }
@@ -182,11 +199,29 @@ impl Env {
     // TODO: prevent generation methods being callable from `check`
 
     /// Generate a value of `T`.
+    ///
+    /// ```rust
+    /// use chaos_theory::Env;
+    ///
+    /// let mut env = Env::new();
+    /// let bytes: Vec<u8> = env.generate();
+    /// let address: core::net::IpAddr = env.generate();
+    /// ```
     pub fn generate<T: Arbitrary>(&mut self) -> T {
         self.generate_with(T::arbitrary())
     }
 
     /// Generate a value using the provided generator.
+    ///
+    /// ```rust
+    /// use chaos_theory::{Env, make};
+    ///
+    /// let mut env = Env::new();
+    /// let dice = make::array::<_, 2>(make::int_in(1u8..=6));
+    /// let first = env.generate_with(&dice);
+    /// let second = env.generate_with(&dice);
+    /// assert!(first.into_iter().chain(second).all(|n| (1..=6).contains(&n)));
+    /// ```
     pub fn generate_with<G: Generator>(&mut self, g: G) -> G::Item {
         self.generate_with_example(g, None)
     }

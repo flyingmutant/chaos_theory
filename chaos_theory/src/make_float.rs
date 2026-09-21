@@ -153,6 +153,18 @@ fn arbitrary_float<F: Float>() -> Floating<F> {
 ///
 /// If the range contains zero, both positive and negative zero can be generated.
 ///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let probability: f64 = src.any_of("probability", make::float_in(0.0..=1.0));
+///     assert!((0.0..=1.0).contains(&probability));
+/// });
+/// # }
+/// ```
+///
 /// # Panics
 ///
 /// Panics if the range is empty or either bound is NaN.

@@ -110,6 +110,20 @@ impl Ranged for Duration {
 }
 
 /// Create a generator of [`Duration`] in range.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+/// use core::time::Duration;
+///
+/// check(|src| {
+///     let range = Duration::from_millis(1)..=Duration::from_secs(5);
+///     let timeout = src.any_of("timeout", make::duration_in(range));
+///     assert!(!timeout.is_zero());
+/// });
+/// # }
+/// ```
 pub fn duration_in(range: impl RangeBounds<Duration>) -> impl Generator<Item = Duration> {
     let range = Range::new(range);
     Duration_ {

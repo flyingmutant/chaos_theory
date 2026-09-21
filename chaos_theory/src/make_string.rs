@@ -649,6 +649,18 @@ pub fn string(elem: impl Generator<Item = char>) -> impl Generator<Item = String
 // TODO: limit the length of the string (in bytes) - will need Effect::Done
 
 /// Create a [`String`] generator with the specified size (in characters).
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let text = src.any_of("text", make::string_n(make::one_of(&['a', 'é', '🦀']), 3..=8));
+///     assert!((3..=8).contains(&text.chars().count()));
+/// });
+/// # }
+/// ```
 pub fn string_n(
     elem: impl Generator<Item = char>,
     size: impl RangeBounds<usize>,

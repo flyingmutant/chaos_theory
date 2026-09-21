@@ -288,6 +288,16 @@ pub mod make {
 ///
 /// To customize the `check` behavior, use [`Env::builder`] and [`Env::check`].
 /// Environment variables described in [`Config::build`] are used as configuration fallbacks.
+///
+/// ```rust
+/// use chaos_theory::check;
+///
+/// check(|src| {
+///     let mut strings: Vec<String> = src.any("strings");
+///     strings.sort();
+///     assert!(strings.is_sorted(), "unsorted after sort: {strings:?}");
+/// });
+/// ```
 #[cfg(feature = "std")]
 pub fn check(prop: impl Fn(&mut Source)) {
     Env::builder().with_env_vars().build().check(prop);

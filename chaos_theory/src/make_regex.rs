@@ -373,6 +373,20 @@ where
 /// With `fullmatch`, whole string will match the regular expression.
 /// Otherwise, whole string or a substring can match.
 ///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// let names = make::string_matching("[a-z][a-z0-9_]{0,15}", true);
+///
+/// check(|src| {
+///     let name = src.any_of("name", &names);
+///     assert!(name.is_ascii() && (1..=16).contains(&name.len()));
+/// });
+/// # }
+/// ```
+///
 /// # Panics
 ///
 /// `string_matching` panics when the regular expression can't be parsed or when it can match non-UTF-8 sequences.
@@ -457,6 +471,19 @@ where
 ///
 /// With `fullmatch`, whole vector will match the regular expression.
 /// Otherwise, whole vector or a subslice can match.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let frame = src.any_of("frame", make::bytes_matching(r"(?-u:\xFF[0-9]+)", true));
+///     assert_eq!(frame[0], 0xff);
+///     assert!(frame[1..].iter().all(u8::is_ascii_digit));
+/// });
+/// # }
+/// ```
 ///
 /// # Panics
 ///

@@ -43,6 +43,18 @@ pub trait Generator: Debug {
     ///
     /// Only specify seeds when you have real domain examples that should guide exploration;
     /// built-in generators already include curated seeds.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Arbitrary, Generator as _, check};
+    ///
+    /// check(|src| {
+    ///     let seeds = ["/health".to_owned(), "/api/users?page=2".to_owned()];
+    ///     let request = src.any_of("request", String::arbitrary().seeded(&seeds, true));
+    /// });
+    /// # }
+    /// ```
     fn seeded(self, seeds: &[Self::Item], mutate_seeds: bool) -> impl Generator<Item = Self::Item>
     where
         Self: Sized,
@@ -103,6 +115,22 @@ pub trait Generator: Debug {
     ///
     /// When possible, prefer [`Generator::try_filter`] if the caller can handle `None`,
     /// or use a generator that always produces valid values.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Generator as _, check, make};
+    ///
+    /// check(|src| {
+    ///     let reserved = [80u16, 443];
+    ///     let port = src.any_of(
+    ///         "port",
+    ///         make::int_in(1..=1024).filter(|port| !reserved.contains(port)),
+    ///     );
+    ///     assert!(!reserved.contains(&port));
+    /// });
+    /// # }
+    /// ```
     fn filter<F>(self, predicate: F) -> impl Generator<Item = Self::Item>
     where
         F: Fn(&Self::Item) -> bool,
@@ -125,6 +153,19 @@ pub trait Generator: Debug {
     }
 
     /// Create a generator of a collections of items, with the specified size.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Generator as _, check, make};
+    /// use std::collections::VecDeque;
+    ///
+    /// check(|src| {
+    ///     let queue = src.any_of("queue", make::int_in(0u8..=9).collect_n::<VecDeque<_>>(1..=8));
+    ///     assert!((1..=8).contains(&queue.len()));
+    /// });
+    /// # }
+    /// ```
     fn collect_n<C>(self, n: impl RangeBounds<usize>) -> impl Generator<Item = C>
     where
         Self: Sized,
@@ -141,6 +182,18 @@ pub trait Generator: Debug {
     /// Create a generator which yields items from either this one or `other`.
     ///
     /// Use [`mix_of`](crate::make::mix_of) when the number of the generators to combine is variable at runtime.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Generator as _, check, make};
+    ///
+    /// check(|src| {
+    ///     let status = src.any_of("status", make::int_in(200u16..=299).or(make::just(404)));
+    ///     assert!((200..=299).contains(&status) || status == 404);
+    /// });
+    /// # }
+    /// ```
     fn or<G>(self, other: G) -> impl Generator<Item = Self::Item>
     where
         G: Generator<Item = Self::Item>,
@@ -155,6 +208,18 @@ pub trait Generator: Debug {
     ///
     /// When possible, prefer using [`Generator::map_reversible`] or other specialized
     /// `Generator::map_` methods instead.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Generator as _, check, make};
+    ///
+    /// check(|src| {
+    ///     let code = src.any_of("code", make::int_in(0u16..=9999).map(|n| format!("{n:04}")));
+    ///     assert_eq!(code.len(), 4);
+    /// });
+    /// # }
+    /// ```
     fn map<F, U>(self, f: F) -> impl Generator<Item = U>
     where
         F: Fn(Self::Item) -> U,
@@ -265,6 +330,26 @@ impl<G: Generator + ?Sized> Generator for &G {
 }
 
 /// A trait for types that have a default [`Generator`] implementation.
+///
+/// ```rust
+/// # #[cfg(all(feature = "std", feature = "derive"))]
+/// # {
+/// // Enable the "derive" feature.
+/// use chaos_theory::{Arbitrary, check, make};
+///
+/// #[derive(Debug, Arbitrary)]
+/// struct Endpoint {
+///     #[chaos_theory(generator = make::int_in(1..))]
+///     port: u16,
+///     secure: bool,
+/// }
+///
+/// check(|src| {
+///     let endpoint: Endpoint = src.any("endpoint");
+///     assert_ne!(endpoint.port, 0);
+/// });
+/// # }
+/// ```
 pub trait Arbitrary: Debug + Sized {
     /// Get the default [`Generator`] implementation for type.
     fn arbitrary() -> impl Generator<Item = Self>;

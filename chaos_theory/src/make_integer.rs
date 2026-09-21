@@ -280,6 +280,18 @@ impl_arbitrary_int_wrappers!(i128);
 ///
 /// If you are generating a size or an index value, prefer
 /// [`make::size`](crate::make::size) or [`make::index`](crate::make::index) instead.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let port: u16 = src.any_of("port", make::int_in(1024..));
+///     assert!(port >= 1024);
+/// });
+/// # }
+/// ```
 pub fn int_in<I: Int>(range: impl RangeBounds<I>) -> impl Generator<Item = I> {
     let range = Range::<I>::new(range);
     let (neg_range, pos_range) = range.zero_split();

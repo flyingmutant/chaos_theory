@@ -162,6 +162,23 @@ impl<G: Generator> Generator for MixOf<'_, G> {
 /// Create a generator that uses the provided closure to construct items.
 ///
 /// Consider [`from_next`] if you want to support example-guided generation.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let indexed = make::from_fn(|src| {
+///         let bytes = src.any_of("bytes", make::vec_n(make::arbitrary::<u8>(), 1..=16));
+///         let index = src.any_of("index", make::index(bytes.len()));
+///         (bytes, index)
+///     });
+///     let batch = src.any_of("batch", make::vec(indexed));
+///     assert!(batch.into_iter().all(|(bytes, index)| index < bytes.len()));
+/// });
+/// # }
+/// ```
 pub fn from_fn<T: Debug>(func: impl Fn(&mut Source) -> T) -> impl Generator<Item = T> {
     from_next(move |src, _example| {
         let mut src = Source::new(src.as_mut());
@@ -184,6 +201,28 @@ pub fn from_fn_find<T: Debug>(func: impl Fn(&mut Source) -> Option<T>) -> impl G
 /// Create a generator that uses the provided closure to construct items.
 ///
 /// Prefer [`from_fn`] if you don't need to support example-guided generation.
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// #[derive(Debug)]
+/// struct Point {
+///     x: i16,
+///     y: i16,
+/// }
+///
+/// let points = make::from_next(|src, example: Option<&Point>| Point {
+///     x: src.any("x", example.map(|p| &p.x)),
+///     y: src.any("y", example.map(|p| &p.y)),
+/// });
+///
+/// check(|src| {
+///     let point = src.any_of("point", &points);
+/// });
+/// # }
+/// ```
 pub fn from_next<T: Debug>(
     next: impl Fn(&mut SourceEx, Option<&T>) -> T,
 ) -> impl Generator<Item = T> {
@@ -220,6 +259,19 @@ pub fn just<T: Debug + Clone>(value: T) -> impl Generator<Item = T> {
 /// Create a generator that yields one of the specified values.
 ///
 /// To choose between multiple generators (not values) use [`Generator::or`] or [`mix_of`].
+///
+/// ```rust
+/// # #[cfg(feature = "std")]
+/// # {
+/// use chaos_theory::{check, make};
+///
+/// check(|src| {
+///     let methods = ["GET", "POST", "DELETE"];
+///     let batch = src.any_of("batch", make::vec(make::one_of(&methods)));
+///     assert!(batch.iter().all(|method| methods.contains(method)));
+/// });
+/// # }
+/// ```
 ///
 /// # Panics
 ///

@@ -60,11 +60,35 @@ impl<'env> Source<'env> {
     }
 
     /// Create an instance of `T`, using its [`Arbitrary`] implementation.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let value: i64 = src.any("value");
+    ///     assert_eq!(value.to_string().parse::<i64>(), Ok(value));
+    /// });
+    /// # }
+    /// ```
     pub fn any<T: Arbitrary>(&mut self, label: &str) -> T {
         self.any_of(label, T::arbitrary())
     }
 
     /// Create an instance of type, using the supplied generator.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{check, make};
+    ///
+    /// check(|src| {
+    ///     let rolls: [u8; 2] = src.any_of("rolls", make::array(make::int_in(1..=6)));
+    ///     assert!((2..=12).contains(&rolls.iter().sum::<u8>()));
+    /// });
+    /// # }
+    /// ```
     pub fn any_of<G: Generator>(&mut self, label: &str, g: G) -> G::Item {
         self.as_ex().any_of(label, g, None)
     }
@@ -72,6 +96,20 @@ impl<'env> Source<'env> {
     /// Choose an element from a slice.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let values: Vec<i32> = src.any("values");
+    ///     if let Some((value, index)) = src.choose("element", &values) {
+    ///         assert_eq!(*value, values[index]);
+    ///     }
+    /// });
+    /// # }
+    /// ```
     pub fn choose<'values, T: Debug>(
         &mut self,
         label: &str,
@@ -86,6 +124,20 @@ impl<'env> Source<'env> {
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let strings: Vec<String> = src.any("strings");
+    ///     if let Some((text, _)) = src.choose_where("ascii", &strings, |s| s.is_ascii()) {
+    ///         assert_eq!(text.to_ascii_uppercase(), text.to_uppercase());
+    ///     }
+    /// });
+    /// # }
+    /// ```
     pub fn choose_where<'values, T: Debug>(
         &mut self,
         label: &str,
@@ -98,6 +150,20 @@ impl<'env> Source<'env> {
     /// Choose a mutable element from a slice.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let mut flags: Vec<bool> = src.any("flags");
+    ///     if let Some((flag, _)) = src.choose_mut("flag", &mut flags) {
+    ///         *flag = !*flag;
+    ///     }
+    /// });
+    /// # }
+    /// ```
     pub fn choose_mut<'values, T: Debug>(
         &mut self,
         label: &str,
@@ -112,6 +178,20 @@ impl<'env> Source<'env> {
     /// if unable to choose value that satisfies the predicate in some number of tries.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let mut remaining: Vec<u8> = src.any("remaining");
+    ///     if let Some((count, _)) = src.choose_mut_where("item", &mut remaining, |n| *n > 0) {
+    ///         *count -= 1;
+    ///     }
+    /// });
+    /// # }
+    /// ```
     pub fn choose_mut_where<'values, T: Debug>(
         &mut self,
         label: &str,
@@ -125,6 +205,20 @@ impl<'env> Source<'env> {
     ///
     /// Use [`make::permutation`](crate::make::permutation) to generate an order
     /// that can be applied to several collections.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::check;
+    ///
+    /// check(|src| {
+    ///     let mut values = [1, 2, 3, 4];
+    ///     src.shuffle("order", &mut values);
+    ///     values.sort();
+    ///     assert_eq!(values, [1, 2, 3, 4]);
+    /// });
+    /// # }
+    /// ```
     pub fn shuffle<T: Debug>(&mut self, label: &str, values: &mut [T]) {
         self.as_ex().shuffle(label, None, values);
     }
@@ -134,6 +228,25 @@ impl<'env> Source<'env> {
     /// `find` is similar to [`Generator::try_filter`]: it returns `None` if unable to find a value.
     ///
     /// Use [`OptionExt::assume_some`] if you can't handle the `None` value gracefully.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{check, make};
+    ///
+    /// check(|src| {
+    ///     let text: String = src.any("text");
+    ///     let substring = src.find("substring", |src| {
+    ///         let start = src.any_of("start", make::index(text.len() + 1));
+    ///         let end = start + src.any_of("length", make::index(text.len() - start + 1));
+    ///         text.get(start..end)
+    ///     });
+    ///     if let Some(substring) = substring {
+    ///         assert!(text.contains(substring));
+    ///     }
+    /// });
+    /// # }
+    /// ```
     pub fn find<T: Debug>(
         &mut self,
         label: &str,
@@ -152,11 +265,48 @@ impl<'env> Source<'env> {
     }
 
     /// Maybe proceed.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{check, make};
+    ///
+    /// check(|src| {
+    ///     let mut text: String = src.any("text");
+    ///     let original = text.clone();
+    ///     let _ = src.maybe("reserve", |src| {
+    ///         text.reserve(src.any_of("extra", make::size(..)));
+    ///     });
+    ///     assert_eq!(text, original);
+    /// });
+    /// # }
+    /// ```
     pub fn maybe<T>(&mut self, label: &str, body: impl FnOnce(&mut Self) -> T) -> Option<T> {
         SourceEx::maybe_impl(self, label, None, body)
     }
 
     /// Select a variant to proceed, where all variants are applicable.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{check, make};
+    ///
+    /// check(|src| {
+    ///     let mut values: Vec<u8> = src.any("values");
+    ///     src.select("action", &["extend", "truncate"], |src, action, _| {
+    ///         match action {
+    ///             "extend" => values.extend(src.any::<Vec<u8>>("extra")),
+    ///             "truncate" => {
+    ///                 let len = src.any_of("length", make::index(values.len() + 1));
+    ///                 values.truncate(len);
+    ///             }
+    ///             _ => unreachable!(),
+    ///         }
+    ///     });
+    /// });
+    /// # }
+    /// ```
     ///
     /// # Panics
     ///
@@ -171,6 +321,30 @@ impl<'env> Source<'env> {
     }
 
     /// Repeat `step` a number of times.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::{Effect, check};
+    ///
+    /// check(|src| {
+    ///     let mut stack = Vec::<u8>::new();
+    ///     src.repeat("step", |src| {
+    ///         src.select("action", &["push", "pop"], |src, action, _| {
+    ///             match action {
+    ///                 "push" => stack.push(src.any("value")),
+    ///                 "pop" => match stack.pop() {
+    ///                     Some(value) => src.log_value("popped", &value),
+    ///                     None => return Effect::Noop,
+    ///                 },
+    ///                 _ => unreachable!(),
+    ///             }
+    ///             Effect::Success
+    ///         })
+    ///     });
+    /// });
+    /// # }
+    /// ```
     pub fn repeat(&mut self, label: &str, step: impl FnMut(&mut Self) -> Effect) {
         self.repeat_n(label, .., step);
     }
@@ -247,6 +421,19 @@ impl<'env> Source<'env> {
     /// Currently, it is used as an additional factor to detect non-determinism in properties.
     /// Use [`Config::with_check_determinism`](crate::Config::with_check_determinism)
     /// to enable strict determinism enforcement.
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "std")]
+    /// # {
+    /// use chaos_theory::Env;
+    ///
+    /// Env::builder().with_check_determinism(true).build().check(|src| {
+    ///     let mut values: Vec<i32> = src.any("values");
+    ///     values.sort();
+    ///     src.observe("sorted", &values);
+    /// });
+    /// # }
+    /// ```
     // TODO: slight problem that for determinism we want to observe as much as possible,
     // while for novelty/coverage we want to observe only non-really-input-dependent parts.
     pub fn observe(&mut self, label: &str, value: impl Hash) {
